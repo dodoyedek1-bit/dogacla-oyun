@@ -7,6 +7,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  CAPACITOR_TELEMETRY: false
 
 jobs:
   build:
@@ -18,7 +19,7 @@ jobs:
     - name: Node.js Kurulumu
       uses: actions/setup-node@v4
       with:
-        node-version: 22
+        node-version: 20
 
     - name: Java Kurulumu (Android İçin)
       uses: actions/setup-java@v4
@@ -27,15 +28,11 @@ jobs:
         java-version: '17'
 
     - name: Projeyi Yarat ve Derle
-      env:
-        CAPACITOR_TELEMETRY: false # Onay sorularını engeller
       run: |
         set -e
-        
         echo "1. Vite Projesi Oluşturuluyor..."
-        # Her soruya evet demesi için --yes kullanıyoruz
-        npx --yes create-vite@latest dogacla-oyun --template react
-        cd dogacla-oyun
+        npx --yes create-vite@latest mobil-oyun --template react
+        cd mobil-oyun
 
         echo "2. Gerekli Paketler Yükleniyor..."
         npm install
@@ -48,17 +45,16 @@ jobs:
         echo '@tailwind base; @tailwind components; @tailwind utilities;' > src/index.css
 
         echo "4. Oyun Kodu Aktarılıyor..."
-        # App.jsx dosyasını kök dizinden src içine kopyalıyoruz
         cp ../App.jsx src/App.jsx
 
         echo "5. Capacitor Ayarlanıyor..."
-        npx --yes cap init "Dogacla" "com.oyun.dogacla" --web-dir dist
+        npx cap init "Dogacla" "com.oyun.dogacla" --web-dir dist
 
         echo "6. Web Uygulaması Derleniyor..."
         npm run build
 
         echo "7. Android Platformu Ekleniyor..."
-        npx --yes cap add android
+        npx cap add android
 
         echo "8. APK Çıktısı Alınıyor..."
         cd android
@@ -69,4 +65,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Dogacla-Oyun-APK
-        path: dogacla-oyun/android/app/build/outputs/apk/debug/app-debug.apk
+        path: mobil-oyun/android/app/build/outputs/apk/debug/app-debug.apk
