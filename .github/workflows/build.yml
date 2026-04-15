@@ -7,7 +7,6 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  CI: false
 
 jobs:
   build:
@@ -19,7 +18,7 @@ jobs:
     - name: Node.js Kurulumu
       uses: actions/setup-node@v4
       with:
-        node-version: 20
+        node-version: 22
 
     - name: Java Kurulumu (Android İçin)
       uses: actions/setup-java@v4
@@ -28,46 +27,40 @@ jobs:
         java-version: '17'
 
     - name: Projeyi Yarat ve Derle
+      env:
+        CAPACITOR_TELEMETRY: false # Onay sorularını engeller
       run: |
-        set -e # Herhangi bir hatada anında dur ve log ver
+        set -e
         
-        echo "1. Dosya Konumları Kontrol Ediliyor..."
-        ls -la
-        
-        echo "2. Vite Projesi Oluşturuluyor..."
-        npm create vite@latest dogacla-oyun -- --template react
+        echo "1. Vite Projesi Oluşturuluyor..."
+        # Her soruya evet demesi için --yes kullanıyoruz
+        npx --yes create-vite@latest dogacla-oyun --template react
         cd dogacla-oyun
 
-        echo "3. Gerekli Paketler Yükleniyor..."
+        echo "2. Gerekli Paketler Yükleniyor..."
         npm install
         npm install lucide-react @capacitor/core @capacitor/android
         npm install -D tailwindcss postcss autoprefixer @capacitor/cli
 
-        echo "4. Tailwind Ayarları Yapılıyor..."
-        npx tailwindcss init -p
+        echo "3. Tailwind Ayarları Yapılıyor..."
+        npx --yes tailwindcss init -p
         echo 'export default { content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"], theme: { extend: {} }, plugins: [], }' > tailwind.config.js
         echo '@tailwind base; @tailwind components; @tailwind utilities;' > src/index.css
 
-        echo "5. Oyun Kodu Aranıyor ve Aktarılıyor..."
-        # Üst dizindeki tüm .jsx dosyalarını bulur ve ilk bulduğunu App.jsx olarak kopyalar
-        JSX_FILE=$(find ../ -maxdepth 1 -iname "*.jsx" | head -n 1)
-        if [ -z "$JSX_FILE" ]; then
-          echo "Kritik Hata: GitHub ana dizininde hiçbir .jsx dosyası bulunamadı! Lütfen kodu yüklediğinizden emin olun."
-          exit 1
-        fi
-        echo "Bulunan dosya: $JSX_FILE"
-        cp "$JSX_FILE" src/App.jsx
+        echo "4. Oyun Kodu Aktarılıyor..."
+        # App.jsx dosyasını kök dizinden src içine kopyalıyoruz
+        cp ../App.jsx src/App.jsx
 
-        echo "6. Capacitor Ayarlanıyor..."
-        npx cap init "Dogacla" "com.oyun.dogacla" --web-dir dist
+        echo "5. Capacitor Ayarlanıyor..."
+        npx --yes cap init "Dogacla" "com.oyun.dogacla" --web-dir dist
 
-        echo "7. Web Uygulaması Derleniyor..."
+        echo "6. Web Uygulaması Derleniyor..."
         npm run build
 
-        echo "8. Android Platformu Ekleniyor..."
-        npx cap add android
+        echo "7. Android Platformu Ekleniyor..."
+        npx --yes cap add android
 
-        echo "9. APK Çıktısı Alınıyor..."
+        echo "8. APK Çıktısı Alınıyor..."
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug
