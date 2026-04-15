@@ -1,0 +1,63 @@
+name: Sihirli Mobil Build
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Repodaki Kodu Al
+      uses: actions/checkout@v4
+
+    - name: Node.js Kurulumu
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Java Kurulumu (Android İçin)
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Projeyi Yarat ve Derle
+      run: |
+        # 1. Vite Projesi Oluştur
+        npx create-vite@latest dogacla-oyun --template react
+        cd dogacla-oyun
+
+        # 2. Gerekli Paketleri Yükle
+        npm install
+        npm install lucide-react @capacitor/core @capacitor/android
+        npm install -D tailwindcss postcss autoprefixer @capacitor/cli
+
+        # 3. Tailwind Ayarları
+        npx tailwindcss init -p
+        echo 'export default { content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"], theme: { extend: {} }, plugins: [], }' > tailwind.config.js
+        echo '@tailwind base; @tailwind components; @tailwind utilities;' > src/index.css
+
+        # 4. Bizim Kodu Projeye Aktar
+        cp ../App.jsx src/App.jsx
+
+        # 5. Capacitor Ayarları
+        npx cap init "Dogacla" "com.oyun.dogacla" --web-dir dist
+
+        # 6. Web Uygulamasını Build Et
+        npm run build
+
+        # 7. Android Platformunu Ekle
+        npx cap add android
+
+        # 8. APK Çıktısı Al
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleDebug
+
+    - name: APK'yı Yükle ve Sun (Artifact)
+      uses: actions/upload-artifact@v4
+      with:
+        name: Dogacla-Oyun-APK
+        path: dogacla-oyun/android/app/build/outputs/apk/debug/app-debug.apk
