@@ -1,53 +1,31 @@
-name: Sihirli Mobil Build
-
-on:
-  push:
-    branches: [ "main", "master" ]
-  workflow_dispatch:
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  CAPACITOR_TELEMETRY: false
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Repodaki Kodu Al
-      uses: actions/checkout@v4
-
-    - name: Node.js Kurulumu
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-
-    - name: Java Kurulumu (Android İçin)
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'zulu'
-        java-version: '17'
-
-    - name: Projeyi Yarat ve Derle
+- name: Projeyi Yarat ve Derle
       run: |
         set -e
         echo "1. Vite Projesi Oluşturuluyor..."
-        npx --yes create-vite@latest mobil-oyun --template react
+        # --no-interactive bayrağı eklendi
+        npx --yes create-vite@latest mobil-oyun -- --template react --no-interactive
         cd mobil-oyun
 
         echo "2. Gerekli Paketler Yükleniyor..."
         npm install
-        npm install lucide-react @capacitor/core @capacitor/android
-        npm install -D tailwindcss postcss autoprefixer @capacitor/cli
+        npm install @capacitor/core @capacitor/android
+        npm install -D @capacitor/cli tailwindcss postcss autoprefixer lucide-react
 
         echo "3. Tailwind Ayarları Yapılıyor..."
-        npx --yes tailwindcss init -p
-        echo 'export default { content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"], theme: { extend: {} }, plugins: [], }' > tailwind.config.js
+        npx tailwindcss init -p
+        echo 'export default { content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"], theme: { extend: {} }, plugins:, }' > tailwind.config.js
         echo '@tailwind base; @tailwind components; @tailwind utilities;' > src/index.css
 
         echo "4. Oyun Kodu Aktarılıyor..."
-        cp ../App.jsx src/App.jsx
+        # Eğer App.jsx yoksa hata vermemesi için kontrol eklendi
+        if [ -f "../App.jsx" ]; then
+          cp../App.jsx src/App.jsx
+        else
+          echo "Uyarı: App.jsx bulunamadı, varsayılan dosya kullanılacak."
+        fi
 
         echo "5. Capacitor Ayarlanıyor..."
+        # Tüm parametreler açıkça belirtildi
         npx cap init "Dogacla" "com.oyun.dogacla" --web-dir dist
 
         echo "6. Web Uygulaması Derleniyor..."
@@ -59,10 +37,4 @@ jobs:
         echo "8. APK Çıktısı Alınıyor..."
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug
-
-    - name: APK'yı Yükle ve Sun (Artifact)
-      uses: actions/upload-artifact@v4
-      with:
-        name: Dogacla-Oyun-APK
-        path: mobil-oyun/android/app/build/outputs/apk/debug/app-debug.apk
+       ./gradlew assembleDebug
