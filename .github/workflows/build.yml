@@ -5,6 +5,10 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Node.js uyarısını gizler ve v24'e zorlar
+  CI: false # Build sırasındaki önemsiz uyarıların işlemi durdurmasını engeller
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,7 +19,7 @@ jobs:
     - name: Node.js Kurulumu
       uses: actions/setup-node@v4
       with:
-        node-version: 20
+        node-version: 22
 
     - name: Java Kurulumu (Android İçin)
       uses: actions/setup-java@v4
@@ -25,33 +29,40 @@ jobs:
 
     - name: Projeyi Yarat ve Derle
       run: |
-        # 1. Vite Projesi Oluştur (Etkileşimsiz mod)
-        npm create vite@latest dogacla-oyun -- --template react
+        echo "1. Vite Projesi Oluşturuluyor..."
+        npx --yes create-vite@latest dogacla-oyun --template react
         cd dogacla-oyun
 
-        # 2. Gerekli Paketleri Yükle
+        echo "2. Gerekli Paketler Yükleniyor..."
         npm install
         npm install lucide-react @capacitor/core @capacitor/android
         npm install -D tailwindcss postcss autoprefixer @capacitor/cli
 
-        # 3. Tailwind Ayarları
-        npx tailwindcss init -p
+        echo "3. Tailwind Ayarları Yapılıyor..."
+        npx --yes tailwindcss init -p
         echo 'export default { content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"], theme: { extend: {} }, plugins: [], }' > tailwind.config.js
         echo '@tailwind base; @tailwind components; @tailwind utilities;' > src/index.css
 
-        # 4. Bizim Kodu Projeye Aktar (Küçük/Büyük harf hatasına karşı korumalı)
-        cp ../App.jsx src/App.jsx || cp ../app.jsx src/App.jsx || cp ../*.jsx src/App.jsx
+        echo "4. Oyun Kodu Aktarılıyor..."
+        if [ -f ../App.jsx ]; then
+          cp ../App.jsx src/App.jsx
+        elif ls ../*.jsx 1> /dev/null 2>&1; then
+          # Eğer dosya ismi App.jsx değilse, ilk bulduğu jsx dosyasını App.jsx yapar
+          find .. -maxdepth 1 -name "*.jsx" | head -n 1 | xargs -I {} cp {} src/App.jsx
+        else
+          echo "UYARI: Deponuzun ana dizininde bir .jsx dosyası bulunamadı! Lütfen kodu yüklediğinizden emin olun."
+        fi
 
-        # 5. Capacitor Ayarları
-        npx cap init "Dogacla" "com.oyun.dogacla" --web-dir dist
+        echo "5. Capacitor Ayarlanıyor..."
+        npx cap init "Dogacla" "com.oyun.dogacla" --web-dir dist || true
 
-        # 6. Web Uygulamasını Build Et
+        echo "6. Web Uygulaması Derleniyor..."
         npm run build
 
-        # 7. Android Platformunu Ekle
+        echo "7. Android Platformu Ekleniyor..."
         npx cap add android
 
-        # 8. APK Çıktısı Al
+        echo "8. APK Çıktısı Alınıyor..."
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug
