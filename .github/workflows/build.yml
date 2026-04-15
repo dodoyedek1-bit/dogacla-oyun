@@ -5,10 +5,6 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
-env:
-  # Node.js deprecation uyarılarını gizlemek ve Node 24 kullanmak için zorunlu kılıyoruz.
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,7 +15,7 @@ jobs:
     - name: Node.js Kurulumu
       uses: actions/setup-node@v4
       with:
-        node-version: 22
+        node-version: 20
 
     - name: Java Kurulumu (Android İçin)
       uses: actions/setup-java@v4
@@ -29,8 +25,8 @@ jobs:
 
     - name: Projeyi Yarat ve Derle
       run: |
-        # 1. Vite Projesi Oluştur (-y parametresi GitHub'da takılıp hata vermesini engeller)
-        npx -y create-vite@latest dogacla-oyun --template react
+        # 1. Vite Projesi Oluştur (Etkileşimsiz mod)
+        npm create vite@latest dogacla-oyun -- --template react
         cd dogacla-oyun
 
         # 2. Gerekli Paketleri Yükle
@@ -39,21 +35,21 @@ jobs:
         npm install -D tailwindcss postcss autoprefixer @capacitor/cli
 
         # 3. Tailwind Ayarları
-        npx -y tailwindcss init -p
+        npx tailwindcss init -p
         echo 'export default { content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"], theme: { extend: {} }, plugins: [], }' > tailwind.config.js
         echo '@tailwind base; @tailwind components; @tailwind utilities;' > src/index.css
 
-        # 4. Bizim Kodu Projeye Aktar
-        cp ../App.jsx src/App.jsx
+        # 4. Bizim Kodu Projeye Aktar (Küçük/Büyük harf hatasına karşı korumalı)
+        cp ../App.jsx src/App.jsx || cp ../app.jsx src/App.jsx || cp ../*.jsx src/App.jsx
 
         # 5. Capacitor Ayarları
-        npx -y cap init "Dogacla" "com.oyun.dogacla" --web-dir dist
+        npx cap init "Dogacla" "com.oyun.dogacla" --web-dir dist
 
         # 6. Web Uygulamasını Build Et
         npm run build
 
         # 7. Android Platformunu Ekle
-        npx -y cap add android
+        npx cap add android
 
         # 8. APK Çıktısı Al
         cd android
