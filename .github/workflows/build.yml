@@ -105,19 +105,15 @@ jobs:
         @tailwind utilities;
         EOF
         
-        echo "Oyun kodu aranıyor..."
-        # KESİN ÇÖZÜM: Sadece içinde "import React" geçen doğru oyun dosyasını bulur!
-        MAIN_FILE=$(grep -rl "import React" ../ --exclude-dir=dogacla-mobil --exclude-dir=.git --exclude-dir=.github | head -n 1)
-        
-        if [ -n "$MAIN_FILE" ]; then
-          echo "Oyun kodu başarıyla bulundu ve kopyalanıyor: $MAIN_FILE"
-          cp "$MAIN_FILE" src/App.jsx
+        if [ -f "../App.jsx" ]; then
+          echo "Oyun kodu (App.jsx) başarıyla bulundu!"
+          cp ../App.jsx src/App.jsx
         else
-          echo "KIRMIZI HATA: GitHub deponuzda içinde 'import React' yazan oyun kodunuz bulunamadı! Dosyayı yüklediğinizden emin olun."
+          echo "KIRMIZI HATA: App.jsx dosyası bulunamadı!"
           exit 1
         fi
 
-    - name: 2. Videoları ve Görselleri İndirip Uygulamaya Göm
+    - name: 2. Videoları ve Görselleri İndirip Göm
       run: |
         cd dogacla-mobil
         cat << 'EOF' > downloadAssets.mjs
@@ -163,12 +159,21 @@ jobs:
         node downloadAssets.mjs
         rm downloadAssets.mjs
 
-    - name: 3. Android Çıktısını Hazırla (APK)
+    - name: 3. Logo ve Splash Ekranını Ayarla, APK Çıktısı Al
       run: |
         cd dogacla-mobil
         npx cap init "Dogacla" "com.oyun.dogacla" --web-dir dist
         npm run build
         npx cap add android
+        
+        echo "==== OYUN LOGOSU VE AÇILIŞ EKRANI OLUŞTURULUYOR ===="
+        npm install -g @capacitor/assets
+        mkdir -p assets
+        # Logoyu GitHub'dan indiriyoruz
+        curl -L "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/dogacla_logsu.png" -o assets/logo.png
+        # Arka plan simsiyah olacak şekilde Android icon ve splash dosyalarını üretiyoruz
+        npx @capacitor/assets generate --android --splashBackgroundColor '#000000' --iconBackgroundColor '#000000'
+        
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug --stacktrace
