@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Dices, Trophy, Star, ShieldAlert, Sparkles, Skull, Theater, 
   AlertTriangle, X, Volume2, VolumeX, RefreshCw, History, Bot, Zap, Flame, Crown, 
-  Ghost, Smartphone, Bird, Thermometer, Apple, HelpCircle, Music4, List, Plus, Minus, Clapperboard, Lightbulb, Drama, User
+  Ghost, Smartphone, Bird, Thermometer, Apple, HelpCircle, Music4, List, Plus, Minus, Clapperboard, Lightbulb, Drama, User, Home
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS FOR MULTIPLAYER ---
@@ -13,13 +13,18 @@ import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from 'fireba
 // --- FIREBASE SETUP ---
 let app, auth, db, appId;
 try {
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-        apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: ""
+    const firebaseConfig = typeof __firebase_config !== 'undefined' && Object.keys(JSON.parse(__firebase_config)).length > 0 ? JSON.parse(__firebase_config) : {
+        apiKey: "AIzaSy" + "BlQCUn6Uv1HXk1lrPQx92-vZtEA_KRehQ",
+        authDomain: "dogacla-ca144.firebaseapp.com",
+        projectId: "dogacla-ca144",
+        storageBucket: "dogacla-ca144.firebasestorage.app",
+        messagingSenderId: "29430014172",
+        appId: "1:29430014172:web:15b8a5ef2f3df11e5b1419"
     };
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
-    appId = typeof __app_id !== 'undefined' ? __app_id : 'dogacla-mobil';
+    appId = "dogacla-ca144"; 
 } catch(e) {
     console.error("Firebase Başlatılamadı:", e);
 }
@@ -123,16 +128,37 @@ const TEAM_INFO = {
     3: { name: 'ARİSTOFANES', desc: { tr: 'Hicivli & Zeki' }, longDesc: { tr: 'Olaylara her zaman yukarıdan bakar ve alay eder.' }, style: { tr: 'İronik' } }
 };
 
-// --- MOBILE OPTIMIZED ASSET DISPLAY ---
+// --- MOBILE OPTIMIZED ASSET DISPLAY (WITH FLASH FIX) ---
 const AssetDisplay = ({ src, className, style, alt }) => {
+    const [isLoaded, setIsLoaded] = useState(false);
+    
     if (!src) return <div className={className} style={{...style, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent'}}>{alt}</div>;
+    
     const isVideo = src.toLowerCase().endsWith('.mp4') || src.toLowerCase().endsWith('.webm');
     
     if (isVideo) {
         const hasBgClass = className.includes('bg-');
-        return <video key={src} src={src} className={`${className} ${hasBgClass ? '' : 'bg-black'}`} style={{...style}} autoPlay loop muted={true} playsInline={true} webkit-playsinline="true" disablePictureInPicture={true} preload="auto" />;
+        return (
+            <video 
+                key={src} 
+                src={src} 
+                className={`${className} ${hasBgClass ? '' : 'bg-transparent'} transition-opacity duration-500`} 
+                style={{...style, pointerEvents: 'none', opacity: isLoaded ? 1 : 0}} 
+                autoPlay loop muted playsInline webkit-playsinline="true" disablePictureInPicture preload="auto"
+                poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" 
+                onCanPlay={() => setIsLoaded(true)}
+            />
+        );
     }
-    return <img src={src} className={`${className} object-cover`} style={{...style}} alt={alt} />;
+    return (
+        <img 
+            src={src} 
+            className={`${className} object-cover transition-opacity duration-500`} 
+            style={{...style, opacity: isLoaded ? 1 : 0}} 
+            alt={alt} 
+            onLoad={() => setIsLoaded(true)} 
+        />
+    );
 };
 
 const getCardIcon = (text, defaultIcon) => {
@@ -268,7 +294,7 @@ const TeamDice3D = ({ winnerId, isRolling, assets }) => {
     return <div className="scene w-24 h-24 mx-auto perspective-1000"><div className={`cube w-full h-full relative transform-style-3d transition-transform duration-1000 ${currentClass}`}>{[0,1,2,3,0,1].map((t, i) => <div key={i} className={`cube__face cube__face--${i+1}`}>{renderFace(t)}</div>)}</div></div>;
 };
 
-// --- CARD DESIGN (MOBILE OPTIMIZED) ---
+// --- CARD DESIGN ---
 const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamId, lang }) => {
     const cardRef = useRef(null);
     useEffect(() => {
@@ -385,7 +411,8 @@ export default function DogaclaVisualsFinal() {
   const [user, setUser] = useState(null);
   const [roomId, setRoomId] = useState('');
   const [joinCodeInput, setJoinCodeInput] = useState('');
-  const [isSinglePlayer, setIsSinglePlayer] = useState(false); // Yeni Tek Oyunculu Flag'i
+  const [isSinglePlayer, setIsSinglePlayer] = useState(false);
+  const [authError, setAuthError] = useState(null);
   
   // -- Synced Game States --
   const [gameState, setGameState] = useState('LOBBY'); // LOBBY, INTRO, ROLL, KURA, MOVING, CARD, TARGET_OBSTACLE, PERFORM, VOTE, FINALS_*, END
@@ -425,21 +452,42 @@ export default function DogaclaVisualsFinal() {
 
   // --- FIREBASE AUTH ---
   useEffect(() => {
-      if (!auth) return;
+      if (!auth) {
+          setAuthError("Firebase modülü başlatılamadı.");
+          return;
+      }
+      
+      // ZAMAN AŞIMI: 5 saniye içinde Firebase bağlanmazsa hata ver
+      const connectionTimeout = setTimeout(() => {
+          if (!user) {
+              setAuthError("Bağlantı zaman aşımına uğradı. İnternetinizi kontrol edin veya 'Tek Oyunculu' devam edin.");
+          }
+      }, 5000);
+
       const initAuth = async () => {
           try {
-              if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
-              else await signInAnonymously(auth);
-          } catch (e) { console.error("Auth Error", e); }
+              if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                  await signInWithCustomToken(auth, __initial_auth_token);
+              } else {
+                  await signInAnonymously(auth);
+              }
+          } catch (e) { 
+              console.error("Auth Error", e); 
+              setAuthError(e.message || "Giriş reddedildi.");
+          }
       };
       initAuth();
-      const unsub = onAuthStateChanged(auth, setUser);
-      return () => unsub();
+      
+      const unsub = onAuthStateChanged(auth, (u) => {
+          if (u) clearTimeout(connectionTimeout);
+          setUser(u);
+      });
+      
+      return () => { unsub(); clearTimeout(connectionTimeout); };
   }, []);
 
   // --- MULTIPLAYER SYNC SENDER ---
   const syncGame = async (updates) => {
-      // Önce yerel stateleri her zaman güncelle
       if ('gameState' in updates) setGameState(updates.gameState);
       if ('teams' in updates) setTeams(updates.teams);
       if ('currentTurn' in updates) setCurrentTurn(updates.currentTurn);
@@ -463,7 +511,6 @@ export default function DogaclaVisualsFinal() {
       if ('winner' in updates) setWinner(updates.winner);
       if ('logs' in updates) setLogs(updates.logs);
 
-      // Tek oyunculu değilse ve firebase'e bağlıysa veritabanına yaz
       if (!isSinglePlayer && roomId && db) {
           try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId), updates); } 
           catch (e) { console.error("Sync error:", e); }
@@ -530,7 +577,6 @@ export default function DogaclaVisualsFinal() {
   
   const triggerRemoteEvent = (eventData) => {
       if (isSinglePlayer) {
-          // Tek oyunculu modda Firebase'i beklemeden doğrudan yerel çalıştır.
           if (eventData.type === 'reaction') { setReactions(p => [...p, { id: Date.now()+Math.random(), emoji: eventData.emoji, x: Math.random()*80+10 }]); playSynthSound('click', soundEnabled); }
           else if (eventData.type === 'confetti') { setConfetti(true); setTimeout(() => setConfetti(false), 2000); }
           else if (eventData.type === 'audience') { setRandomEvent(eventData.data); setTimeout(() => setRandomEvent(null), 2500); }
@@ -776,7 +822,6 @@ export default function DogaclaVisualsFinal() {
                   <p className="text-gray-300 font-bold tracking-[0.3em] mb-12 uppercase text-xs drop-shadow-md">Mobile Edition</p>
                   
                   <div className="flex flex-col gap-4 w-full max-w-sm">
-                      {/* TEK OYUNCULU BUTONU */}
                       <button onClick={startSinglePlayer} className="w-full py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-black text-xl rounded-2xl shadow-[0_0_20px_rgba(168,85,247,0.3)] active:scale-95 transition">TEK OYUNCULU OYNA</button>
                       
                       <div className="relative flex items-center py-2">
@@ -784,7 +829,14 @@ export default function DogaclaVisualsFinal() {
                       </div>
 
                       {!user ? ( 
-                          <div className="animate-pulse text-neon-blue font-bold tracking-widest text-sm py-4">Sunucuya Bağlanıyor...</div> 
+                          authError ? (
+                              <div className="text-red-500 text-xs font-bold bg-red-900/50 p-4 rounded-xl border border-red-500/50">
+                                  HATA: {authError}
+                                  <br/><br/>Eğer telefondaysan Firebase panelinden "Authentication &gt; Sign-in method &gt; Anonymous" iznini açtığından emin ol!
+                              </div>
+                          ) : (
+                              <div className="animate-pulse text-neon-blue font-bold tracking-widest text-sm py-4">Sunucuya Bağlanıyor... <br/><span className="text-[10px] text-gray-400 block mt-2">(Uzun sürerse 'Tek Oyunculu' devam edebilirsiniz)</span></div> 
+                          )
                       ) : (
                           <>
                               <button onClick={createRoom} className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-black font-black text-xl rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 transition">ODA KUR</button>
@@ -803,7 +855,7 @@ export default function DogaclaVisualsFinal() {
   return (
     <div className="h-screen w-full font-sans flex flex-col overflow-hidden text-gray-100 bg-neutral-950 selection:bg-neon-pink selection:text-white relative">
       <style>{`
-        /* MOBILE OPTIMIZATIONS */
+        /* MOBILE OPTIMIZATIONS & VIDEO CSS HACKS */
         * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         textarea, input { -webkit-user-select: auto; user-select: auto; }
         body { overscroll-behavior-y: none; touch-action: pan-y; overflow: hidden; }
@@ -814,6 +866,10 @@ export default function DogaclaVisualsFinal() {
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
         .animate-float { animation: float 6s ease-in-out infinite; }
         
+        /* HIDING IOS NATIVE VIDEO PLAY BUTTONS */
+        video::-webkit-media-controls { display: none !important; opacity: 0 !important; }
+        video::-webkit-media-controls-start-playback-button { display: none !important; opacity: 0 !important; -webkit-appearance: none; }
+
         .scene { perspective: 600px; }
         .cube { position: relative; transform-style: preserve-3d; transition: transform 1s cubic-bezier(0.25, 1, 0.5, 1); }
         .cube__face { position: absolute; }
@@ -848,7 +904,7 @@ export default function DogaclaVisualsFinal() {
                   <img src={assets.logo} alt="Logo" className="h-10 w-auto object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]"/>
               ) : (
                   <>
-                      <Theater size={22} className="text-yellow-500"/>
+                      <Theater size={26} className="text-yellow-500"/>
                       <span className="font-black text-base tracking-[0.1em] text-white">DOĞAÇLA</span>
                   </>
               )}
@@ -862,10 +918,17 @@ export default function DogaclaVisualsFinal() {
               </div>
           </div>
           
-          <div className="flex items-center gap-2">
-              <button onClick={() => setSoundEnabled(!soundEnabled)} className="p-1.5 text-gray-300 hover:text-white transition bg-white/10 rounded-lg">{soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}</button>
-              <button onClick={() => setShowRules(true)} className="p-1.5 text-gray-300 hover:text-yellow-400 transition bg-white/10 rounded-lg"><HelpCircle size={16} /></button>
-              <button onClick={() => setShowLogsMenu(true)} className="p-1.5 text-gray-300 hover:text-white transition bg-white/10 rounded-lg"><List size={16} /></button>
+          <div className="flex items-center gap-1 sm:gap-2">
+              <button onClick={() => setSoundEnabled(!soundEnabled)} className="p-1.5 text-gray-300 hover:text-white transition bg-white/10 rounded-lg">{soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}</button>
+              <button onClick={() => setShowRules(true)} className="p-1.5 text-gray-300 hover:text-yellow-400 transition bg-white/10 rounded-lg"><HelpCircle size={20} /></button>
+              <button onClick={() => setShowLogsMenu(true)} className="p-1.5 text-gray-300 hover:text-white transition bg-white/10 rounded-lg"><List size={20} /></button>
+              
+              {/* ANA MENÜYE DÖNÜŞ (LOBİ) BUTONU */}
+              {gameState !== 'LOBBY' && (
+                  <button onClick={resetGame} className="p-1.5 text-white hover:text-red-400 transition bg-red-600/50 hover:bg-red-600/80 rounded-lg ml-1 shadow-lg border border-red-500/50">
+                      <Home size={20} />
+                  </button>
+              )}
           </div>
       </header>
 
@@ -920,8 +983,8 @@ export default function DogaclaVisualsFinal() {
                             <div className="absolute inset-0 flex items-center justify-center p-1 pointer-events-none z-20 mt-2">
                                 <div className={`w-full h-full flex flex-wrap items-center justify-center gap-0.5`}>
                                     {playersHere.map((p) => (
-                                        <div key={p.id} className={`relative w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-white shadow-lg ${p.color} flex items-center justify-center overflow-hidden bg-black transition-all duration-300 ${currentTeam.id === p.id ? 'scale-125 ring-2 ring-white/50 animate-pulse z-30' : 'z-10'}`}>
-                                            {(assets[`team${p.id}`] || assets[`team${p.id}_idle`]) ? <AssetDisplay src={assets[`team${p.id}`] || assets[`team${p.id}_idle`]} className="w-full h-full object-cover object-top" alt={`P${p.id}`} /> : <span className="text-[12px]">{p.icon}</span>}
+                                        <div key={p.id} className={`relative w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white shadow-lg ${p.color} flex items-center justify-center overflow-hidden bg-black transition-all duration-300 ${currentTeam.id === p.id ? 'scale-125 ring-2 ring-white/50 animate-pulse z-30' : 'z-10'}`}>
+                                            {(assets[`team${p.id}`] || assets[`team${p.id}_idle`]) ? <AssetDisplay src={assets[`team${p.id}`] || assets[`team${p.id}_idle`]} className="w-full h-full object-cover object-top" alt={`P${p.id}`} /> : <span className="text-[16px]">{p.icon}</span>}
                                         </div>
                                     ))}
                                 </div>
@@ -937,17 +1000,17 @@ export default function DogaclaVisualsFinal() {
       {gameState !== 'END' && gameState !== 'INTRO' && gameState !== 'KURA' && !gameState.startsWith('FINALS_') && (
           <footer className="fixed bottom-0 left-0 w-full bg-black/90 backdrop-blur-xl border-t border-white/10 rounded-t-3xl z-40 p-4 pb-6 flex flex-col shadow-[0_-10px_30px_rgba(0,0,0,0.6)]">
               <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-14 h-14 rounded-full border-2 ${currentTeam.border} overflow-hidden bg-black shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.8)]`}>
+                  <div className={`w-16 h-16 rounded-full border-2 ${currentTeam.border} overflow-hidden bg-black shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.8)]`}>
                       <AssetDisplay src={getCurrentCharacterAsset()} className="w-full h-full object-cover object-top" />
-                      <div className="absolute top-0 right-0 text-sm animate-bounce drop-shadow-md">{characterMood === 'happy' && '😂'}{characterMood === 'thinking' && '🤔'}{characterMood === 'scared' && '😱'}</div>
+                      <div className="absolute top-0 right-0 text-lg animate-bounce drop-shadow-md">{characterMood === 'happy' && '😂'}{characterMood === 'thinking' && '🤔'}{characterMood === 'scared' && '😱'}</div>
                   </div>
                   <div className="flex flex-col flex-1">
                       <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">{UI[lang].onStageNow}</span>
-                      <span className={`font-black text-xl leading-none ${currentTeam.text}`}>{TEAM_INFO[currentTeam.id].name}</span>
+                      <span className={`font-black text-2xl leading-none ${currentTeam.text}`}>{TEAM_INFO[currentTeam.id].name}</span>
                   </div>
                   <div className="text-right">
                       <div className="text-[10px] text-gray-400 uppercase">Puan</div>
-                      <div className="font-mono font-bold text-2xl text-yellow-500 leading-none">{currentTeam.score}</div>
+                      <div className="font-mono font-bold text-3xl text-yellow-500 leading-none">{currentTeam.score}</div>
                   </div>
               </div>
 
@@ -961,7 +1024,7 @@ export default function DogaclaVisualsFinal() {
               <div className="w-full flex-1 flex flex-col justify-end">
                   {gameState === 'ROLL' && (
                       <button onClick={rollDice} className="w-full py-4 bg-gradient-to-r from-neon-blue to-blue-600 text-white text-2xl font-black rounded-2xl shadow-[0_0_20px_rgba(0,243,255,0.4)] flex items-center justify-center gap-2 active:scale-95 transition-all uppercase tracking-widest">
-                          <Dices size={28} /> {UI[lang].rollDice}
+                          <Dices size={32} /> {UI[lang].rollDice}
                       </button>
                   )}
                   {gameState === 'MOVING' && <div className="text-neon-blue font-black animate-pulse text-center text-xl tracking-[0.2em] py-4">{UI[lang].enteringStage}</div>}
@@ -969,7 +1032,7 @@ export default function DogaclaVisualsFinal() {
                       <div className="w-full overflow-x-auto flex gap-2 no-scrollbar">
                           {teams.filter(t => t.id !== currentTeam.id).map(t => (
                               <button key={t.id} onClick={() => assignObstacleToRival(t.id)} className={`flex-1 min-w-[100px] p-3 rounded-xl border border-gray-700 bg-gray-800 flex flex-col items-center gap-1 active:bg-red-900/40 active:border-red-500 transition`}>
-                                  <ShieldAlert size={16} className="text-red-500"/><span className="text-xs font-bold whitespace-nowrap">{TEAM_INFO[t.id].name}</span>
+                                  <ShieldAlert size={20} className="text-red-500"/><span className="text-sm font-bold whitespace-nowrap">{TEAM_INFO[t.id].name}</span>
                               </button>
                           ))}
                       </div>
@@ -978,38 +1041,38 @@ export default function DogaclaVisualsFinal() {
                       <div className="w-full flex flex-col gap-3">
                           <div className="flex justify-between items-end px-2">
                               <div className="flex gap-2">
-                                  <button onClick={() => addReaction('👏')} className="w-10 h-10 rounded-full bg-green-600/20 border border-green-500/50 flex items-center justify-center text-lg active:bg-green-500/40">👏</button>
-                                  <button onClick={() => addReaction('😂')} className="w-10 h-10 rounded-full bg-yellow-600/20 border border-yellow-500/50 flex items-center justify-center text-lg active:bg-yellow-500/40">😂</button>
+                                  <button onClick={() => addReaction('👏')} className="w-12 h-12 rounded-full bg-green-600/20 border border-green-500/50 flex items-center justify-center text-xl active:bg-green-500/40">👏</button>
+                                  <button onClick={() => addReaction('😂')} className="w-12 h-12 rounded-full bg-yellow-600/20 border border-yellow-500/50 flex items-center justify-center text-xl active:bg-yellow-500/40">😂</button>
                               </div>
                               <Timer key={timerKey} duration={performanceTimer} onFinish={finishPerformance} soundEnabled={soundEnabled} />
                           </div>
                           {currentTeam.bonuses.length > 0 && (
                               <div className="flex gap-2 overflow-x-auto no-scrollbar">
                                   {currentTeam.bonuses.map((b, i) => (
-                                      <button key={i} onClick={() => prepareBonus(i)} className="px-3 py-2 bg-purple-900 border border-purple-500/80 rounded-lg font-bold text-[10px] text-white whitespace-nowrap flex items-center gap-1 active:scale-95">
-                                          <Sparkles size={12}/> {getLocalizedText(b.name, lang)}
+                                      <button key={i} onClick={() => prepareBonus(i)} className="px-4 py-2 bg-purple-900 border border-purple-500/80 rounded-lg font-bold text-xs text-white whitespace-nowrap flex items-center gap-1 active:scale-95">
+                                          <Sparkles size={16}/> {getLocalizedText(b.name, lang)}
                                       </button>
                                   ))}
                               </div>
                           )}
-                          <button onClick={finishPerformance} className="w-full py-3 bg-white/10 text-white rounded-xl font-bold uppercase tracking-widest active:bg-white/20 transition">{UI[lang].finishPerf}</button>
+                          <button onClick={finishPerformance} className="w-full py-4 bg-white/10 text-white rounded-xl font-bold uppercase tracking-widest active:bg-white/20 transition text-lg">{UI[lang].finishPerf}</button>
                       </div>
                   )}
                   {gameState === 'VOTE' && (
                       <div className="w-full flex flex-col gap-3">
                           <div className="flex gap-2 text-center">
-                              <button onClick={() => setVoteData(p => ({...p, roleplay: !p.roleplay}))} className={`flex-1 py-2 rounded-lg text-[10px] font-bold border transition ${voteData.roleplay ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_10px_blue]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].role}</button>
-                              <button onClick={() => setVoteData(p => ({...p, obstacleOvercome: !p.obstacleOvercome}))} className={`flex-1 py-2 rounded-lg text-[10px] font-bold border transition ${voteData.obstacleOvercome ? 'bg-green-600 border-green-400 text-white shadow-[0_0_10px_green]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].obstacleBtn}</button>
-                              <button onClick={() => setVoteData(p => ({...p, fail: !p.fail}))} className={`flex-1 py-2 rounded-lg text-[10px] font-bold border transition ${voteData.fail ? 'bg-red-600 border-red-400 text-white shadow-[0_0_10px_red]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].fail}</button>
+                              <button onClick={() => setVoteData(p => ({...p, roleplay: !p.roleplay}))} className={`flex-1 py-3 rounded-lg text-[10px] font-bold border transition ${voteData.roleplay ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_10px_blue]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].role}</button>
+                              <button onClick={() => setVoteData(p => ({...p, obstacleOvercome: !p.obstacleOvercome}))} className={`flex-1 py-3 rounded-lg text-[10px] font-bold border transition ${voteData.obstacleOvercome ? 'bg-green-600 border-green-400 text-white shadow-[0_0_10px_green]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].obstacleBtn}</button>
+                              <button onClick={() => setVoteData(p => ({...p, fail: !p.fail}))} className={`flex-1 py-3 rounded-lg text-[10px] font-bold border transition ${voteData.fail ? 'bg-red-600 border-red-400 text-white shadow-[0_0_10px_red]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].fail}</button>
                           </div>
-                          <div className="flex justify-between items-center px-4">
-                              <button onClick={() => updateJuryScore(-1)} className="w-10 h-10 rounded-full border border-red-500/50 text-red-500 flex items-center justify-center active:bg-red-500/20"><Minus size={20}/></button>
-                              <span className="text-5xl font-mono font-bold text-white">{juryScore}</span>
-                              <button onClick={() => updateJuryScore(1)} className="w-10 h-10 rounded-full border border-green-500/50 text-green-500 flex items-center justify-center active:bg-green-500/20"><Plus size={20}/></button>
+                          <div className="flex justify-between items-center px-4 py-2">
+                              <button onClick={() => updateJuryScore(-1)} className="w-12 h-12 rounded-full border border-red-500/50 text-red-500 flex items-center justify-center active:bg-red-500/20"><Minus size={24}/></button>
+                              <span className="text-6xl font-mono font-black text-white">{juryScore}</span>
+                              <button onClick={() => updateJuryScore(1)} className="w-12 h-12 rounded-full border border-green-500/50 text-green-500 flex items-center justify-center active:bg-green-500/20"><Plus size={24}/></button>
                           </div>
                           <div className="flex gap-2">
-                              <button onClick={askAICritic} className="w-12 bg-purple-900/50 border border-purple-500 text-purple-300 rounded-xl flex items-center justify-center active:bg-purple-800" disabled={criticLoading}><Bot size={20}/></button>
-                              <button onClick={() => submitManualVote()} className="flex-1 py-3 bg-white text-black font-black text-sm rounded-xl shadow-[0_0_15px_rgba(255,255,255,0.4)] active:scale-95 transition uppercase tracking-widest">{UI[lang].confirmScore}</button>
+                              <button onClick={askAICritic} className="w-14 bg-purple-900/50 border border-purple-500 text-purple-300 rounded-xl flex items-center justify-center active:bg-purple-800" disabled={criticLoading}><Bot size={24}/></button>
+                              <button onClick={() => submitManualVote()} className="flex-1 py-4 bg-white text-black font-black text-base rounded-xl shadow-[0_0_15px_rgba(255,255,255,0.4)] active:scale-95 transition uppercase tracking-widest">{UI[lang].confirmScore}</button>
                           </div>
                       </div>
                   )}
@@ -1021,11 +1084,11 @@ export default function DogaclaVisualsFinal() {
       {gameState === 'FINALS_PLAY' && (
           <footer className="fixed bottom-0 left-0 w-full bg-black/95 backdrop-blur-xl border-t-2 border-yellow-500 rounded-t-3xl z-40 p-4 pb-6 flex flex-col shadow-[0_-10px_30px_rgba(250,204,21,0.3)]">
               <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-14 h-14 rounded-full border-2 border-yellow-400 overflow-hidden bg-black shrink-0 relative shadow-[0_0_15px_rgba(250,204,21,0.5)]`}><AssetDisplay src={assets[`team${currentTeam.id}_scared`]} className="w-full h-full object-cover object-top" /></div>
-                  <div className="flex flex-col flex-1"><span className="text-[10px] text-yellow-400 uppercase font-bold tracking-wider">FİNAL PERFORMANSI</span><span className={`font-black text-xl leading-none text-white`}>{TEAM_INFO[currentTeam.id].name}</span></div>
+                  <div className={`w-16 h-16 rounded-full border-2 border-yellow-400 overflow-hidden bg-black shrink-0 relative shadow-[0_0_15px_rgba(250,204,21,0.5)]`}><AssetDisplay src={assets[`team${currentTeam.id}_scared`]} className="w-full h-full object-cover object-top" /></div>
+                  <div className="flex flex-col flex-1"><span className="text-[10px] text-yellow-400 uppercase font-bold tracking-wider">FİNAL PERFORMANSI</span><span className={`font-black text-2xl leading-none text-white`}>{TEAM_INFO[currentTeam.id].name}</span></div>
               </div>
               <div className="flex justify-between items-center bg-gray-900/50 p-4 rounded-xl border border-yellow-500/30">
-                  <div className="text-xs text-yellow-500 uppercase tracking-widest">{UI[lang].time}</div>
+                  <div className="text-sm text-yellow-500 uppercase tracking-widest">{UI[lang].time}</div>
                   <Timer key={timerKey} duration={performanceTimer} onFinish={finishPerformance} soundEnabled={soundEnabled} />
               </div>
               <button onClick={finishPerformance} className="w-full mt-4 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-black rounded-xl font-black text-lg uppercase tracking-widest active:scale-95 shadow-[0_0_15px_rgba(250,204,21,0.4)]">{UI[lang].finishPerf}</button>
@@ -1035,33 +1098,33 @@ export default function DogaclaVisualsFinal() {
       {/* FULL SCREEN OVERLAYS (MODALS) */}
       {gameState === 'FINALS_DIRECTOR_INPUT' && directors.length > 0 && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md px-4 pb-10">
-               <Clapperboard size={64} className="text-yellow-400 mb-4 animate-pulse" />
+               <Clapperboard size={80} className="text-yellow-400 mb-4 animate-pulse" />
                <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 mb-2 tracking-widest text-center">{UI[lang].directorPromptTitle}</h2>
-               <p className="text-sm text-gray-300 mb-6 text-center max-w-sm">{UI[lang].directorPromptDesc} <span className="text-yellow-400 font-bold block mt-1">{directors.map(d => TEAM_INFO[d.id].name).join(' & ')}</span></p>
-               <textarea value={directorInput} onChange={e => setDirectorInput(e.target.value)} placeholder="Örn: Uzaylı İstilası..." className="w-full max-w-sm h-28 bg-gray-900 border-2 border-yellow-500/50 rounded-xl p-4 text-white text-base focus:outline-none focus:border-yellow-400 mb-6 resize-none" />
-               <button onClick={generateDraftMission} disabled={!directorInput.trim()} className="w-full max-w-sm py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-black text-lg rounded-full active:scale-95 disabled:opacity-50 transition">{UI[lang].generateDraft}</button>
+               <p className="text-base text-gray-300 mb-6 text-center max-w-sm">{UI[lang].directorPromptDesc} <span className="text-yellow-400 font-bold block mt-1">{directors.map(d => TEAM_INFO[d.id].name).join(' & ')}</span></p>
+               <textarea value={directorInput} onChange={e => setDirectorInput(e.target.value)} placeholder="Örn: Uzaylı İstilası..." className="w-full max-w-sm h-32 bg-gray-900 border-2 border-yellow-500/50 rounded-xl p-4 text-white text-lg focus:outline-none focus:border-yellow-400 mb-6 resize-none" />
+               <button onClick={generateDraftMission} disabled={!directorInput.trim()} className="w-full max-w-sm py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-black text-xl rounded-full active:scale-95 disabled:opacity-50 transition">{UI[lang].generateDraft}</button>
           </div>
       )}
 
       {gameState === 'FINALS_DRAFT_REVIEW' && draftMission && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md px-4">
-               <Lightbulb size={50} className="text-yellow-400 mb-4 animate-bounce" />
-               <h2 className="text-2xl font-black text-yellow-400 mb-6 tracking-widest text-center">{UI[lang].aiDrafted}</h2>
-               <div className="bg-gray-900 border border-yellow-400/50 p-4 rounded-xl w-full max-w-sm mb-6 max-h-[40vh] overflow-y-auto"><p className="text-white text-sm leading-relaxed italic text-center">"{getLocalizedText(draftMission, lang)}"</p></div>
-               <div className="flex gap-3 w-full max-w-sm"><button onClick={generateDraftMission} className="p-4 bg-gray-800 text-white rounded-xl active:bg-gray-700 flex items-center justify-center"><RefreshCw size={20}/></button><button onClick={approveAndGenerateOptions} className="flex-1 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-black text-sm rounded-xl active:scale-95">{UI[lang].createAsIs}</button></div>
+               <Lightbulb size={64} className="text-yellow-400 mb-4 animate-bounce" />
+               <h2 className="text-3xl font-black text-yellow-400 mb-6 tracking-widest text-center">{UI[lang].aiDrafted}</h2>
+               <div className="bg-gray-900 border border-yellow-400/50 p-6 rounded-xl w-full max-w-sm mb-6 max-h-[40vh] overflow-y-auto"><p className="text-white text-base leading-relaxed italic text-center">"{getLocalizedText(draftMission, lang)}"</p></div>
+               <div className="flex gap-3 w-full max-w-sm"><button onClick={generateDraftMission} className="p-4 bg-gray-800 text-white rounded-xl active:bg-gray-700 flex items-center justify-center"><RefreshCw size={24}/></button><button onClick={approveAndGenerateOptions} className="flex-1 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-black text-base rounded-xl active:scale-95">{UI[lang].createAsIs}</button></div>
           </div>
       )}
 
       {gameState === 'FINALS_GENERATING' && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md"><Bot size={64} className="text-neon-blue mb-4 animate-bounce" /><h2 className="text-2xl font-black text-neon-blue tracking-widest animate-pulse">{draftMission ? UI[lang].generatingOptions : UI[lang].generatingDraft}</h2></div>
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md"><Bot size={80} className="text-neon-blue mb-4 animate-bounce" /><h2 className="text-3xl font-black text-neon-blue tracking-widest animate-pulse">{draftMission ? UI[lang].generatingOptions : UI[lang].generatingDraft}</h2></div>
       )}
 
       {gameState === 'FINALS_SELECT_CARD' && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-start bg-black/95 backdrop-blur-md px-4 py-8 overflow-y-auto no-scrollbar">
-               <h2 className="text-2xl font-black text-neon-blue mb-6 tracking-widest text-center sticky top-0 bg-black/95 py-2 w-full z-10">{UI[lang].selectAICard}</h2>
+               <h2 className="text-3xl font-black text-neon-blue mb-6 tracking-widest text-center sticky top-0 bg-black/95 py-4 w-full z-10">{UI[lang].selectAICard}</h2>
                <div className="flex flex-col gap-4 w-full max-w-sm pb-8">
                    {aiCards.map((c, idx) => (
-                       <div key={idx} onClick={() => selectFinalCard(c)} className="bg-gray-900 border border-yellow-500/50 rounded-2xl p-5 active:scale-95 transition-all shadow-[0_0_10px_rgba(250,204,21,0.2)] flex flex-col items-center text-center"><h3 className="text-lg font-bold text-yellow-400 mb-2">{getLocalizedText(c.title, lang)}</h3><p className="text-white text-sm mb-3 flex-1">"{getLocalizedText(c.mission, lang)}"</p><p className="text-[10px] text-gray-400 italic border-t border-gray-700 pt-2 w-full">{getLocalizedText(c.desc, lang)}</p></div>
+                       <div key={idx} onClick={() => selectFinalCard(c)} className="bg-gray-900 border border-yellow-500/50 rounded-2xl p-6 active:scale-95 transition-all shadow-[0_0_10px_rgba(250,204,21,0.2)] flex flex-col items-center text-center"><h3 className="text-xl font-bold text-yellow-400 mb-2">{getLocalizedText(c.title, lang)}</h3><p className="text-white text-base mb-3 flex-1">"{getLocalizedText(c.mission, lang)}"</p><p className="text-xs text-gray-400 italic border-t border-gray-700 pt-2 w-full">{getLocalizedText(c.desc, lang)}</p></div>
                    ))}
                </div>
           </div>
@@ -1069,26 +1132,26 @@ export default function DogaclaVisualsFinal() {
 
       {gameState === 'FINALS_TRANSITION' && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md px-4 text-center">
-               <h2 className="text-3xl font-black text-white mb-6">{UI[lang].transitionWait}</h2>
-               <div className="w-40 h-40 rounded-full border-4 border-yellow-400 mb-8 overflow-hidden bg-black shadow-[0_0_30px_yellow]"><AssetDisplay src={assets[`team${finalists[1].id}_idle`]} className="w-full h-full object-cover object-top" /></div>
-               <button onClick={startNextFinalist} className="w-full max-w-xs py-4 bg-white text-black font-black text-lg rounded-full active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.4)]">{UI[lang].startNext} ({TEAM_INFO[finalists[1].id].name})</button>
+               <h2 className="text-4xl font-black text-white mb-8">{UI[lang].transitionWait}</h2>
+               <div className="w-48 h-48 rounded-full border-4 border-yellow-400 mb-10 overflow-hidden bg-black shadow-[0_0_30px_yellow]"><AssetDisplay src={assets[`team${finalists[1].id}_idle`]} className="w-full h-full object-cover object-top" /></div>
+               <button onClick={startNextFinalist} className="w-full max-w-sm py-5 bg-white text-black font-black text-xl rounded-full active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.4)]">{UI[lang].startNext} ({TEAM_INFO[finalists[1].id].name})</button>
           </div>
       )}
 
       {gameState === 'FINALS_CASTING' && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md px-4 py-8 overflow-y-auto no-scrollbar">
-               <Star size={60} className="text-yellow-400 mb-4 animate-spin-slow" />
-               <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 mb-1 tracking-widest text-center">{UI[lang].auditionComplete}</h2>
-               <p className="text-sm text-gray-300 mb-8">{UI[lang].whoGetsRole}</p>
+               <Star size={80} className="text-yellow-400 mb-4 animate-spin-slow" />
+               <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 mb-2 tracking-widest text-center">{UI[lang].auditionComplete}</h2>
+               <p className="text-base text-gray-300 mb-8">{UI[lang].whoGetsRole}</p>
                <div className="flex flex-col gap-6 w-full max-w-sm">
-                    <button onClick={() => castWinner(finalists[0])} className="w-full p-4 rounded-2xl border-2 border-gray-600 active:border-yellow-400 bg-gray-900 flex items-center gap-4 transition-all">
-                        <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 bg-black"><AssetDisplay src={assets[`team${finalists[0].id}_happy`]} className="w-full h-full object-cover object-top" /></div>
-                        <div className="flex-1 text-left"><h3 className="text-xl font-bold text-white">{TEAM_INFO[finalists[0].id].name}</h3><span className="text-xs text-yellow-500 font-bold">{UI[lang].castWinner}</span></div>
+                    <button onClick={() => castWinner(finalists[0])} className="w-full p-4 rounded-3xl border-2 border-gray-600 active:border-yellow-400 bg-gray-900 flex items-center gap-4 transition-all">
+                        <div className="w-20 h-20 rounded-full overflow-hidden shrink-0 bg-black"><AssetDisplay src={assets[`team${finalists[0].id}_happy`]} className="w-full h-full object-cover object-top" /></div>
+                        <div className="flex-1 text-left"><h3 className="text-2xl font-bold text-white">{TEAM_INFO[finalists[0].id].name}</h3><span className="text-sm text-yellow-500 font-bold">{UI[lang].castWinner}</span></div>
                     </button>
-                    <div className="text-2xl font-black text-red-500 italic text-center">VS</div>
-                    <button onClick={() => castWinner(finalists[1])} className="w-full p-4 rounded-2xl border-2 border-gray-600 active:border-yellow-400 bg-gray-900 flex items-center gap-4 transition-all">
-                        <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 bg-black"><AssetDisplay src={assets[`team${finalists[1].id}_happy`]} className="w-full h-full object-cover object-top" /></div>
-                        <div className="flex-1 text-left"><h3 className="text-xl font-bold text-white">{TEAM_INFO[finalists[1].id].name}</h3><span className="text-xs text-yellow-500 font-bold">{UI[lang].castWinner}</span></div>
+                    <div className="text-3xl font-black text-red-500 italic text-center">VS</div>
+                    <button onClick={() => castWinner(finalists[1])} className="w-full p-4 rounded-3xl border-2 border-gray-600 active:border-yellow-400 bg-gray-900 flex items-center gap-4 transition-all">
+                        <div className="w-20 h-20 rounded-full overflow-hidden shrink-0 bg-black"><AssetDisplay src={assets[`team${finalists[1].id}_happy`]} className="w-full h-full object-cover object-top" /></div>
+                        <div className="flex-1 text-left"><h3 className="text-2xl font-bold text-white">{TEAM_INFO[finalists[1].id].name}</h3><span className="text-sm text-yellow-500 font-bold">{UI[lang].castWinner}</span></div>
                     </button>
                </div>
           </div>
@@ -1097,14 +1160,14 @@ export default function DogaclaVisualsFinal() {
       {gameState === 'END' && winner && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b from-yellow-900 to-black px-4">
                <ConfettiExplosion />
-               <Trophy size={80} className="text-yellow-400 mb-4 drop-shadow-[0_0_20px_rgba(250,204,21,1)] animate-bounce" />
-               <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 mb-4 tracking-tighter text-center">{UI[lang].champion}</h1>
-               <div className="relative mb-6">
-                   <div className="w-48 h-48 rounded-full border-4 border-yellow-400 shadow-[0_0_30px_yellow] overflow-hidden bg-black"><AssetDisplay src={assets[`team${winner.id}_happy`]} className="w-full h-full object-cover object-top" /></div>
-                   <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black px-6 py-1 rounded-full font-black text-xl whitespace-nowrap shadow-lg">{TEAM_INFO[winner.id].name}</div>
+               <Trophy size={100} className="text-yellow-400 mb-6 drop-shadow-[0_0_20px_rgba(250,204,21,1)] animate-bounce" />
+               <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 mb-6 tracking-tighter text-center">{UI[lang].champion}</h1>
+               <div className="relative mb-8">
+                   <div className="w-56 h-56 rounded-full border-4 border-yellow-400 shadow-[0_0_30px_yellow] overflow-hidden bg-black"><AssetDisplay src={assets[`team${winner.id}_happy`]} className="w-full h-full object-cover object-top" /></div>
+                   <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black px-8 py-2 rounded-full font-black text-2xl whitespace-nowrap shadow-lg">{TEAM_INFO[winner.id].name}</div>
                </div>
-               <p className="text-xl text-yellow-200 mb-10 font-bold">{UI[lang].finalScore} <span className="text-white text-3xl">{winner.score}</span></p>
-               <button onClick={resetGame} className="px-8 py-4 w-full max-w-xs bg-white text-black font-black text-sm uppercase tracking-widest rounded-xl active:scale-95 transition flex items-center justify-center gap-2"><RefreshCw size={20} /> {UI[lang].playAgain}</button>
+               <p className="text-2xl text-yellow-200 mb-12 font-bold">{UI[lang].finalScore} <span className="text-white text-4xl">{winner.score}</span></p>
+               <button onClick={resetGame} className="px-8 py-5 w-full max-w-sm bg-white text-black font-black text-lg uppercase tracking-widest rounded-2xl active:scale-95 transition flex items-center justify-center gap-2"><RefreshCw size={24} /> {UI[lang].playAgain}</button>
           </div>
       )}
 
@@ -1136,5 +1199,5 @@ const Timer = ({ duration, onFinish, soundEnabled }) => {
         if (timeLeft <= 0) { if (duration > 0) { playSynthSound('alarm', soundEnabled); onFinish(); } return; }
         const id = setInterval(() => setTimeLeft(t => t - 1), 1000); return () => clearInterval(id);
     }, [timeLeft, onFinish, duration, soundEnabled]);
-    return <div className="text-4xl font-mono font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] tracking-wider">{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</div>;
+    return <div className="text-5xl font-mono font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] tracking-wider">{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</div>;
 };
