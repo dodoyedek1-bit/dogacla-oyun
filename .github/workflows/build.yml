@@ -104,13 +104,15 @@ jobs:
         @tailwind utilities;
         EOF
         
-        # Akıllı Dosya Bulucu (İsim ne olursa olsun JSX dosyasını oyun kodu olarak kabul eder)
-        MAIN_FILE=$(find ../ -maxdepth 1 -name "*.jsx" | head -n 1)
+        echo "Oyun kodu aranıyor..."
+        # Akıllı Dosya Bulucu: Adı ne olursa olsun React kodunu bulur.
+        MAIN_FILE=$(grep -rl "import React" ../ --exclude-dir=dogacla-mobil --exclude-dir=.git | head -n 1)
+        
         if [ -n "$MAIN_FILE" ]; then
           echo "Oyun kodu başarıyla bulundu: $MAIN_FILE"
           cp "$MAIN_FILE" src/App.jsx
         else
-          echo "HATA: GitHub deponuzda .jsx uzantılı hiçbir kod dosyası bulunamadı!"
+          echo "HATA: GitHub deponuzda oyun kodunuz bulunamadı! Dosyanın kaydedildiğinden emin olun."
           exit 1
         fi
 
