@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Dices, Trophy, Star, ShieldAlert, Sparkles, Skull, Theater, 
   AlertTriangle, X, Volume2, VolumeX, RefreshCw, History, Bot, Zap, Flame, Crown, 
-  Ghost, Smartphone, Bird, Thermometer, Apple, HelpCircle, Music4, List, Plus, Minus, Clapperboard, Lightbulb, Drama, User, Home, Share2
+  Ghost, Smartphone, Bird, Thermometer, Apple, HelpCircle, Music4, List, Plus, Minus, Clapperboard, Lightbulb, Drama, User, Home, Share2, Copy
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS FOR MULTIPLAYER ---
@@ -456,15 +456,6 @@ export default function DogaclaVisualsFinal() {
       const timer = setTimeout(() => setIsAppLoading(false), 2500);
       return () => clearTimeout(timer);
   }, []);
-
-  useEffect(() => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const roomCodeFromUrl = urlParams.get('room');
-      if (roomCodeFromUrl && user && !roomId) {
-          joinRoom(roomCodeFromUrl.toUpperCase());
-          window.history.replaceState({}, document.title, window.location.pathname);
-      }
-  }, [user]); 
 
   // --- FIREBASE AUTH ---
   useEffect(() => {
@@ -1018,15 +1009,15 @@ export default function DogaclaVisualsFinal() {
                         <div className="text-gray-400 text-xs sm:text-sm tracking-[0.2em] mb-2 font-bold text-center">DAVET KODUNUZ</div>
                         <div className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 tracking-widest mb-6 drop-shadow-lg text-center">{roomId}</div>
                         <button onClick={() => {
-                            const baseUrl = "https://dogacla-ca144.web.app";
-                            const link = `${baseUrl}/?room=${roomId}`;
-                            navigator.clipboard.writeText(link).catch(() => {
-                                const ta = document.createElement('textarea'); ta.value = link; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+                            // KESİN ÇÖZÜM: Çalışmayan Link yerine, whatsapp'tan yollanacak güzel bir davet mesajı kopyalar.
+                            const inviteText = `🎭 DOĞAÇLA oyununa davetlisin!\nOyuna gir ve Çok Oyunculu bölümünden şu oda kodunu yazarak bana katıl: ${roomId}`;
+                            navigator.clipboard.writeText(inviteText).catch(() => {
+                                const ta = document.createElement('textarea'); ta.value = inviteText; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
                             });
-                            setToastMsg("✅ Link Kopyalandı! Arkadaşlarına Gönder.");
+                            setToastMsg("✅ Davet Kodu Kopyalandı! Arkadaşına gönder.");
                             setTimeout(() => setToastMsg(null), 3000);
                         }} className="px-4 sm:px-8 py-3 sm:py-4 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-base sm:text-lg active:scale-95 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(37,99,235,0.4)]">
-                            <Share2 size={20} /> Katılma Linkini Kopyala
+                            <Copy size={20} /> Davet Kodunu Kopyala
                         </button>
                     </div>
                 )}
