@@ -1,4 +1,4 @@
-name: Sihirli Mobil Build
+name: DOĞAÇLA Mobil Build (Gömülü Videolarla)
 
 on:
   push:
@@ -26,28 +26,24 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
 
-    - name: Kesin Çözümlü Kurulum ve Derleme
+    - name: 1. Ortam ve Paket Kurulumu
       run: |
         set -e
-        
-        echo "1. Güvenli Klasörler Hazırlanıyor..."
         mkdir dogacla-mobil
         cd dogacla-mobil
         mkdir src
         
-        echo "2. Konfigürasyon Dosyaları Manuel Oluşturuluyor..."
         cat << 'EOF' > package.json
         {
           "name": "dogacla-mobil",
           "private": true,
           "version": "1.0.0",
           "type": "module",
-          "scripts": {
-            "build": "vite build"
-          },
+          "scripts": { "build": "vite build" },
           "dependencies": {
             "@capacitor/android": "^6.0.0",
             "@capacitor/core": "^6.0.0",
+            "firebase": "^10.8.1",
             "lucide-react": "^0.360.0",
             "react": "^18.2.0",
             "react-dom": "^18.2.0"
@@ -70,30 +66,22 @@ jobs:
         EOF
         
         cat << 'EOF' > tailwind.config.js
-        export default {
-          content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
-          theme: { extend: {} },
-          plugins: [],
-        }
+        export default { content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"], theme: { extend: {} }, plugins: [], }
         EOF
         
         cat << 'EOF' > postcss.config.js
-        export default {
-          plugins: { tailwindcss: {}, autoprefixer: {} }
-        }
+        export default { plugins: { tailwindcss: {}, autoprefixer: {} } }
         EOF
         
-        echo "3. Paketler Yükleniyor..."
         npm install
         
-        echo "4. Temel React Bağlantıları Kuruluyor..."
         cat << 'EOF' > index.html
         <!DOCTYPE html>
         <html lang="en">
           <head>
             <meta charset="UTF-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-            <title>Doğaçla Oyun</title>
+            <title>DOĞAÇLA</title>
           </head>
           <body>
             <div id="root"></div>
@@ -116,22 +104,65 @@ jobs:
         @tailwind utilities;
         EOF
         
-        echo "5. Oyun Kodun Aktarılıyor..."
         cp ../App.jsx src/App.jsx
+
+    - name: 2. Videoları ve Görselleri İndirip Uygulamaya Göm
+      run: |
+        cd dogacla-mobil
+        cat << 'EOF' > downloadAssets.mjs
+        import fs from 'fs';
+        import https from 'https';
         
-        echo "6. Web Uygulaması Derleniyor..."
-        npm run build
+        const path = './src/App.jsx';
+        let code = fs.readFileSync(path, 'utf8');
+        const urls = code.match(/https:\/\/raw\.githubusercontent\.com[^"']+/g) || [];
+        const uniqueUrls = [...new Set(urls)];
         
-        echo "7. Capacitor & Android Hazırlığı..."
+        if (uniqueUrls.length > 0) {
+            fs.mkdirSync('./public/assets', { recursive: true });
+            
+            async function downloadAll() {
+                for (const url of uniqueUrls) {
+                    const filename = decodeURIComponent(url.split('/').pop());
+                    code = code.split(url).join('/assets/' + filename);
+                    
+                    console.log(`Indiriliyor: ${filename}...`);
+                    await new Promise((resolve) => {
+                        https.get(url, (res) => {
+                            if (res.statusCode === 200) {
+                                const file = fs.createWriteStream('./public/assets/' + filename);
+                                res.pipe(file);
+                                file.on('finish', () => { file.close(); resolve(); });
+                            } else {
+                                console.log(`Hata - İndirilemedi (404): ${filename}`);
+                                resolve();
+                            }
+                        }).on('error', (e) => {
+                            console.error(e);
+                            resolve();
+                        });
+                    });
+                }
+                fs.writeFileSync(path, code);
+                console.log('Tüm assetler indirildi ve React koduna gömüldü!');
+            }
+            await downloadAll();
+        }
+        EOF
+        node downloadAssets.mjs
+        rm downloadAssets.mjs
+
+    - name: 3. Android Çıktısını Hazırla (APK)
+      run: |
+        cd dogacla-mobil
         npx cap init "Dogacla" "com.oyun.dogacla" --web-dir dist
+        npm run build
         npx cap add android
-        
-        echo "8. APK Çıktısı Alınıyor..."
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug
 
-    - name: APK'yı Yükle ve Sun
+    - name: APK'yı Yükle
       uses: actions/upload-artifact@v4
       with:
         name: Dogacla-Oyun-APK
