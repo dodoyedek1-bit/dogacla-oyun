@@ -284,14 +284,20 @@ const Dice3D = ({ value, isRolling }) => {
     return <div className="scene w-32 h-32 mx-auto perspective-1000"><div className={`cube w-full h-full relative transform-style-3d transition-transform duration-1000 ${isRolling ? 'rolling' : currentClass}`}>{[1,2,3,4,5,6].map(n => <div key={n} className={`cube__face cube__face--${n} absolute w-32 h-32 border-2 border-neon-blue bg-black/90 flex items-center justify-center text-6xl text-neon-blue font-black shadow-[inset_0_0_30px_rgba(0,255,255,0.5)]`}>{n}</div>)}</div></div>;
 };
 
-const TeamDice3D = ({ winnerId, isRolling, assets }) => {
+const TeamDice3D = ({ winnerId, isRolling, assets, teams }) => {
     const [currentClass, setCurrentClass] = useState('');
-    useEffect(() => { if (isRolling) setCurrentClass('kura-rolling'); else if (winnerId !== null) setCurrentClass(`show-${(winnerId % 4) + 1}`); }, [winnerId, isRolling]);
-    const renderFace = (teamId) => {
-        const assetSrc = assets[`team${teamId}_idle`] || assets[`team${teamId}`];
-        return <div className="w-full h-full flex items-center justify-center bg-black border-2 border-[#D4AF37] rounded-lg overflow-hidden">{assetSrc ? <AssetDisplay src={assetSrc} className="w-full h-full object-cover" alt={`Team ${teamId}`} /> : <span className="text-[#D4AF37] text-3xl">T{teamId+1}</span>}</div>;
+    useEffect(() => { 
+        if (isRolling) setCurrentClass('kura-rolling'); 
+        else if (winnerId !== null) setCurrentClass(`show-${winnerId + 1}`); 
+    }, [winnerId, isRolling]);
+
+    const renderFace = (teamIndex) => {
+        const team = teams[teamIndex % teams.length];
+        const assetSrc = assets[`team${team.id}_idle`] || assets[`team${team.id}`];
+        return <div className="w-full h-full flex items-center justify-center bg-black border-2 border-[#D4AF37] rounded-lg overflow-hidden">{assetSrc ? <AssetDisplay src={assetSrc} className="w-full h-full object-cover" alt={`Team ${team.id}`} /> : <span className="text-[#D4AF37] text-3xl">T{team.id+1}</span>}</div>;
     };
-    return <div className="scene w-32 h-32 mx-auto perspective-1000"><div className={`cube w-full h-full relative transform-style-3d transition-transform duration-1000 ${currentClass}`}>{[0,1,2,3,0,1].map((t, i) => <div key={i} className={`cube__face cube__face--${i+1}`}>{renderFace(t)}</div>)}</div></div>;
+
+    return <div className="scene w-32 h-32 mx-auto perspective-1000"><div className={`cube w-full h-full relative transform-style-3d transition-transform duration-1000 ${currentClass}`}>{[0,1,2,3,4,5].map((idx) => <div key={idx} className={`cube__face cube__face--${idx+1}`}>{renderFace(idx)}</div>)}</div></div>;
 };
 
 // --- CARD DESIGN ---
@@ -415,10 +421,15 @@ export default function DogaclaVisualsFinal() {
   const [authError, setAuthError] = useState(null);
   const [toastMsg, setToastMsg] = useState(null); 
   const [isAppLoading, setIsAppLoading] = useState(true); 
+  const [teamSelectMode, setTeamSelectMode] = useState(null); // 'single' | 'multi' | null
+  const [localDiceState, setLocalDiceState] = useState({ isRolling: false, value: null });
   
   // -- Synced Game States --
   const [gameState, setGameState] = useState('LOBBY'); 
   const [teams, setTeams] = useState(INITIAL_TEAMS);
+  const [players, setPlayers] = useState({}); // YENİ: { uid: teamId }
+  const [targetTeamCount, setTargetTeamCount] = useState(4); // YENİ
+  const [hostUid, setHostUid] = useState(null); // YENİ
   const [currentTurn, setCurrentTurn] = useState(0);
   const [diceValue, setDiceValue] = useState(null);
   const [activeCard, setActiveCard] = useState(null);
@@ -456,6 +467,15 @@ export default function DogaclaVisualsFinal() {
       const timer = setTimeout(() => setIsAppLoading(false), 2500);
       return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const roomCodeFromUrl = urlParams.get('room');
+      if (roomCodeFromUrl && user && !roomId) {
+          joinRoom(roomCodeFromUrl.toUpperCase());
+          window.history.replaceState({}, document.title, window.location.pathname);
+      }
+  }, [user]); 
 
   // --- FIREBASE AUTH ---
   useEffect(() => {
@@ -496,6 +516,9 @@ export default function DogaclaVisualsFinal() {
   const syncGame = async (updates) => {
       if ('gameState' in updates) setGameState(updates.gameState);
       if ('teams' in updates) setTeams(updates.teams);
+      if ('players' in updates) setPlayers(updates.players);
+      if ('targetTeamCount' in updates) setTargetTeamCount(updates.targetTeamCount);
+      if ('hostUid' in updates) setHostUid(updates.hostUid);
       if ('currentTurn' in updates) setCurrentTurn(updates.currentTurn);
       if ('diceValue' in updates) setDiceValue(updates.diceValue);
       if ('activeCard' in updates) setActiveCard(updates.activeCard);
@@ -531,6 +554,9 @@ export default function DogaclaVisualsFinal() {
               const data = snap.data();
               if (data.gameState !== undefined) setGameState(data.gameState);
               if (data.teams !== undefined) setTeams(data.teams);
+              if (data.players !== undefined) setPlayers(data.players);
+              if (data.targetTeamCount !== undefined) setTargetTeamCount(data.targetTeamCount);
+              if (data.hostUid !== undefined) setHostUid(data.hostUid);
               if (data.currentTurn !== undefined) setCurrentTurn(data.currentTurn);
               if (data.diceValue !== undefined) setDiceValue(data.diceValue);
               if (data.activeCard !== undefined) setActiveCard(data.activeCard);
@@ -568,8 +594,9 @@ export default function DogaclaVisualsFinal() {
       return () => { document.removeEventListener('touchstart', unlockAudio); document.removeEventListener('click', unlockAudio); };
   }, []);
 
-  const currentTeam = teams[currentTurn];
+  const currentTeam = teams[currentTurn] || teams[0];
   const isGoldenMic = hypeMeter >= 100; 
+  const isHost = hostUid === user?.uid;
   const bgMusicRef = useRef(new Audio());
 
   useEffect(() => {
@@ -594,25 +621,41 @@ export default function DogaclaVisualsFinal() {
   const addReaction = (emoji) => { triggerRemoteEvent({ type: 'reaction', emoji }); setHypeMeter(Math.min(100, hypeMeter + 2)); syncGame({ hypeMeter: Math.min(100, hypeMeter + 2) }); };
   const removeReaction = useCallback((id) => setReactions(prev => prev.filter(r => r.id !== id)), []);
 
-  const startSinglePlayer = () => {
+  const promptSinglePlayer = () => setTeamSelectMode('single');
+  const promptMultiPlayer = () => setTeamSelectMode('multi');
+
+  const startSinglePlayer = (count) => {
       playSynthSound('click', soundEnabled);
       setIsSinglePlayer(true);
       setRoomId('');
+      
+      const activeTeams = INITIAL_TEAMS.slice(0, count);
+      setTeams(activeTeams);
+      setTargetTeamCount(count);
       setGameState('INTRO');
-      setTeams(INITIAL_TEAMS);
       setCurrentTurn(0);
       setHypeMeter(0);
+      setTeamSelectMode(null);
       setLogs(["DOĞAÇLA Tek Oyunculu Olarak Başladı!"]);
   };
 
-  const createRoom = async () => {
+  const createRoom = async (count) => {
       if (!user || !db) return;
       try {
           const code = Math.random().toString(36).substring(2, 6).toUpperCase();
-          const initialData = { gameState: 'INTRO', teams: INITIAL_TEAMS, currentTurn: 0, hypeMeter: 0, logs: ["Doğaçla'ya Hoş Geldiniz!"], hostUid: user.uid };
+          const activeTeams = INITIAL_TEAMS.slice(0, count);
+          const initialData = { 
+              gameState: 'INTRO', 
+              teams: activeTeams, 
+              targetTeamCount: count,
+              players: {},
+              hostUid: user.uid,
+              currentTurn: 0, hypeMeter: 0, logs: ["Doğaçla'ya Hoş Geldiniz!"] 
+          };
           await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code), initialData);
           setIsSinglePlayer(false);
           setRoomId(code);
+          setTeamSelectMode(null);
           setAuthError(null);
       } catch (err) {
           console.error(err);
@@ -637,10 +680,37 @@ export default function DogaclaVisualsFinal() {
       }
   };
 
+  const joinTeamWithDice = () => {
+      if (!user) return;
+      playSynthSound('roll', soundEnabled);
+      setLocalDiceState({ isRolling: true, value: null });
+      setTimeout(() => {
+          // Dengeli dağılım için en az oyuncusu olan takımları bul
+          const teamCounts = Array(teams.length).fill(0);
+          Object.values(players).forEach(tId => {
+              const index = teams.findIndex(t => t.id === tId);
+              if (index !== -1) teamCounts[index]++;
+          });
+          const minCount = Math.min(...teamCounts);
+          const availableTeamIndices = teamCounts.map((c, i) => c === minCount ? i : -1).filter(i => i !== -1);
+          const chosenIndex = availableTeamIndices[Math.floor(Math.random() * availableTeamIndices.length)];
+          const assignedTeam = teams[chosenIndex].id;
+          
+          const roll = Math.ceil(Math.random() * 6);
+          setLocalDiceState({ isRolling: false, value: roll });
+          
+          setTimeout(() => {
+              setLocalDiceState({ isRolling: false, value: null });
+              syncGame({ players: { ...players, [user.uid]: assignedTeam } });
+              addLog(`Bir oyuncu ${TEAM_INFO[assignedTeam].name} takımına katıldı!`);
+          }, 1500);
+      }, 1000);
+  };
+
   const resetGame = () => { 
       playSynthSound('click', soundEnabled);
       setIsSinglePlayer(false);
-      syncGame({ gameState: 'LOBBY', teams: INITIAL_TEAMS, currentTurn: 0, diceValue: null, activeCard: null, cardType: null, playingBonus: null, performanceTimer: 0, juryScore: 0, hypeMeter: 0, characterMood: 'idle', isRollingDice: false, showDiceModal: false, kuraRolling: false, finalists: [], directors: [], draftMission: null, customFinalCard: null, aiCards: [], finalTurnIndex: 0, winner: null, logs: ["Doğaçla Mobile Act I!"] });
+      syncGame({ gameState: 'LOBBY', teams: INITIAL_TEAMS, players: {}, targetTeamCount: 4, hostUid: null, currentTurn: 0, diceValue: null, activeCard: null, cardType: null, playingBonus: null, performanceTimer: 0, juryScore: 0, hypeMeter: 0, characterMood: 'idle', isRollingDice: false, showDiceModal: false, kuraRolling: false, finalists: [], directors: [], draftMission: null, customFinalCard: null, aiCards: [], finalTurnIndex: 0, winner: null, logs: ["Doğaçla Mobile Act I!"] });
       setRoomId('');
   };
 
@@ -665,9 +735,9 @@ export default function DogaclaVisualsFinal() {
   const startKura = () => { 
       syncGame({ gameState: 'KURA', kuraRolling: true, showDiceModal: true }); playSynthSound('roll', soundEnabled); 
       setTimeout(() => { 
-          const winnerId = Math.floor(Math.random() * 4); 
-          syncGame({ currentTurn: winnerId, kuraRolling: false }); playSynthSound('success', soundEnabled); 
-          setTimeout(() => { syncGame({ showDiceModal: false, gameState: 'ROLL' }); addLog(lang === 'tr' ? `Sahne ışıkları ${TEAM_INFO[winnerId].name} üzerinde!` : `Spotlights on ${TEAM_INFO[winnerId].name}!`); }, 1500); 
+          const winnerIndex = Math.floor(Math.random() * teams.length); 
+          syncGame({ currentTurn: winnerIndex, kuraRolling: false }); playSynthSound('success', soundEnabled); 
+          setTimeout(() => { syncGame({ showDiceModal: false, gameState: 'ROLL' }); addLog(lang === 'tr' ? `Sahne ışıkları ${TEAM_INFO[teams[winnerIndex].id].name} üzerinde!` : `Spotlights on ${TEAM_INFO[teams[winnerIndex].id].name}!`); }, 1500); 
       }, 2500); 
   };
   
@@ -677,7 +747,7 @@ export default function DogaclaVisualsFinal() {
       const finishers = teams.filter(t => t.pos >= 35); 
       if (finishers.length > 0) { 
           const sorted = [...teams].sort((a, b) => b.score - a.score); 
-          syncGame({ finalists: sorted.slice(0, 2), directors: sorted.slice(2, 4), finalTurnIndex: 0, currentTurn: sorted[0].id, draftMission: null, gameState: 'FINALS_DIRECTOR_INPUT' }); playSynthSound('success', soundEnabled);
+          syncGame({ finalists: sorted.slice(0, 2), directors: sorted.slice(2, 4), finalTurnIndex: 0, currentTurn: teams.findIndex(t => t.id === sorted[0].id), draftMission: null, gameState: 'FINALS_DIRECTOR_INPUT' }); playSynthSound('success', soundEnabled);
       } else { nextTurn(); }
   };
 
@@ -797,7 +867,7 @@ export default function DogaclaVisualsFinal() {
       setVoteData({ roleplay: false, obstacleOvercome: false, fail: false, bonusScore: 0 }); 
       
       if (isFinal) { 
-          if (finalTurnIndex === 0) { syncGame({ finalTurnIndex: 1, currentTurn: finalists[1].id, gameState: 'FINALS_PREP' }); } 
+          if (finalTurnIndex === 0) { syncGame({ finalTurnIndex: 1, currentTurn: teams.findIndex(t => t.id === finalists[1].id), gameState: 'FINALS_PREP' }); } 
           else calculateWinner(); 
       } else { 
           syncGame({ activeCard: null }); 
@@ -810,8 +880,8 @@ export default function DogaclaVisualsFinal() {
       else syncGame({ gameState: 'VOTE' });
   };
 
-  const startNextFinalist = () => { syncGame({ finalTurnIndex: 1, currentTurn: finalists[1].id, gameState: 'FINALS_PREP' }); playSynthSound('click', soundEnabled); };
-  const nextTurn = () => { syncGame({ gameState: 'ROLL', diceValue: null, currentTurn: (currentTurn + 1) % 4, characterMood: 'idle' }); };
+  const startNextFinalist = () => { syncGame({ finalTurnIndex: 1, currentTurn: teams.findIndex(t => t.id === finalists[1].id), gameState: 'FINALS_PREP' }); playSynthSound('click', soundEnabled); };
+  const nextTurn = () => { syncGame({ gameState: 'ROLL', diceValue: null, currentTurn: (currentTurn + 1) % teams.length, characterMood: 'idle' }); };
   const prepareBonus = (bonusIndex) => syncGame({ playingBonus: currentTeam.bonuses[bonusIndex] });
   const executeBonusPower = () => {
       triggerRemoteEvent({ type: 'confetti' });
@@ -823,8 +893,32 @@ export default function DogaclaVisualsFinal() {
       syncGame({ teams: newTeams, playingBonus: null, performanceTimer: newTimer });
   };
 
-  // --- LOBBY SCREEN RENDER ---
+  // --- LOBBY & TEAM SELECT SCREEN RENDER ---
   if (gameState === 'LOBBY') {
+      if (teamSelectMode) {
+          return (
+              <div className="h-screen w-full flex flex-col items-center justify-center bg-neutral-950 text-white px-4 text-center relative overflow-hidden">
+                  <div className="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000" style={{backgroundImage: assets.bg ? `url(${assets.bg})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
+                  <div className="absolute inset-0 z-0 bg-gradient-to-t from-black via-transparent to-black/80 pointer-events-none"></div>
+                  
+                  <div className="relative z-10 flex flex-col items-center w-full mt-8 px-2">
+                      <h2 className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-600 mb-8 tracking-widest drop-shadow-md">KAÇ TAKIM OLACAK?</h2>
+                      <div className="flex flex-col gap-4 w-full max-w-[90vw] sm:max-w-sm">
+                          {[2, 3, 4].map(count => (
+                              <button key={count} onClick={() => {
+                                  if (teamSelectMode === 'single') startSinglePlayer(count);
+                                  else createRoom(count);
+                              }} className="w-full py-5 bg-black/60 backdrop-blur-md border-2 border-gray-600 hover:border-yellow-400 text-white font-black text-2xl rounded-2xl active:scale-95 transition shadow-lg flex items-center justify-center gap-3">
+                                  <Users size={28} className="text-yellow-500" /> {count} TAKIM
+                              </button>
+                          ))}
+                      </div>
+                      <button onClick={() => setTeamSelectMode(null)} className="mt-8 text-gray-400 font-bold underline px-6 py-2 rounded-full hover:bg-white/10 transition">Geri Dön</button>
+                  </div>
+              </div>
+          )
+      }
+
       return (
           <div className="h-screen w-full flex flex-col items-center justify-center bg-neutral-950 text-white px-4 text-center selection:bg-neon-pink relative overflow-hidden">
               {isAppLoading && (
@@ -855,7 +949,7 @@ export default function DogaclaVisualsFinal() {
                   <p className="text-gray-300 font-bold tracking-[0.3em] mb-12 uppercase text-xs drop-shadow-md">Mobile Edition</p>
                   
                   <div className="flex flex-col gap-4 w-full max-w-[90vw] sm:max-w-sm">
-                      <button onClick={startSinglePlayer} className="w-full py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-black text-lg sm:text-xl rounded-2xl shadow-[0_0_20px_rgba(168,85,247,0.3)] active:scale-95 transition">TEK OYUNCULU OYNA</button>
+                      <button onClick={promptSinglePlayer} className="w-full py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-black text-lg sm:text-xl rounded-2xl shadow-[0_0_20px_rgba(168,85,247,0.3)] active:scale-95 transition">TEK OYUNCULU OYNA</button>
                       
                       <div className="relative flex items-center py-2">
                           <div className="flex-grow border-t border-gray-800"></div><span className="flex-shrink-0 mx-4 text-gray-400 font-black text-[10px] sm:text-xs tracking-widest">ÇOK OYUNCULU</span><div className="flex-grow border-t border-gray-800"></div>
@@ -872,7 +966,7 @@ export default function DogaclaVisualsFinal() {
                           )
                       ) : (
                           <>
-                              <button onClick={createRoom} className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-black font-black text-lg sm:text-xl rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 transition">ODA KUR</button>
+                              <button onClick={promptMultiPlayer} className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-black font-black text-lg sm:text-xl rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 transition">ODA KUR</button>
                               <div className="flex gap-2">
                                   <input value={joinCodeInput} onChange={e => setJoinCodeInput(e.target.value.toUpperCase())} placeholder="ODA KODU" maxLength={4} className="flex-1 bg-black/60 backdrop-blur-md text-white text-center font-black text-xl sm:text-2xl rounded-2xl border-2 border-gray-700 focus:border-neon-blue outline-none uppercase placeholder:text-gray-500 tracking-widest transition shadow-inner" />
                                   <button onClick={() => joinRoom(joinCodeInput)} disabled={joinCodeInput.length !== 4} className="px-6 py-4 bg-blue-600 disabled:bg-gray-800 text-white font-black text-base sm:text-lg rounded-2xl active:scale-95 transition disabled:active:scale-100 shadow-[0_0_20px_rgba(37,99,235,0.3)] disabled:shadow-none">KATIL</button>
@@ -884,6 +978,21 @@ export default function DogaclaVisualsFinal() {
           </div>
       );
   }
+
+  // --- TAKIM ATAMA ZARI EKRANI (YEREL) ---
+  const renderLocalDice = () => {
+      if (!localDiceState.isRolling && !localDiceState.value) return null;
+      return (
+          <div className="fixed inset-0 bg-black/90 z-[110] flex items-center justify-center backdrop-blur-md">
+              <div className="text-center scale-110">
+                  <Dice3D value={localDiceState.isRolling ? null : localDiceState.value} isRolling={localDiceState.isRolling} />
+                  <div className="mt-12 text-2xl font-black text-neon-blue animate-pulse tracking-widest">
+                      {localDiceState.isRolling ? "TAKIM BELİRLENİYOR..." : "HOŞ GELDİN!"}
+                  </div>
+              </div>
+          </div>
+      )
+  };
 
   return (
     <div className="h-screen w-full font-sans flex flex-col overflow-hidden text-gray-100 bg-neutral-950 selection:bg-neon-pink selection:text-white relative">
@@ -929,17 +1038,20 @@ export default function DogaclaVisualsFinal() {
       {confetti && <ConfettiExplosion />}
       {randomEvent && <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[80] animate-bounce bg-black/80 px-6 py-2 rounded-full border border-white/20 backdrop-blur-md whitespace-nowrap"><span className={`text-lg font-black ${randomEvent.color} drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]`}>{randomEvent.msg}</span></div>}
       
-      {/* YENİ: BİLDİRİM (TOAST) MESAJI */}
+      {/* BİLDİRİM (TOAST) MESAJI */}
       {toastMsg && (
           <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-[100] bg-green-500 text-white px-6 py-3 rounded-full font-black text-sm shadow-[0_0_20px_rgba(34,197,94,0.6)] animate-bounce whitespace-nowrap border-2 border-green-300">
               {toastMsg}
           </div>
       )}
 
+      {/* YEREL ZAR MODALI (Takım seçimi için) */}
+      {renderLocalDice()}
+
       <div className="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000" style={{backgroundImage: assets.bg ? `url(${assets.bg})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black via-transparent to-black/80 pointer-events-none"></div>
 
-      {showDiceModal && <div className="fixed inset-0 bg-black/90 z-[80] flex items-center justify-center backdrop-blur-md"><div className="text-center scale-110">{gameState === 'KURA' ? <TeamDice3D winnerId={kuraRolling ? null : currentTurn} isRolling={kuraRolling} assets={assets} /> : <Dice3D value={isRollingDice ? null : (diceValue > 6 ? 6 : diceValue)} isRolling={isRollingDice} />}<div className="mt-12 text-2xl font-black text-neon-blue animate-pulse tracking-widest">{kuraRolling ? UI[lang].drawingLots : UI[lang].rollingDice}</div></div></div>}
+      {showDiceModal && <div className="fixed inset-0 bg-black/90 z-[80] flex items-center justify-center backdrop-blur-md"><div className="text-center scale-110">{gameState === 'KURA' ? <TeamDice3D winnerId={kuraRolling ? null : currentTurn} isRolling={kuraRolling} assets={assets} teams={teams} /> : <Dice3D value={isRollingDice ? null : (diceValue > 6 ? 6 : diceValue)} isRolling={isRollingDice} />}<div className="mt-12 text-2xl font-black text-neon-blue animate-pulse tracking-widest">{kuraRolling ? UI[lang].drawingLots : UI[lang].rollingDice}</div></div></div>}
       
       {/* FLOATING HEADER (MOBILE) */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-black/50 border-b border-white/10 flex items-center justify-between px-2 sm:px-3 z-40 backdrop-blur-lg">
@@ -998,40 +1110,65 @@ export default function DogaclaVisualsFinal() {
         {gameState === 'INTRO' && (
             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 rounded-2xl h-full backdrop-blur-sm px-4">
                 {assets.logo ? (
-                    <img src={assets.logo} alt="DOĞAÇLA" className="w-48 sm:w-64 md:w-80 max-w-[80vw] mb-4 animate-pulse drop-shadow-[0_0_30px_rgba(250,204,21,0.5)] object-contain" />
+                    <img src={assets.logo} alt="DOĞAÇLA" className="w-40 sm:w-56 md:w-64 max-w-[70vw] mb-4 animate-pulse drop-shadow-[0_0_30px_rgba(250,204,21,0.5)] object-contain" />
                 ) : (
                     <h1 className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-600 animate-pulse mb-2 text-center leading-none">DOĞAÇLA<br/><span className="text-xl sm:text-2xl text-white tracking-widest font-light">ACT I</span></h1>
                 )}
 
-                {/* YENİ: ODA KODU VE DAVET LİNKİ ALANI */}
+                {/* ODA KODU VE DAVET LİNKİ ALANI */}
                 {roomId && !isSinglePlayer && (
-                    <div className="mt-8 flex flex-col items-center bg-gray-900/80 p-4 sm:p-6 rounded-3xl border-2 border-yellow-500/30 shadow-[0_0_30px_rgba(0,0,0,0.8)] backdrop-blur-md max-w-full">
-                        <div className="text-gray-400 text-xs sm:text-sm tracking-[0.2em] mb-2 font-bold text-center">DAVET KODUNUZ</div>
-                        <div className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 tracking-widest mb-6 drop-shadow-lg text-center">{roomId}</div>
+                    <div className="mt-4 flex flex-col items-center bg-gray-900/80 p-4 sm:p-5 rounded-3xl border-2 border-yellow-500/30 shadow-[0_0_30px_rgba(0,0,0,0.8)] backdrop-blur-md max-w-full">
+                        <div className="text-gray-400 text-[10px] sm:text-xs tracking-[0.2em] mb-1 font-bold text-center">DAVET KODUNUZ</div>
+                        <div className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 tracking-widest mb-4 drop-shadow-lg text-center">{roomId}</div>
                         <button onClick={() => {
-                            // KESİN ÇÖZÜM: Çalışmayan Link yerine, whatsapp'tan yollanacak güzel bir davet mesajı kopyalar.
                             const inviteText = `🎭 DOĞAÇLA oyununa davetlisin!\nOyuna gir ve Çok Oyunculu bölümünden şu oda kodunu yazarak bana katıl: ${roomId}`;
                             navigator.clipboard.writeText(inviteText).catch(() => {
                                 const ta = document.createElement('textarea'); ta.value = inviteText; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
                             });
                             setToastMsg("✅ Davet Kodu Kopyalandı! Arkadaşına gönder.");
                             setTimeout(() => setToastMsg(null), 3000);
-                        }} className="px-4 sm:px-8 py-3 sm:py-4 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-base sm:text-lg active:scale-95 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(37,99,235,0.4)]">
-                            <Copy size={20} /> Davet Kodunu Kopyala
+                        }} className="px-4 sm:px-6 py-2 sm:py-3 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-black text-sm sm:text-base active:scale-95 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(37,99,235,0.4)]">
+                            <Copy size={16} /> Davet Kodunu Kopyala
                         </button>
                     </div>
                 )}
 
-                {/* YENİ: OYUNU BEKLEME VE BAŞLATMA ALANI */}
-                {roomId && !isSinglePlayer && (
-                    <div className="mt-4 animate-pulse text-yellow-400 font-bold text-sm sm:text-base text-center">
-                        ⏳ Arkadaşlarının katılmasını bekle<br/>veya hazır olduğunda direkt BAŞLA'ya bas!
+                {/* YENİ: TAKIM TABLOSU VE OYUNCU SAYILARI */}
+                <div className="w-full max-w-[90vw] sm:max-w-sm mt-6">
+                    <div className="text-yellow-400 text-center font-bold text-sm tracking-widest mb-2">SAHADAKİ TAKIMLAR</div>
+                    <div className="flex justify-center gap-2">
+                        {teams.map(t => {
+                            const count = isSinglePlayer ? 1 : Object.values(players).filter(id => id === t.id).length;
+                            return (
+                                <div key={t.id} className={`flex-1 p-2 rounded-xl border-2 ${t.border} bg-black/80 text-center shadow-lg relative overflow-hidden`}>
+                                    <div className={`text-[10px] sm:text-xs font-black tracking-wider ${t.text}`}>{TEAM_INFO[t.id].name}</div>
+                                    <div className="text-white font-black text-lg sm:text-xl mt-1">{count} <span className="text-[10px] font-normal text-gray-400">Kişi</span></div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+
+                {/* ZAR ATMA VEYA BAŞLATMA BUTONLARI */}
+                {roomId && !isSinglePlayer && players[user?.uid] === undefined ? (
+                    // Kullanıcı henüz bir takıma atanmadıysa zar atma butonu görünür
+                    <button onClick={joinTeamWithDice} className="mt-8 px-8 py-4 sm:py-5 w-full max-w-[90vw] sm:max-w-sm bg-gradient-to-r from-purple-600 to-neon-blue text-white font-black text-lg sm:text-xl rounded-full shadow-[0_0_30px_rgba(0,243,255,0.5)] active:scale-95 transition tracking-widest flex justify-center items-center gap-3">
+                        <Dices size={28} className="animate-bounce" /> TAKIM İÇİN ZAR AT
+                    </button>
+                ) : (
+                    <div className="flex flex-col items-center w-full">
+                        {roomId && !isSinglePlayer && !isHost && (
+                             <div className="mt-8 text-yellow-400 font-bold animate-pulse text-sm sm:text-base text-center bg-black/50 p-4 rounded-xl border border-yellow-500/30">
+                                 ⏳ Kurucunun oyunu başlatması bekleniyor...
+                             </div>
+                        )}
+                        {(isSinglePlayer || isHost) && (
+                            <button onClick={startKura} className="mt-8 px-10 sm:px-12 py-4 sm:py-5 w-full max-w-[90vw] sm:max-w-sm bg-white text-black font-black text-xl sm:text-2xl rounded-full shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 transition tracking-widest flex justify-center items-center gap-2">
+                                {roomId && !isSinglePlayer ? "OYUNU BAŞLAT" : UI[lang].start}
+                            </button>
+                        )}
                     </div>
                 )}
-
-                <button onClick={startKura} className="mt-8 px-10 sm:px-12 py-4 sm:py-5 bg-white text-black font-black text-xl sm:text-2xl rounded-full shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 transition tracking-widest">
-                    {roomId && !isSinglePlayer ? "OYUNU BAŞLAT" : UI[lang].start}
-                </button>
             </div>
         )}
         
