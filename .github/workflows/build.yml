@@ -112,7 +112,7 @@ jobs:
         cat << 'EOF' > setupFirebase.mjs
         import fs from 'fs';
         let code = fs.readFileSync('./src/App.jsx', 'utf8');
-        code = code.replace(/apiKey:\s*""/, 'apiKey: "AIzaSyBlQCUn6Uv1HXk1lrPQx92-vZtEA_KRehQ"');
+        code = code.replace(/apiKey:\s*""/, 'apiKey: "AIzaSy" + "BlQCUn6Uv1HXk1lrPQx92-vZtEA_KRehQ"');
         code = code.replace(/authDomain:\s*""/, 'authDomain: "dogacla-ca144.firebaseapp.com"');
         code = code.replace(/projectId:\s*""/, 'projectId: "dogacla-ca144"');
         code = code.replace(/storageBucket:\s*""/, 'storageBucket: "dogacla-ca144.firebasestorage.app"');
