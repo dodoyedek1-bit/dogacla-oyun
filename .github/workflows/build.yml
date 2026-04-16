@@ -18,7 +18,7 @@ jobs:
     - name: Node.js Kurulumu
       uses: actions/setup-node@v4
       with:
-        node-version: 20
+        node-version: 22
 
     - name: Java Kurulumu (Android İçin)
       uses: actions/setup-java@v4
@@ -104,27 +104,17 @@ jobs:
         @tailwind utilities;
         EOF
         
-        cp ../App.jsx src/App.jsx
+        # Akıllı Dosya Bulucu (İsim ne olursa olsun JSX dosyasını oyun kodu olarak kabul eder)
+        MAIN_FILE=$(find ../ -maxdepth 1 -name "*.jsx" | head -n 1)
+        if [ -n "$MAIN_FILE" ]; then
+          echo "Oyun kodu başarıyla bulundu: $MAIN_FILE"
+          cp "$MAIN_FILE" src/App.jsx
+        else
+          echo "HATA: GitHub deponuzda .jsx uzantılı hiçbir kod dosyası bulunamadı!"
+          exit 1
+        fi
 
-    - name: 2. Firebase Veritabanını Uygulamaya Entegre Et
-      run: |
-        cd dogacla-mobil
-        cat << 'EOF' > setupFirebase.mjs
-        import fs from 'fs';
-        let code = fs.readFileSync('./src/App.jsx', 'utf8');
-        code = code.replace(/apiKey:\s*""/, 'apiKey: "AIzaSy" + "BlQCUn6Uv1HXk1lrPQx92-vZtEA_KRehQ"');
-        code = code.replace(/authDomain:\s*""/, 'authDomain: "dogacla-ca144.firebaseapp.com"');
-        code = code.replace(/projectId:\s*""/, 'projectId: "dogacla-ca144"');
-        code = code.replace(/storageBucket:\s*""/, 'storageBucket: "dogacla-ca144.firebasestorage.app"');
-        code = code.replace(/messagingSenderId:\s*""/, 'messagingSenderId: "29430014172"');
-        code = code.replace(/appId:\s*""/, 'appId: "1:29430014172:web:15b8a5ef2f3df11e5b1419"');
-        fs.writeFileSync('./src/App.jsx', code);
-        console.log('Firebase veritabanı başarıyla entegre edildi!');
-        EOF
-        node setupFirebase.mjs
-        rm setupFirebase.mjs
-
-    - name: 3. Videoları ve Görselleri İndirip Uygulamaya Göm
+    - name: 2. Videoları ve Görselleri İndirip Uygulamaya Göm
       run: |
         cd dogacla-mobil
         cat << 'EOF' > downloadAssets.mjs
@@ -170,7 +160,7 @@ jobs:
         node downloadAssets.mjs
         rm downloadAssets.mjs
 
-    - name: 4. Android Çıktısını Hazırla (APK)
+    - name: 3. Android Çıktısını Hazırla (APK)
       run: |
         cd dogacla-mobil
         npx cap init "Dogacla" "com.oyun.dogacla" --web-dir dist
@@ -178,7 +168,7 @@ jobs:
         npx cap add android
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug
+        ./gradlew assembleDebug --stacktrace
 
     - name: APK'yı Yükle
       uses: actions/upload-artifact@v4
