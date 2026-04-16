@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Dices, Trophy, Star, ShieldAlert, Sparkles, Skull, Theater, 
   AlertTriangle, X, Volume2, VolumeX, RefreshCw, History, Bot, Zap, Flame, Crown, 
-  Ghost, Smartphone, Bird, Thermometer, Apple, HelpCircle, Music4, List, Plus, Minus, Clapperboard, Lightbulb, Drama, User, Home
+  Ghost, Smartphone, Bird, Thermometer, Apple, HelpCircle, Music4, List, Plus, Minus, Clapperboard, Lightbulb, Drama, User, Home, Share2
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS FOR MULTIPLAYER ---
@@ -128,7 +128,7 @@ const TEAM_INFO = {
     3: { name: 'ARİSTOFANES', desc: { tr: 'Hicivli & Zeki' }, longDesc: { tr: 'Olaylara her zaman yukarıdan bakar ve alay eder.' }, style: { tr: 'İronik' } }
 };
 
-// --- MOBILE OPTIMIZED ASSET DISPLAY (WITH FLASH FIX) ---
+// --- MOBILE OPTIMIZED ASSET DISPLAY (WITH DELAYED FADE-IN FIX FOR IOS) ---
 const AssetDisplay = ({ src, className, style, alt }) => {
     const [isLoaded, setIsLoaded] = useState(false);
     
@@ -142,18 +142,18 @@ const AssetDisplay = ({ src, className, style, alt }) => {
             <video 
                 key={src} 
                 src={src} 
-                className={`${className} ${hasBgClass ? '' : 'bg-transparent'} transition-opacity duration-500`} 
+                className={`${className} ${hasBgClass ? '' : 'bg-transparent'} transition-opacity duration-700 ease-in`} 
                 style={{...style, pointerEvents: 'none', opacity: isLoaded ? 1 : 0}} 
                 autoPlay loop muted playsInline webkit-playsinline="true" disablePictureInPicture preload="auto"
-                poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" 
-                onCanPlay={() => setIsLoaded(true)}
+                onCanPlayThrough={() => setIsLoaded(true)}
+                onLoadedData={() => setIsLoaded(true)}
             />
         );
     }
     return (
         <img 
             src={src} 
-            className={`${className} object-cover transition-opacity duration-500`} 
+            className={`${className} object-cover transition-opacity duration-700 ease-in`} 
             style={{...style, opacity: isLoaded ? 1 : 0}} 
             alt={alt} 
             onLoad={() => setIsLoaded(true)} 
@@ -164,12 +164,12 @@ const AssetDisplay = ({ src, className, style, alt }) => {
 const getCardIcon = (text, defaultIcon) => {
     if (!text) return defaultIcon;
     const lowerText = text.toLowerCase();
-    if (lowerText.includes("king") || lowerText.includes("kral") || lowerText.includes("crown")) return <Crown size={32} className="text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]" />;
-    if (lowerText.includes("phone") || lowerText.includes("sinyal") || lowerText.includes("call")) return <Smartphone size={32} className="text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.8)]" />;
-    if (lowerText.includes("chicken") || lowerText.includes("tavuk")) return <Bird size={32} className="text-orange-400 drop-shadow-[0_0_10px_rgba(251,146,60,0.8)]" />;
-    if (lowerText.includes("cold") || lowerText.includes("soğuk") || lowerText.includes("freeze")) return <Thermometer size={32} className="text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]" />;
-    if (lowerText.includes("apple") || lowerText.includes("elma") || lowerText.includes("eat")) return <Apple size={32} className="text-red-400 drop-shadow-[0_0_10px_rgba(248,113,113,0.8)]" />;
-    if (lowerText.includes("song") || lowerText.includes("şarkı") || lowerText.includes("music")) return <Music4 size={32} className="text-purple-400 drop-shadow-[0_0_10px_rgba(192,132,252,0.8)]" />;
+    if (lowerText.includes("king") || lowerText.includes("kral") || lowerText.includes("crown")) return <Crown size={36} className="text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]" />;
+    if (lowerText.includes("phone") || lowerText.includes("sinyal") || lowerText.includes("call")) return <Smartphone size={36} className="text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.8)]" />;
+    if (lowerText.includes("chicken") || lowerText.includes("tavuk")) return <Bird size={36} className="text-orange-400 drop-shadow-[0_0_10px_rgba(251,146,60,0.8)]" />;
+    if (lowerText.includes("cold") || lowerText.includes("soğuk") || lowerText.includes("freeze")) return <Thermometer size={36} className="text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]" />;
+    if (lowerText.includes("apple") || lowerText.includes("elma") || lowerText.includes("eat")) return <Apple size={36} className="text-red-400 drop-shadow-[0_0_10px_rgba(248,113,113,0.8)]" />;
+    if (lowerText.includes("song") || lowerText.includes("şarkı") || lowerText.includes("music")) return <Music4 size={36} className="text-purple-400 drop-shadow-[0_0_10px_rgba(192,132,252,0.8)]" />;
     return defaultIcon;
 };
 
@@ -281,7 +281,7 @@ const ConfettiExplosion = () => (
 const Dice3D = ({ value, isRolling }) => {
     const [currentClass, setCurrentClass] = useState('');
     useEffect(() => { if (isRolling) setCurrentClass('rolling'); else if (value) setCurrentClass(`show-${value}`); }, [value, isRolling]);
-    return <div className="scene w-24 h-24 mx-auto perspective-1000"><div className={`cube w-full h-full relative transform-style-3d transition-transform duration-1000 ${isRolling ? 'rolling' : currentClass}`}>{[1,2,3,4,5,6].map(n => <div key={n} className={`cube__face cube__face--${n} absolute w-24 h-24 border-2 border-neon-blue bg-black/90 flex items-center justify-center text-5xl text-neon-blue font-bold shadow-[inset_0_0_20px_rgba(0,255,255,0.5)]`}>{n}</div>)}</div></div>;
+    return <div className="scene w-32 h-32 mx-auto perspective-1000"><div className={`cube w-full h-full relative transform-style-3d transition-transform duration-1000 ${isRolling ? 'rolling' : currentClass}`}>{[1,2,3,4,5,6].map(n => <div key={n} className={`cube__face cube__face--${n} absolute w-32 h-32 border-2 border-neon-blue bg-black/90 flex items-center justify-center text-6xl text-neon-blue font-black shadow-[inset_0_0_30px_rgba(0,255,255,0.5)]`}>{n}</div>)}</div></div>;
 };
 
 const TeamDice3D = ({ winnerId, isRolling, assets }) => {
@@ -289,9 +289,9 @@ const TeamDice3D = ({ winnerId, isRolling, assets }) => {
     useEffect(() => { if (isRolling) setCurrentClass('kura-rolling'); else if (winnerId !== null) setCurrentClass(`show-${(winnerId % 4) + 1}`); }, [winnerId, isRolling]);
     const renderFace = (teamId) => {
         const assetSrc = assets[`team${teamId}_idle`] || assets[`team${teamId}`];
-        return <div className="w-full h-full flex items-center justify-center bg-black border-2 border-[#D4AF37] rounded-lg overflow-hidden">{assetSrc ? <AssetDisplay src={assetSrc} className="w-full h-full object-cover" alt={`Team ${teamId}`} /> : <span className="text-[#D4AF37] text-2xl">T{teamId+1}</span>}</div>;
+        return <div className="w-full h-full flex items-center justify-center bg-black border-2 border-[#D4AF37] rounded-lg overflow-hidden">{assetSrc ? <AssetDisplay src={assetSrc} className="w-full h-full object-cover" alt={`Team ${teamId}`} /> : <span className="text-[#D4AF37] text-3xl">T{teamId+1}</span>}</div>;
     };
-    return <div className="scene w-24 h-24 mx-auto perspective-1000"><div className={`cube w-full h-full relative transform-style-3d transition-transform duration-1000 ${currentClass}`}>{[0,1,2,3,0,1].map((t, i) => <div key={i} className={`cube__face cube__face--${i+1}`}>{renderFace(t)}</div>)}</div></div>;
+    return <div className="scene w-32 h-32 mx-auto perspective-1000"><div className={`cube w-full h-full relative transform-style-3d transition-transform duration-1000 ${currentClass}`}>{[0,1,2,3,0,1].map((t, i) => <div key={i} className={`cube__face cube__face--${i+1}`}>{renderFace(t)}</div>)}</div></div>;
 };
 
 // --- CARD DESIGN ---
@@ -413,6 +413,8 @@ export default function DogaclaVisualsFinal() {
   const [joinCodeInput, setJoinCodeInput] = useState('');
   const [isSinglePlayer, setIsSinglePlayer] = useState(false);
   const [authError, setAuthError] = useState(null);
+  const [toastMsg, setToastMsg] = useState(null); // YENİ: Bildirim mesajları için
+  const [isAppLoading, setIsAppLoading] = useState(true); // YENİ: Başlangıç Yükleme Ekranı
   
   // -- Synced Game States --
   const [gameState, setGameState] = useState('LOBBY'); // LOBBY, INTRO, ROLL, KURA, MOVING, CARD, TARGET_OBSTACLE, PERFORM, VOTE, FINALS_*, END
@@ -450,6 +452,23 @@ export default function DogaclaVisualsFinal() {
   const [timerKey, setTimerKey] = useState(0); 
   const [criticLoading, setCriticLoading] = useState(false);
 
+  // YENİ: Yükleme Ekranı Kontrolü (Oyun açılınca DOM'u ve videoları önceden arka planda hazırlar)
+  useEffect(() => {
+      const timer = setTimeout(() => setIsAppLoading(false), 2500);
+      return () => clearTimeout(timer);
+  }, []);
+
+  // YENİ: URL'den gelen davet kodunu otomatik kontrol et ve odaya katıl
+  useEffect(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const roomCodeFromUrl = urlParams.get('room');
+      if (roomCodeFromUrl && user && !roomId) {
+          joinRoom(roomCodeFromUrl.toUpperCase());
+          // URL'yi temizle ki sayfayı yenileyince tekrar girmeye çalışmasın
+          window.history.replaceState({}, document.title, window.location.pathname);
+      }
+  }, [user]); // Kullanıcı giriş yaptığında tetiklenir
+
   // --- FIREBASE AUTH ---
   useEffect(() => {
       if (!auth) {
@@ -457,13 +476,6 @@ export default function DogaclaVisualsFinal() {
           return;
       }
       
-      // ZAMAN AŞIMI: 5 saniye içinde Firebase bağlanmazsa hata ver
-      const connectionTimeout = setTimeout(() => {
-          if (!user) {
-              setAuthError("Bağlantı zaman aşımına uğradı. İnternetinizi kontrol edin veya 'Tek Oyunculu' devam edin.");
-          }
-      }, 5000);
-
       const initAuth = async () => {
           try {
               if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -479,11 +491,10 @@ export default function DogaclaVisualsFinal() {
       initAuth();
       
       const unsub = onAuthStateChanged(auth, (u) => {
-          if (u) clearTimeout(connectionTimeout);
           setUser(u);
       });
       
-      return () => { unsub(); clearTimeout(connectionTimeout); };
+      return () => { unsub(); };
   }, []);
 
   // --- MULTIPLAYER SYNC SENDER ---
@@ -601,19 +612,33 @@ export default function DogaclaVisualsFinal() {
 
   const createRoom = async () => {
       if (!user || !db) return;
-      const code = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const initialData = { gameState: 'INTRO', teams: INITIAL_TEAMS, currentTurn: 0, hypeMeter: 0, logs: ["Doğaçla'ya Hoş Geldiniz!"], hostUid: user.uid };
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code), initialData);
-      setIsSinglePlayer(false);
-      setRoomId(code);
+      try {
+          const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+          const initialData = { gameState: 'INTRO', teams: INITIAL_TEAMS, currentTurn: 0, hypeMeter: 0, logs: ["Doğaçla'ya Hoş Geldiniz!"], hostUid: user.uid };
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code), initialData);
+          setIsSinglePlayer(false);
+          setRoomId(code);
+          setAuthError(null);
+      } catch (err) {
+          console.error(err);
+          setAuthError("Oda kurulamadı: " + err.message);
+      }
   };
   
   const joinRoom = async (code) => {
       if (!user || !db || code.length !== 4) return;
-      const docSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code));
-      if (docSnap.exists()) {
-          setIsSinglePlayer(false);
-          setRoomId(code); 
+      try {
+          const docSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code));
+          if (docSnap.exists()) {
+              setIsSinglePlayer(false);
+              setRoomId(code); 
+              setAuthError(null);
+          } else {
+              setAuthError("HATA: Böyle bir oda kodu bulunamadı!");
+          }
+      } catch(err) {
+          console.error(err);
+          setAuthError("Odaya Katılma Hatası: " + err.message);
       }
   };
 
@@ -807,10 +832,19 @@ export default function DogaclaVisualsFinal() {
   if (gameState === 'LOBBY') {
       return (
           <div className="h-screen w-full flex flex-col items-center justify-center bg-neutral-950 text-white px-4 text-center selection:bg-neon-pink relative overflow-hidden">
+              {isAppLoading && (
+                  <div className="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center transition-opacity duration-500">
+                      <Theater size={80} className="text-yellow-500 animate-pulse mb-6 drop-shadow-[0_0_20px_rgba(250,204,21,0.8)]" />
+                      <h1 className="text-4xl font-black text-yellow-400 tracking-widest animate-bounce">YÜKLENİYOR...</h1>
+                      <div className="mt-8 w-64 h-3 bg-gray-800 rounded-full overflow-hidden border border-white/20">
+                          <div className="h-full bg-gradient-to-r from-yellow-600 to-yellow-300 animate-loading-bar"></div>
+                      </div>
+                  </div>
+              )}
               <div className="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000" style={{backgroundImage: assets.bg ? `url(${assets.bg})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
               <div className="absolute inset-0 z-0 bg-gradient-to-t from-black via-transparent to-black/80 pointer-events-none"></div>
               
-              <div className="relative z-10 flex flex-col items-center w-full">
+              <div className="relative z-10 flex flex-col items-center w-full mt-8">
                   {assets.logo ? (
                       <img src={assets.logo} alt="DOĞAÇLA" className="w-64 sm:w-80 mb-6 drop-shadow-[0_0_20px_rgba(250,204,21,0.6)]" />
                   ) : (
@@ -865,37 +899,48 @@ export default function DogaclaVisualsFinal() {
         .animate-pulse-fast { animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
         .animate-float { animation: float 6s ease-in-out infinite; }
+        @keyframes loadingBar { 0% { width: 0%; } 100% { width: 100%; } }
+        .animate-loading-bar { animation: loadingBar 2.5s ease-in-out forwards; }
         
-        /* HIDING IOS NATIVE VIDEO PLAY BUTTONS */
-        video::-webkit-media-controls { display: none !important; opacity: 0 !important; }
-        video::-webkit-media-controls-start-playback-button { display: none !important; opacity: 0 !important; -webkit-appearance: none; }
+        /* HIDING IOS NATIVE VIDEO PLAY BUTTONS COMPLETELY */
+        video::-webkit-media-controls { display: none !important; opacity: 0 !important; visibility: hidden !important; }
+        video::-webkit-media-controls-start-playback-button { display: none !important; -webkit-appearance: none !important; }
+        video::-webkit-media-controls-play-button { display: none !important; -webkit-appearance: none !important; }
+        video { outline: none; border: none; }
 
         .scene { perspective: 600px; }
         .cube { position: relative; transform-style: preserve-3d; transition: transform 1s cubic-bezier(0.25, 1, 0.5, 1); }
         .cube__face { position: absolute; }
-        .cube__face--1 { transform: rotateY(0deg) translateZ(48px); }
-        .cube__face--2 { transform: rotateY(180deg) translateZ(48px); }
-        .cube__face--3 { transform: rotateY(90deg) translateZ(48px); }
-        .cube__face--4 { transform: rotateY(-90deg) translateZ(48px); }
-        .cube__face--5 { transform: rotateX(90deg) translateZ(48px); }
-        .cube__face--6 { transform: rotateX(-90deg) translateZ(48px); }
-        .show-1 { transform: translateZ(-48px) rotateY(0deg); }
-        .show-2 { transform: translateZ(-48px) rotateY(-180deg); }
-        .show-3 { transform: translateZ(-48px) rotateY(-90deg); }
-        .show-4 { transform: translateZ(-48px) rotateY(90deg); }
-        .show-5 { transform: translateZ(-48px) rotateX(-90deg); }
-        .show-6 { transform: translateZ(-48px) rotateX(90deg); }
+        .cube__face--1 { transform: rotateY(0deg) translateZ(64px); }
+        .cube__face--2 { transform: rotateY(180deg) translateZ(64px); }
+        .cube__face--3 { transform: rotateY(90deg) translateZ(64px); }
+        .cube__face--4 { transform: rotateY(-90deg) translateZ(64px); }
+        .cube__face--5 { transform: rotateX(90deg) translateZ(64px); }
+        .cube__face--6 { transform: rotateX(-90deg) translateZ(64px); }
+        .show-1 { transform: translateZ(-64px) rotateY(0deg); }
+        .show-2 { transform: translateZ(-64px) rotateY(-180deg); }
+        .show-3 { transform: translateZ(-64px) rotateY(-90deg); }
+        .show-4 { transform: translateZ(-64px) rotateY(90deg); }
+        .show-5 { transform: translateZ(-64px) rotateX(-90deg); }
+        .show-6 { transform: translateZ(-64px) rotateX(90deg); }
         .rolling { animation: spinCube 0.5s infinite linear; }
-        @keyframes spinCube { 0% { transform: translateZ(-48px) rotateX(0deg) rotateY(0deg); } 100% { transform: translateZ(-48px) rotateX(360deg) rotateY(360deg); } }
+        @keyframes spinCube { 0% { transform: translateZ(-64px) rotateX(0deg) rotateY(0deg); } 100% { transform: translateZ(-64px) rotateX(360deg) rotateY(360deg); } }
       `}</style>
       
       {confetti && <ConfettiExplosion />}
       {randomEvent && <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[80] animate-bounce bg-black/80 px-6 py-2 rounded-full border border-white/20 backdrop-blur-md whitespace-nowrap"><span className={`text-lg font-black ${randomEvent.color} drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]`}>{randomEvent.msg}</span></div>}
       
+      {/* YENİ: BİLDİRİM (TOAST) MESAJI */}
+      {toastMsg && (
+          <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-[100] bg-green-500 text-white px-6 py-3 rounded-full font-black text-sm shadow-[0_0_20px_rgba(34,197,94,0.6)] animate-bounce whitespace-nowrap border-2 border-green-300">
+              {toastMsg}
+          </div>
+      )}
+
       <div className="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000" style={{backgroundImage: assets.bg ? `url(${assets.bg})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black via-transparent to-black/80 pointer-events-none"></div>
 
-      {showDiceModal && <div className="fixed inset-0 bg-black/90 z-[80] flex items-center justify-center backdrop-blur-md"><div className="text-center scale-125">{gameState === 'KURA' ? <TeamDice3D winnerId={kuraRolling ? null : currentTurn} isRolling={kuraRolling} assets={assets} /> : <Dice3D value={isRollingDice ? null : (diceValue > 6 ? 6 : diceValue)} isRolling={isRollingDice} />}<div className="mt-8 text-xl font-black text-neon-blue animate-pulse tracking-widest">{kuraRolling ? UI[lang].drawingLots : UI[lang].rollingDice}</div></div></div>}
+      {showDiceModal && <div className="fixed inset-0 bg-black/90 z-[80] flex items-center justify-center backdrop-blur-md"><div className="text-center scale-110">{gameState === 'KURA' ? <TeamDice3D winnerId={kuraRolling ? null : currentTurn} isRolling={kuraRolling} assets={assets} /> : <Dice3D value={isRollingDice ? null : (diceValue > 6 ? 6 : diceValue)} isRolling={isRollingDice} />}<div className="mt-12 text-2xl font-black text-neon-blue animate-pulse tracking-widest">{kuraRolling ? UI[lang].drawingLots : UI[lang].rollingDice}</div></div></div>}
       
       {/* FLOATING HEADER (MOBILE) */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-black/50 border-b border-white/10 flex items-center justify-between px-3 z-40 backdrop-blur-lg">
@@ -904,8 +949,8 @@ export default function DogaclaVisualsFinal() {
                   <img src={assets.logo} alt="Logo" className="h-10 w-auto object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]"/>
               ) : (
                   <>
-                      <Theater size={26} className="text-yellow-500"/>
-                      <span className="font-black text-base tracking-[0.1em] text-white">DOĞAÇLA</span>
+                      <Theater size={28} className="text-yellow-500"/>
+                      <span className="font-black text-xl tracking-[0.1em] text-white">DOĞAÇLA</span>
                   </>
               )}
               {roomId && !isSinglePlayer && <span className="ml-1 px-1.5 py-0.5 bg-gray-800 text-yellow-400 text-[10px] font-mono font-bold rounded border border-yellow-500/30 tracking-widest">ODA:{roomId}</span>}
@@ -919,14 +964,14 @@ export default function DogaclaVisualsFinal() {
           </div>
           
           <div className="flex items-center gap-1 sm:gap-2">
-              <button onClick={() => setSoundEnabled(!soundEnabled)} className="p-1.5 text-gray-300 hover:text-white transition bg-white/10 rounded-lg">{soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}</button>
-              <button onClick={() => setShowRules(true)} className="p-1.5 text-gray-300 hover:text-yellow-400 transition bg-white/10 rounded-lg"><HelpCircle size={20} /></button>
-              <button onClick={() => setShowLogsMenu(true)} className="p-1.5 text-gray-300 hover:text-white transition bg-white/10 rounded-lg"><List size={20} /></button>
+              <button onClick={() => setSoundEnabled(!soundEnabled)} className="p-2 text-gray-300 hover:text-white transition bg-white/10 rounded-lg">{soundEnabled ? <Volume2 size={24} /> : <VolumeX size={24} />}</button>
+              <button onClick={() => setShowRules(true)} className="p-2 text-gray-300 hover:text-yellow-400 transition bg-white/10 rounded-lg"><HelpCircle size={24} /></button>
+              <button onClick={() => setShowLogsMenu(true)} className="p-2 text-gray-300 hover:text-white transition bg-white/10 rounded-lg"><List size={24} /></button>
               
               {/* ANA MENÜYE DÖNÜŞ (LOBİ) BUTONU */}
               {gameState !== 'LOBBY' && (
-                  <button onClick={resetGame} className="p-1.5 text-white hover:text-red-400 transition bg-red-600/50 hover:bg-red-600/80 rounded-lg ml-1 shadow-lg border border-red-500/50">
-                      <Home size={20} />
+                  <button onClick={resetGame} className="p-2 text-white hover:text-red-400 transition bg-red-600/50 hover:bg-red-600/80 rounded-lg ml-1 shadow-lg border border-red-500/50">
+                      <Home size={24} />
                   </button>
               )}
           </div>
@@ -938,9 +983,9 @@ export default function DogaclaVisualsFinal() {
              <div className="w-full h-[50vh] bg-gray-900 rounded-t-3xl border-t border-[#D4AF37]/30 p-4 shadow-2xl flex flex-col" onClick={e=>e.stopPropagation()}>
                  <div className="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
                      <h3 className="font-bold text-[#D4AF37] flex items-center gap-2"><History size={18}/> {UI[lang].logs}</h3>
-                     <button onClick={() => setShowLogsMenu(false)} className="text-gray-400"><X size={20}/></button>
+                     <button onClick={() => setShowLogsMenu(false)} className="text-gray-400"><X size={24}/></button>
                  </div>
-                 <div className="flex-1 overflow-y-auto text-xs font-mono space-y-2 no-scrollbar pb-safe">
+                 <div className="flex-1 overflow-y-auto text-sm font-mono space-y-2 no-scrollbar pb-safe">
                      {logs.map((l, i) => <div key={i} className="text-gray-300 border-l-2 border-neon-blue/50 pl-2 py-1">{l}</div>)}
                  </div>
              </div>
@@ -948,7 +993,7 @@ export default function DogaclaVisualsFinal() {
       )}
       
       {/* MAIN SCROLLABLE BOARD AREA */}
-      <main className="flex-1 overflow-y-auto no-scrollbar pt-20 pb-64 px-2 z-10 relative">
+      <main className="flex-1 overflow-y-auto no-scrollbar pt-20 pb-72 px-2 z-10 relative">
         {reactions.map(r => <FloatingReaction key={r.id} {...r} onComplete={removeReaction} />)}
         
         {gameState === 'INTRO' && (
@@ -958,7 +1003,26 @@ export default function DogaclaVisualsFinal() {
                 ) : (
                     <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-600 animate-pulse mb-2 text-center leading-none">DOĞAÇLA<br/><span className="text-2xl text-white tracking-widest font-light">ACT I</span></h1>
                 )}
-                <button onClick={startKura} className="mt-12 px-10 py-4 bg-white text-black font-black text-xl rounded-full shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 transition tracking-widest">{UI[lang].start}</button>
+
+                {/* YENİ: ODA KODU VE DAVET LİNKİ ALANI */}
+                {roomId && !isSinglePlayer && (
+                    <div className="mt-8 flex flex-col items-center bg-gray-900/80 p-6 rounded-3xl border-2 border-yellow-500/30 shadow-[0_0_30px_rgba(0,0,0,0.8)] backdrop-blur-md">
+                        <div className="text-gray-400 text-sm tracking-[0.2em] mb-2 font-bold">DAVET KODUNUZ</div>
+                        <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 tracking-widest mb-6 drop-shadow-lg">{roomId}</div>
+                        <button onClick={() => {
+                            const link = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+                            navigator.clipboard.writeText(link).catch(() => {
+                                const ta = document.createElement('textarea'); ta.value = link; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+                            });
+                            setToastMsg("✅ Link Kopyalandı! Arkadaşlarına Gönder.");
+                            setTimeout(() => setToastMsg(null), 3000);
+                        }} className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-lg active:scale-95 flex items-center gap-3 shadow-[0_0_20px_rgba(37,99,235,0.4)]">
+                            <Share2 size={24} /> Katılma Linkini Kopyala
+                        </button>
+                    </div>
+                )}
+
+                <button onClick={startKura} className="mt-12 px-12 py-5 bg-white text-black font-black text-2xl rounded-full shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 transition tracking-widest">{UI[lang].start}</button>
             </div>
         )}
         
@@ -969,22 +1033,22 @@ export default function DogaclaVisualsFinal() {
                     if(sq.type==='easy') { baseStyle="bg-green-900/40 border-green-500/30"; glow="shadow-[0_0_10px_rgba(34,197,94,0.1)]"; } 
                     if(sq.type==='medium') { baseStyle="bg-yellow-900/40 border-yellow-500/30"; glow="shadow-[0_0_10px_rgba(234,179,8,0.1)]"; } 
                     if(sq.type==='hard') { baseStyle="bg-red-900/40 border-red-500/30"; glow="shadow-[0_0_10px_rgba(239,68,68,0.1)]"; } 
-                    if(sq.type==='final') { baseStyle="bg-purple-900/60 border-purple-500"; glow="shadow-[0_0_20px_rgba(168,85,247,0.4)]"; icon=<Crown size={14} className="text-purple-300"/>; } 
-                    if(sq.type==='obstacle') { baseStyle="bg-gray-800/80 border-gray-600"; icon=<Skull size={12} className="text-gray-400"/>; } 
-                    if(sq.type==='bonus') { baseStyle="bg-blue-900/50 border-blue-400/50"; icon=<Sparkles size={12} className="text-blue-300"/>; } 
+                    if(sq.type==='final') { baseStyle="bg-purple-900/60 border-purple-500"; glow="shadow-[0_0_20px_rgba(168,85,247,0.4)]"; icon=<Crown size={18} className="text-purple-300"/>; } 
+                    if(sq.type==='obstacle') { baseStyle="bg-gray-800/80 border-gray-600"; icon=<Skull size={16} className="text-gray-400"/>; } 
+                    if(sq.type==='bonus') { baseStyle="bg-blue-900/50 border-blue-400/50"; icon=<Sparkles size={16} className="text-blue-300"/>; } 
                     const playersHere = teams.filter(t => t.pos === i);
                     
                     return (
                         <div key={i} className={`aspect-square rounded-xl border ${baseStyle} relative flex flex-col items-center justify-center transition-all duration-300 ${glow} backdrop-blur-sm overflow-hidden`}>
-                            <span className="absolute top-1 left-1 text-[8px] uppercase font-bold text-white/40">{UI[lang][sq.type] || sq.type}</span>
-                            <span className="absolute top-1 right-1 text-[8px] font-mono opacity-30">{i}</span>
+                            <span className="absolute top-1 left-1 text-[10px] uppercase font-bold text-white/40">{UI[lang][sq.type] || sq.type}</span>
+                            <span className="absolute top-1 right-1 text-[10px] font-mono opacity-30">{i}</span>
                             {icon && <div className="absolute bottom-1 right-1 opacity-40">{icon}</div>}
                             
-                            <div className="absolute inset-0 flex items-center justify-center p-1 pointer-events-none z-20 mt-2">
-                                <div className={`w-full h-full flex flex-wrap items-center justify-center gap-0.5`}>
+                            <div className="absolute inset-0 flex items-center justify-center p-1 pointer-events-none z-20 mt-3">
+                                <div className={`w-full h-full flex flex-wrap items-center justify-center gap-1`}>
                                     {playersHere.map((p) => (
-                                        <div key={p.id} className={`relative w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white shadow-lg ${p.color} flex items-center justify-center overflow-hidden bg-black transition-all duration-300 ${currentTeam.id === p.id ? 'scale-125 ring-2 ring-white/50 animate-pulse z-30' : 'z-10'}`}>
-                                            {(assets[`team${p.id}`] || assets[`team${p.id}_idle`]) ? <AssetDisplay src={assets[`team${p.id}`] || assets[`team${p.id}_idle`]} className="w-full h-full object-cover object-top" alt={`P${p.id}`} /> : <span className="text-[16px]">{p.icon}</span>}
+                                        <div key={p.id} className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-white shadow-lg ${p.color} flex items-center justify-center overflow-hidden bg-black transition-all duration-300 ${currentTeam.id === p.id ? 'scale-125 ring-4 ring-white/50 animate-pulse z-30' : 'z-10'}`}>
+                                            {(assets[`team${p.id}`] || assets[`team${p.id}_idle`]) ? <AssetDisplay src={assets[`team${p.id}`] || assets[`team${p.id}_idle`]} className="w-full h-full object-cover object-top" alt={`P${p.id}`} /> : <span className="text-[20px]">{p.icon}</span>}
                                         </div>
                                     ))}
                                 </div>
@@ -998,81 +1062,81 @@ export default function DogaclaVisualsFinal() {
 
       {/* BOTTOM ACTION SHEET */}
       {gameState !== 'END' && gameState !== 'INTRO' && gameState !== 'KURA' && !gameState.startsWith('FINALS_') && (
-          <footer className="fixed bottom-0 left-0 w-full bg-black/90 backdrop-blur-xl border-t border-white/10 rounded-t-3xl z-40 p-4 pb-6 flex flex-col shadow-[0_-10px_30px_rgba(0,0,0,0.6)]">
+          <footer className="fixed bottom-0 left-0 w-full bg-black/90 backdrop-blur-xl border-t border-white/10 rounded-t-3xl z-40 p-4 pb-8 flex flex-col shadow-[0_-10px_30px_rgba(0,0,0,0.6)]">
               <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-16 h-16 rounded-full border-2 ${currentTeam.border} overflow-hidden bg-black shrink-0 relative shadow-[0_0_15px_rgba(0,0,0,0.8)]`}>
+                  <div className={`w-20 h-20 rounded-full border-4 ${currentTeam.border} overflow-hidden bg-black shrink-0 relative shadow-[0_0_20px_rgba(0,0,0,0.8)]`}>
                       <AssetDisplay src={getCurrentCharacterAsset()} className="w-full h-full object-cover object-top" />
-                      <div className="absolute top-0 right-0 text-lg animate-bounce drop-shadow-md">{characterMood === 'happy' && '😂'}{characterMood === 'thinking' && '🤔'}{characterMood === 'scared' && '😱'}</div>
+                      <div className="absolute top-0 right-0 text-2xl animate-bounce drop-shadow-lg">{characterMood === 'happy' && '😂'}{characterMood === 'thinking' && '🤔'}{characterMood === 'scared' && '😱'}</div>
                   </div>
-                  <div className="flex flex-col flex-1">
-                      <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">{UI[lang].onStageNow}</span>
-                      <span className={`font-black text-2xl leading-none ${currentTeam.text}`}>{TEAM_INFO[currentTeam.id].name}</span>
+                  <div className="flex flex-col flex-1 pl-2">
+                      <span className="text-xs text-gray-400 uppercase font-bold tracking-wider">{UI[lang].onStageNow}</span>
+                      <span className={`font-black text-3xl leading-none ${currentTeam.text}`}>{TEAM_INFO[currentTeam.id].name}</span>
                   </div>
-                  <div className="text-right">
-                      <div className="text-[10px] text-gray-400 uppercase">Puan</div>
-                      <div className="font-mono font-bold text-3xl text-yellow-500 leading-none">{currentTeam.score}</div>
+                  <div className="text-right pr-2">
+                      <div className="text-xs text-gray-400 uppercase font-bold">Puan</div>
+                      <div className="font-mono font-black text-4xl text-yellow-500 leading-none">{currentTeam.score}</div>
                   </div>
               </div>
 
               {currentTeam.activeObstacles.length > 0 && (
-                  <div className="w-full p-2 mb-3 bg-red-500/20 border border-red-500/50 rounded-lg flex gap-2 items-center animate-pulse">
-                      <AlertTriangle className="text-red-500 shrink-0" size={16}/>
-                      <div className="text-xs text-white line-clamp-1">{getLocalizedText(currentTeam.activeObstacles[0].text, lang)}</div>
+                  <div className="w-full p-3 mb-4 bg-red-500/20 border border-red-500/50 rounded-xl flex gap-2 items-center animate-pulse">
+                      <AlertTriangle className="text-red-500 shrink-0" size={20}/>
+                      <div className="text-sm font-bold text-white line-clamp-1">{getLocalizedText(currentTeam.activeObstacles[0].text, lang)}</div>
                   </div>
               )}
 
               <div className="w-full flex-1 flex flex-col justify-end">
                   {gameState === 'ROLL' && (
-                      <button onClick={rollDice} className="w-full py-4 bg-gradient-to-r from-neon-blue to-blue-600 text-white text-2xl font-black rounded-2xl shadow-[0_0_20px_rgba(0,243,255,0.4)] flex items-center justify-center gap-2 active:scale-95 transition-all uppercase tracking-widest">
-                          <Dices size={32} /> {UI[lang].rollDice}
+                      <button onClick={rollDice} className="w-full py-5 bg-gradient-to-r from-neon-blue to-blue-600 text-white text-3xl font-black rounded-2xl shadow-[0_0_30px_rgba(0,243,255,0.4)] flex items-center justify-center gap-3 active:scale-95 transition-all uppercase tracking-widest">
+                          <Dices size={40} /> {UI[lang].rollDice}
                       </button>
                   )}
-                  {gameState === 'MOVING' && <div className="text-neon-blue font-black animate-pulse text-center text-xl tracking-[0.2em] py-4">{UI[lang].enteringStage}</div>}
+                  {gameState === 'MOVING' && <div className="text-neon-blue font-black animate-pulse text-center text-2xl tracking-[0.2em] py-5">{UI[lang].enteringStage}</div>}
                   {gameState === 'TARGET_OBSTACLE' && (
                       <div className="w-full overflow-x-auto flex gap-2 no-scrollbar">
                           {teams.filter(t => t.id !== currentTeam.id).map(t => (
-                              <button key={t.id} onClick={() => assignObstacleToRival(t.id)} className={`flex-1 min-w-[100px] p-3 rounded-xl border border-gray-700 bg-gray-800 flex flex-col items-center gap-1 active:bg-red-900/40 active:border-red-500 transition`}>
-                                  <ShieldAlert size={20} className="text-red-500"/><span className="text-sm font-bold whitespace-nowrap">{TEAM_INFO[t.id].name}</span>
+                              <button key={t.id} onClick={() => assignObstacleToRival(t.id)} className={`flex-1 min-w-[100px] p-4 rounded-xl border-2 border-gray-700 bg-gray-800 flex flex-col items-center gap-2 active:bg-red-900/40 active:border-red-500 transition`}>
+                                  <ShieldAlert size={28} className="text-red-500"/><span className="text-base font-black whitespace-nowrap">{TEAM_INFO[t.id].name}</span>
                               </button>
                           ))}
                       </div>
                   )}
                   {gameState === 'PERFORM' && (
-                      <div className="w-full flex flex-col gap-3">
+                      <div className="w-full flex flex-col gap-4">
                           <div className="flex justify-between items-end px-2">
-                              <div className="flex gap-2">
-                                  <button onClick={() => addReaction('👏')} className="w-12 h-12 rounded-full bg-green-600/20 border border-green-500/50 flex items-center justify-center text-xl active:bg-green-500/40">👏</button>
-                                  <button onClick={() => addReaction('😂')} className="w-12 h-12 rounded-full bg-yellow-600/20 border border-yellow-500/50 flex items-center justify-center text-xl active:bg-yellow-500/40">😂</button>
+                              <div className="flex gap-3">
+                                  <button onClick={() => addReaction('👏')} className="w-14 h-14 rounded-full bg-green-600/20 border-2 border-green-500/50 flex items-center justify-center text-2xl active:bg-green-500/40 shadow-lg">👏</button>
+                                  <button onClick={() => addReaction('😂')} className="w-14 h-14 rounded-full bg-yellow-600/20 border-2 border-yellow-500/50 flex items-center justify-center text-2xl active:bg-yellow-500/40 shadow-lg">😂</button>
                               </div>
                               <Timer key={timerKey} duration={performanceTimer} onFinish={finishPerformance} soundEnabled={soundEnabled} />
                           </div>
                           {currentTeam.bonuses.length > 0 && (
-                              <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                              <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
                                   {currentTeam.bonuses.map((b, i) => (
-                                      <button key={i} onClick={() => prepareBonus(i)} className="px-4 py-2 bg-purple-900 border border-purple-500/80 rounded-lg font-bold text-xs text-white whitespace-nowrap flex items-center gap-1 active:scale-95">
-                                          <Sparkles size={16}/> {getLocalizedText(b.name, lang)}
+                                      <button key={i} onClick={() => prepareBonus(i)} className="px-5 py-3 bg-purple-900 border-2 border-purple-500/80 rounded-xl font-bold text-sm text-white whitespace-nowrap flex items-center gap-2 active:scale-95 shadow-md">
+                                          <Sparkles size={18}/> {getLocalizedText(b.name, lang)}
                                       </button>
                                   ))}
                               </div>
                           )}
-                          <button onClick={finishPerformance} className="w-full py-4 bg-white/10 text-white rounded-xl font-bold uppercase tracking-widest active:bg-white/20 transition text-lg">{UI[lang].finishPerf}</button>
+                          <button onClick={finishPerformance} className="w-full py-5 bg-white/10 text-white rounded-2xl font-black uppercase tracking-widest active:bg-white/20 transition text-xl">{UI[lang].finishPerf}</button>
                       </div>
                   )}
                   {gameState === 'VOTE' && (
-                      <div className="w-full flex flex-col gap-3">
+                      <div className="w-full flex flex-col gap-4">
                           <div className="flex gap-2 text-center">
-                              <button onClick={() => setVoteData(p => ({...p, roleplay: !p.roleplay}))} className={`flex-1 py-3 rounded-lg text-[10px] font-bold border transition ${voteData.roleplay ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_10px_blue]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].role}</button>
-                              <button onClick={() => setVoteData(p => ({...p, obstacleOvercome: !p.obstacleOvercome}))} className={`flex-1 py-3 rounded-lg text-[10px] font-bold border transition ${voteData.obstacleOvercome ? 'bg-green-600 border-green-400 text-white shadow-[0_0_10px_green]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].obstacleBtn}</button>
-                              <button onClick={() => setVoteData(p => ({...p, fail: !p.fail}))} className={`flex-1 py-3 rounded-lg text-[10px] font-bold border transition ${voteData.fail ? 'bg-red-600 border-red-400 text-white shadow-[0_0_10px_red]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].fail}</button>
+                              <button onClick={() => setVoteData(p => ({...p, roleplay: !p.roleplay}))} className={`flex-1 py-4 rounded-xl text-xs font-black border-2 transition ${voteData.roleplay ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_15px_blue]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].role}</button>
+                              <button onClick={() => setVoteData(p => ({...p, obstacleOvercome: !p.obstacleOvercome}))} className={`flex-1 py-4 rounded-xl text-xs font-black border-2 transition ${voteData.obstacleOvercome ? 'bg-green-600 border-green-400 text-white shadow-[0_0_15px_green]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].obstacleBtn}</button>
+                              <button onClick={() => setVoteData(p => ({...p, fail: !p.fail}))} className={`flex-1 py-4 rounded-xl text-xs font-black border-2 transition ${voteData.fail ? 'bg-red-600 border-red-400 text-white shadow-[0_0_15px_red]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].fail}</button>
                           </div>
                           <div className="flex justify-between items-center px-4 py-2">
-                              <button onClick={() => updateJuryScore(-1)} className="w-12 h-12 rounded-full border border-red-500/50 text-red-500 flex items-center justify-center active:bg-red-500/20"><Minus size={24}/></button>
-                              <span className="text-6xl font-mono font-black text-white">{juryScore}</span>
-                              <button onClick={() => updateJuryScore(1)} className="w-12 h-12 rounded-full border border-green-500/50 text-green-500 flex items-center justify-center active:bg-green-500/20"><Plus size={24}/></button>
+                              <button onClick={() => updateJuryScore(-1)} className="w-16 h-16 rounded-full border-2 border-red-500/50 text-red-500 flex items-center justify-center active:bg-red-500/20 shadow-lg"><Minus size={32}/></button>
+                              <span className="text-7xl font-mono font-black text-white drop-shadow-xl">{juryScore}</span>
+                              <button onClick={() => updateJuryScore(1)} className="w-16 h-16 rounded-full border-2 border-green-500/50 text-green-500 flex items-center justify-center active:bg-green-500/20 shadow-lg"><Plus size={32}/></button>
                           </div>
-                          <div className="flex gap-2">
-                              <button onClick={askAICritic} className="w-14 bg-purple-900/50 border border-purple-500 text-purple-300 rounded-xl flex items-center justify-center active:bg-purple-800" disabled={criticLoading}><Bot size={24}/></button>
-                              <button onClick={() => submitManualVote()} className="flex-1 py-4 bg-white text-black font-black text-base rounded-xl shadow-[0_0_15px_rgba(255,255,255,0.4)] active:scale-95 transition uppercase tracking-widest">{UI[lang].confirmScore}</button>
+                          <div className="flex gap-3">
+                              <button onClick={askAICritic} className="w-16 bg-purple-900/50 border-2 border-purple-500 text-purple-300 rounded-2xl flex items-center justify-center active:bg-purple-800 shadow-md" disabled={criticLoading}><Bot size={32}/></button>
+                              <button onClick={() => submitManualVote()} className="flex-1 py-5 bg-white text-black font-black text-xl rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.5)] active:scale-95 transition uppercase tracking-widest">{UI[lang].confirmScore}</button>
                           </div>
                       </div>
                   )}
@@ -1082,49 +1146,49 @@ export default function DogaclaVisualsFinal() {
 
       {/* FINALS PLAY PANEL */}
       {gameState === 'FINALS_PLAY' && (
-          <footer className="fixed bottom-0 left-0 w-full bg-black/95 backdrop-blur-xl border-t-2 border-yellow-500 rounded-t-3xl z-40 p-4 pb-6 flex flex-col shadow-[0_-10px_30px_rgba(250,204,21,0.3)]">
-              <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-16 h-16 rounded-full border-2 border-yellow-400 overflow-hidden bg-black shrink-0 relative shadow-[0_0_15px_rgba(250,204,21,0.5)]`}><AssetDisplay src={assets[`team${currentTeam.id}_scared`]} className="w-full h-full object-cover object-top" /></div>
-                  <div className="flex flex-col flex-1"><span className="text-[10px] text-yellow-400 uppercase font-bold tracking-wider">FİNAL PERFORMANSI</span><span className={`font-black text-2xl leading-none text-white`}>{TEAM_INFO[currentTeam.id].name}</span></div>
+          <footer className="fixed bottom-0 left-0 w-full bg-black/95 backdrop-blur-xl border-t-4 border-yellow-500 rounded-t-3xl z-40 p-4 pb-8 flex flex-col shadow-[0_-10px_40px_rgba(250,204,21,0.4)]">
+              <div className="flex items-center gap-4 mb-4">
+                  <div className={`w-20 h-20 rounded-full border-4 border-yellow-400 overflow-hidden bg-black shrink-0 relative shadow-[0_0_20px_rgba(250,204,21,0.6)]`}><AssetDisplay src={assets[`team${currentTeam.id}_scared`]} className="w-full h-full object-cover object-top" /></div>
+                  <div className="flex flex-col flex-1"><span className="text-xs text-yellow-400 uppercase font-black tracking-widest">FİNAL PERFORMANSI</span><span className={`font-black text-3xl leading-none text-white mt-1`}>{TEAM_INFO[currentTeam.id].name}</span></div>
               </div>
-              <div className="flex justify-between items-center bg-gray-900/50 p-4 rounded-xl border border-yellow-500/30">
-                  <div className="text-sm text-yellow-500 uppercase tracking-widest">{UI[lang].time}</div>
+              <div className="flex justify-between items-center bg-gray-900/50 p-5 rounded-2xl border-2 border-yellow-500/30 shadow-inner">
+                  <div className="text-base text-yellow-500 font-bold uppercase tracking-widest">{UI[lang].time}</div>
                   <Timer key={timerKey} duration={performanceTimer} onFinish={finishPerformance} soundEnabled={soundEnabled} />
               </div>
-              <button onClick={finishPerformance} className="w-full mt-4 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-black rounded-xl font-black text-lg uppercase tracking-widest active:scale-95 shadow-[0_0_15px_rgba(250,204,21,0.4)]">{UI[lang].finishPerf}</button>
+              <button onClick={finishPerformance} className="w-full mt-5 py-5 bg-gradient-to-r from-yellow-500 to-orange-500 text-black rounded-2xl font-black text-xl uppercase tracking-widest active:scale-95 shadow-[0_0_20px_rgba(250,204,21,0.5)]">{UI[lang].finishPerf}</button>
           </footer>
       )}
 
       {/* FULL SCREEN OVERLAYS (MODALS) */}
       {gameState === 'FINALS_DIRECTOR_INPUT' && directors.length > 0 && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md px-4 pb-10">
-               <Clapperboard size={80} className="text-yellow-400 mb-4 animate-pulse" />
-               <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 mb-2 tracking-widest text-center">{UI[lang].directorPromptTitle}</h2>
-               <p className="text-base text-gray-300 mb-6 text-center max-w-sm">{UI[lang].directorPromptDesc} <span className="text-yellow-400 font-bold block mt-1">{directors.map(d => TEAM_INFO[d.id].name).join(' & ')}</span></p>
-               <textarea value={directorInput} onChange={e => setDirectorInput(e.target.value)} placeholder="Örn: Uzaylı İstilası..." className="w-full max-w-sm h-32 bg-gray-900 border-2 border-yellow-500/50 rounded-xl p-4 text-white text-lg focus:outline-none focus:border-yellow-400 mb-6 resize-none" />
-               <button onClick={generateDraftMission} disabled={!directorInput.trim()} className="w-full max-w-sm py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-black text-xl rounded-full active:scale-95 disabled:opacity-50 transition">{UI[lang].generateDraft}</button>
+               <Clapperboard size={100} className="text-yellow-400 mb-6 animate-pulse" />
+               <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 mb-3 tracking-widest text-center">{UI[lang].directorPromptTitle}</h2>
+               <p className="text-lg text-gray-300 mb-8 text-center max-w-sm">{UI[lang].directorPromptDesc} <span className="text-yellow-400 font-black block mt-2 text-xl">{directors.map(d => TEAM_INFO[d.id].name).join(' & ')}</span></p>
+               <textarea value={directorInput} onChange={e => setDirectorInput(e.target.value)} placeholder="Örn: Uzaylı İstilası..." className="w-full max-w-sm h-36 bg-gray-900 border-2 border-yellow-500/50 rounded-2xl p-5 text-white text-xl focus:outline-none focus:border-yellow-400 mb-8 resize-none shadow-inner" />
+               <button onClick={generateDraftMission} disabled={!directorInput.trim()} className="w-full max-w-sm py-5 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-black text-2xl rounded-full active:scale-95 disabled:opacity-50 transition shadow-[0_0_20px_rgba(250,204,21,0.5)]">{UI[lang].generateDraft}</button>
           </div>
       )}
 
       {gameState === 'FINALS_DRAFT_REVIEW' && draftMission && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md px-4">
-               <Lightbulb size={64} className="text-yellow-400 mb-4 animate-bounce" />
-               <h2 className="text-3xl font-black text-yellow-400 mb-6 tracking-widest text-center">{UI[lang].aiDrafted}</h2>
-               <div className="bg-gray-900 border border-yellow-400/50 p-6 rounded-xl w-full max-w-sm mb-6 max-h-[40vh] overflow-y-auto"><p className="text-white text-base leading-relaxed italic text-center">"{getLocalizedText(draftMission, lang)}"</p></div>
-               <div className="flex gap-3 w-full max-w-sm"><button onClick={generateDraftMission} className="p-4 bg-gray-800 text-white rounded-xl active:bg-gray-700 flex items-center justify-center"><RefreshCw size={24}/></button><button onClick={approveAndGenerateOptions} className="flex-1 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-black text-base rounded-xl active:scale-95">{UI[lang].createAsIs}</button></div>
+               <Lightbulb size={80} className="text-yellow-400 mb-6 animate-bounce" />
+               <h2 className="text-4xl font-black text-yellow-400 mb-8 tracking-widest text-center">{UI[lang].aiDrafted}</h2>
+               <div className="bg-gray-900 border-2 border-yellow-400/50 p-6 rounded-2xl w-full max-w-sm mb-8 max-h-[40vh] overflow-y-auto shadow-inner"><p className="text-white text-lg leading-relaxed italic text-center">"{getLocalizedText(draftMission, lang)}"</p></div>
+               <div className="flex gap-4 w-full max-w-sm"><button onClick={generateDraftMission} className="p-5 bg-gray-800 text-white rounded-2xl active:bg-gray-700 flex items-center justify-center border border-gray-600"><RefreshCw size={28}/></button><button onClick={approveAndGenerateOptions} className="flex-1 py-5 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-black text-xl rounded-2xl active:scale-95 shadow-[0_0_20px_rgba(250,204,21,0.5)]">{UI[lang].createAsIs}</button></div>
           </div>
       )}
 
       {gameState === 'FINALS_GENERATING' && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md"><Bot size={80} className="text-neon-blue mb-4 animate-bounce" /><h2 className="text-3xl font-black text-neon-blue tracking-widest animate-pulse">{draftMission ? UI[lang].generatingOptions : UI[lang].generatingDraft}</h2></div>
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md"><Bot size={100} className="text-neon-blue mb-6 animate-bounce drop-shadow-[0_0_20px_rgba(0,243,255,0.8)]" /><h2 className="text-4xl font-black text-neon-blue tracking-widest animate-pulse text-center px-4">{draftMission ? UI[lang].generatingOptions : UI[lang].generatingDraft}</h2></div>
       )}
 
       {gameState === 'FINALS_SELECT_CARD' && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-start bg-black/95 backdrop-blur-md px-4 py-8 overflow-y-auto no-scrollbar">
-               <h2 className="text-3xl font-black text-neon-blue mb-6 tracking-widest text-center sticky top-0 bg-black/95 py-4 w-full z-10">{UI[lang].selectAICard}</h2>
-               <div className="flex flex-col gap-4 w-full max-w-sm pb-8">
+               <h2 className="text-4xl font-black text-neon-blue mb-8 tracking-widest text-center sticky top-0 bg-black/95 py-4 w-full z-10 drop-shadow-md">{UI[lang].selectAICard}</h2>
+               <div className="flex flex-col gap-5 w-full max-w-sm pb-10">
                    {aiCards.map((c, idx) => (
-                       <div key={idx} onClick={() => selectFinalCard(c)} className="bg-gray-900 border border-yellow-500/50 rounded-2xl p-6 active:scale-95 transition-all shadow-[0_0_10px_rgba(250,204,21,0.2)] flex flex-col items-center text-center"><h3 className="text-xl font-bold text-yellow-400 mb-2">{getLocalizedText(c.title, lang)}</h3><p className="text-white text-base mb-3 flex-1">"{getLocalizedText(c.mission, lang)}"</p><p className="text-xs text-gray-400 italic border-t border-gray-700 pt-2 w-full">{getLocalizedText(c.desc, lang)}</p></div>
+                       <div key={idx} onClick={() => selectFinalCard(c)} className="bg-gray-900 border-2 border-yellow-500/50 rounded-3xl p-6 active:scale-95 transition-all shadow-[0_0_15px_rgba(250,204,21,0.3)] flex flex-col items-center text-center"><h3 className="text-2xl font-black text-yellow-400 mb-3">{getLocalizedText(c.title, lang)}</h3><p className="text-white text-lg mb-4 flex-1">"{getLocalizedText(c.mission, lang)}"</p><p className="text-sm text-gray-400 italic border-t border-gray-700 pt-3 w-full">{getLocalizedText(c.desc, lang)}</p></div>
                    ))}
                </div>
           </div>
@@ -1132,26 +1196,26 @@ export default function DogaclaVisualsFinal() {
 
       {gameState === 'FINALS_TRANSITION' && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md px-4 text-center">
-               <h2 className="text-4xl font-black text-white mb-8">{UI[lang].transitionWait}</h2>
-               <div className="w-48 h-48 rounded-full border-4 border-yellow-400 mb-10 overflow-hidden bg-black shadow-[0_0_30px_yellow]"><AssetDisplay src={assets[`team${finalists[1].id}_idle`]} className="w-full h-full object-cover object-top" /></div>
-               <button onClick={startNextFinalist} className="w-full max-w-sm py-5 bg-white text-black font-black text-xl rounded-full active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.4)]">{UI[lang].startNext} ({TEAM_INFO[finalists[1].id].name})</button>
+               <h2 className="text-5xl font-black text-white mb-10 tracking-widest">{UI[lang].transitionWait}</h2>
+               <div className="w-56 h-56 rounded-full border-4 border-yellow-400 mb-12 overflow-hidden bg-black shadow-[0_0_40px_rgba(250,204,21,0.6)]"><AssetDisplay src={assets[`team${finalists[1].id}_idle`]} className="w-full h-full object-cover object-top" /></div>
+               <button onClick={startNextFinalist} className="w-full max-w-sm py-6 bg-white text-black font-black text-2xl rounded-full active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.5)]">{UI[lang].startNext} ({TEAM_INFO[finalists[1].id].name})</button>
           </div>
       )}
 
       {gameState === 'FINALS_CASTING' && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md px-4 py-8 overflow-y-auto no-scrollbar">
-               <Star size={80} className="text-yellow-400 mb-4 animate-spin-slow" />
-               <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 mb-2 tracking-widest text-center">{UI[lang].auditionComplete}</h2>
-               <p className="text-base text-gray-300 mb-8">{UI[lang].whoGetsRole}</p>
+               <Star size={100} className="text-yellow-400 mb-6 animate-spin-slow drop-shadow-[0_0_20px_rgba(250,204,21,0.8)]" />
+               <h2 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 mb-3 tracking-widest text-center leading-none">{UI[lang].auditionComplete}</h2>
+               <p className="text-lg text-gray-300 mb-10">{UI[lang].whoGetsRole}</p>
                <div className="flex flex-col gap-6 w-full max-w-sm">
-                    <button onClick={() => castWinner(finalists[0])} className="w-full p-4 rounded-3xl border-2 border-gray-600 active:border-yellow-400 bg-gray-900 flex items-center gap-4 transition-all">
-                        <div className="w-20 h-20 rounded-full overflow-hidden shrink-0 bg-black"><AssetDisplay src={assets[`team${finalists[0].id}_happy`]} className="w-full h-full object-cover object-top" /></div>
-                        <div className="flex-1 text-left"><h3 className="text-2xl font-bold text-white">{TEAM_INFO[finalists[0].id].name}</h3><span className="text-sm text-yellow-500 font-bold">{UI[lang].castWinner}</span></div>
+                    <button onClick={() => castWinner(finalists[0])} className="w-full p-4 rounded-3xl border-2 border-gray-600 active:border-yellow-400 bg-gray-900 flex items-center gap-4 transition-all shadow-lg">
+                        <div className="w-24 h-24 rounded-full overflow-hidden shrink-0 bg-black border-2 border-white/20"><AssetDisplay src={assets[`team${finalists[0].id}_happy`]} className="w-full h-full object-cover object-top" /></div>
+                        <div className="flex-1 text-left"><h3 className="text-3xl font-black text-white">{TEAM_INFO[finalists[0].id].name}</h3><span className="text-base text-yellow-500 font-bold tracking-widest">{UI[lang].castWinner}</span></div>
                     </button>
-                    <div className="text-3xl font-black text-red-500 italic text-center">VS</div>
-                    <button onClick={() => castWinner(finalists[1])} className="w-full p-4 rounded-3xl border-2 border-gray-600 active:border-yellow-400 bg-gray-900 flex items-center gap-4 transition-all">
-                        <div className="w-20 h-20 rounded-full overflow-hidden shrink-0 bg-black"><AssetDisplay src={assets[`team${finalists[1].id}_happy`]} className="w-full h-full object-cover object-top" /></div>
-                        <div className="flex-1 text-left"><h3 className="text-2xl font-bold text-white">{TEAM_INFO[finalists[1].id].name}</h3><span className="text-sm text-yellow-500 font-bold">{UI[lang].castWinner}</span></div>
+                    <div className="text-4xl font-black text-red-500 italic text-center drop-shadow-md">VS</div>
+                    <button onClick={() => castWinner(finalists[1])} className="w-full p-4 rounded-3xl border-2 border-gray-600 active:border-yellow-400 bg-gray-900 flex items-center gap-4 transition-all shadow-lg">
+                        <div className="w-24 h-24 rounded-full overflow-hidden shrink-0 bg-black border-2 border-white/20"><AssetDisplay src={assets[`team${finalists[1].id}_happy`]} className="w-full h-full object-cover object-top" /></div>
+                        <div className="flex-1 text-left"><h3 className="text-3xl font-black text-white">{TEAM_INFO[finalists[1].id].name}</h3><span className="text-base text-yellow-500 font-bold tracking-widest">{UI[lang].castWinner}</span></div>
                     </button>
                </div>
           </div>
@@ -1160,14 +1224,14 @@ export default function DogaclaVisualsFinal() {
       {gameState === 'END' && winner && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b from-yellow-900 to-black px-4">
                <ConfettiExplosion />
-               <Trophy size={100} className="text-yellow-400 mb-6 drop-shadow-[0_0_20px_rgba(250,204,21,1)] animate-bounce" />
-               <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 mb-6 tracking-tighter text-center">{UI[lang].champion}</h1>
-               <div className="relative mb-8">
-                   <div className="w-56 h-56 rounded-full border-4 border-yellow-400 shadow-[0_0_30px_yellow] overflow-hidden bg-black"><AssetDisplay src={assets[`team${winner.id}_happy`]} className="w-full h-full object-cover object-top" /></div>
-                   <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black px-8 py-2 rounded-full font-black text-2xl whitespace-nowrap shadow-lg">{TEAM_INFO[winner.id].name}</div>
+               <Trophy size={120} className="text-yellow-400 mb-8 drop-shadow-[0_0_30px_rgba(250,204,21,1)] animate-bounce" />
+               <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 mb-8 tracking-tighter text-center leading-none">{UI[lang].champion}</h1>
+               <div className="relative mb-10">
+                   <div className="w-64 h-64 rounded-full border-4 border-yellow-400 shadow-[0_0_40px_yellow] overflow-hidden bg-black"><AssetDisplay src={assets[`team${winner.id}_happy`]} className="w-full h-full object-cover object-top" /></div>
+                   <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black px-10 py-3 rounded-full font-black text-3xl whitespace-nowrap shadow-xl">{TEAM_INFO[winner.id].name}</div>
                </div>
-               <p className="text-2xl text-yellow-200 mb-12 font-bold">{UI[lang].finalScore} <span className="text-white text-4xl">{winner.score}</span></p>
-               <button onClick={resetGame} className="px-8 py-5 w-full max-w-sm bg-white text-black font-black text-lg uppercase tracking-widest rounded-2xl active:scale-95 transition flex items-center justify-center gap-2"><RefreshCw size={24} /> {UI[lang].playAgain}</button>
+               <p className="text-3xl text-yellow-200 mb-14 font-bold">{UI[lang].finalScore} <span className="text-white text-5xl ml-2">{winner.score}</span></p>
+               <button onClick={resetGame} className="px-10 py-6 w-full max-w-sm bg-white text-black font-black text-xl uppercase tracking-widest rounded-3xl active:scale-95 transition flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(255,255,255,0.5)]"><RefreshCw size={28} /> {UI[lang].playAgain}</button>
           </div>
       )}
 
@@ -1179,10 +1243,10 @@ export default function DogaclaVisualsFinal() {
       {/* KURALLAR MODALI */}
       {showRules && (
           <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/90 backdrop-blur-md" onClick={() => setShowRules(false)}>
-              <div className="bg-gray-900 border-t-2 border-[#D4AF37] rounded-t-3xl w-full p-6 pb-safe shadow-[0_-10px_40px_rgba(212,175,55,0.2)] max-h-[85vh] flex flex-col" onClick={e=>e.stopPropagation()}>
-                  <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-black text-[#D4AF37] font-serif tracking-widest">{UI[lang].rulesTitle}</h2><button onClick={() => setShowRules(false)} className="text-gray-400 p-2 bg-black/50 rounded-full"><X size={20}/></button></div>
-                  <div className="space-y-3 overflow-y-auto no-scrollbar flex-1 pb-4">
-                      {UI[lang].rulesContent.map((rule, idx) => ( <div key={idx} className="bg-black/50 border border-white/10 p-4 rounded-xl"><h3 className="text-base font-bold text-white mb-1">{rule.title}</h3><p className="text-gray-300 text-xs leading-relaxed">{rule.text}</p></div> ))}
+              <div className="bg-gray-900 border-t-4 border-[#D4AF37] rounded-t-3xl w-full p-6 pb-safe shadow-[0_-10px_50px_rgba(212,175,55,0.3)] max-h-[85vh] flex flex-col" onClick={e=>e.stopPropagation()}>
+                  <div className="flex justify-between items-center mb-6"><h2 className="text-3xl font-black text-[#D4AF37] font-serif tracking-widest">{UI[lang].rulesTitle}</h2><button onClick={() => setShowRules(false)} className="text-gray-400 p-2 bg-black/50 rounded-full"><X size={24}/></button></div>
+                  <div className="space-y-4 overflow-y-auto no-scrollbar flex-1 pb-4">
+                      {UI[lang].rulesContent.map((rule, idx) => ( <div key={idx} className="bg-black/50 border border-white/10 p-5 rounded-2xl"><h3 className="text-lg font-bold text-white mb-2">{rule.title}</h3><p className="text-gray-300 text-sm leading-relaxed">{rule.text}</p></div> ))}
                   </div>
               </div>
           </div>
