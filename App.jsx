@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Dices, Trophy, Star, ShieldAlert, Sparkles, Skull, Theater, 
   AlertTriangle, X, Volume2, VolumeX, RefreshCw, History, Bot, Zap, Flame, Crown, 
-  Ghost, Smartphone, Bird, Thermometer, Apple, HelpCircle, Music4, List, Plus, Minus, Clapperboard, Lightbulb, Drama
+  Ghost, Smartphone, Bird, Thermometer, Apple, HelpCircle, Music4, List, Plus, Minus, Clapperboard, Lightbulb, Drama, User
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS FOR MULTIPLAYER ---
@@ -14,7 +14,6 @@ import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from 'fireba
 let app, auth, db, appId;
 try {
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-        // NOT: Kendi özel APK'nı alırken buraya kendi Firebase yapılandırmanı girebilirsin.
         apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: ""
     };
     app = initializeApp(firebaseConfig);
@@ -131,7 +130,6 @@ const AssetDisplay = ({ src, className, style, alt }) => {
     
     if (isVideo) {
         const hasBgClass = className.includes('bg-');
-        // Mobile video optimizations added
         return <video key={src} src={src} className={`${className} ${hasBgClass ? '' : 'bg-black'}`} style={{...style}} autoPlay loop muted={true} playsInline={true} webkit-playsinline="true" disablePictureInPicture={true} preload="auto" />;
     }
     return <img src={src} className={`${className} object-cover`} style={{...style}} alt={alt} />;
@@ -337,14 +335,14 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
                 <div className="absolute inset-0 z-10 flex flex-col justify-start p-0">
                     <div className={`relative w-full ${isBonus ? 'h-[50%]' : 'h-[40%]'} shrink-0 z-0 overflow-hidden flex items-center justify-center bg-black`}>
                          
-                         {/* ARKA PLAN BLUR (Siyah Boşlukları Dolduran Sinematik Işık Efekti) */}
+                         {/* ARKA PLAN BLUR */}
                          {isBonus && assets[`bonus_${card.id}`] ? (
                              <AssetDisplay src={assets[`bonus_${card.id}`]} className="absolute inset-0 w-full h-full object-cover scale-[1.5] blur-2xl opacity-40 bg-transparent" alt="Blur Bg" />
                          ) : (
                              characterVideoSrc && <AssetDisplay src={characterVideoSrc} className="absolute inset-0 w-full h-full object-cover scale-[1.5] blur-2xl opacity-40 bg-transparent" alt="Blur Bg" />
                          )}
 
-                         {/* ANA VİDEO (Ön Planda Net Olarak Oynayan ve Siyahlıkları Gizlenen Video) */}
+                         {/* ANA VİDEO */}
                          {isBonus && assets[`bonus_${card.id}`] ? (
                              <AssetDisplay src={assets[`bonus_${card.id}`]} className={`relative z-10 w-full h-full object-contain object-center bg-transparent mix-blend-screen transition-transform duration-700 ${isPlaying ? 'scale-110 drop-shadow-[0_0_20px_rgba(255,200,0,1)]' : 'scale-100'}`} alt="Bonus" />
                          ) : (
@@ -387,6 +385,7 @@ export default function DogaclaVisualsFinal() {
   const [user, setUser] = useState(null);
   const [roomId, setRoomId] = useState('');
   const [joinCodeInput, setJoinCodeInput] = useState('');
+  const [isSinglePlayer, setIsSinglePlayer] = useState(false); // Yeni Tek Oyunculu Flag'i
   
   // -- Synced Game States --
   const [gameState, setGameState] = useState('LOBBY'); // LOBBY, INTRO, ROLL, KURA, MOVING, CARD, TARGET_OBSTACLE, PERFORM, VOTE, FINALS_*, END
@@ -440,6 +439,7 @@ export default function DogaclaVisualsFinal() {
 
   // --- MULTIPLAYER SYNC SENDER ---
   const syncGame = async (updates) => {
+      // Önce yerel stateleri her zaman güncelle
       if ('gameState' in updates) setGameState(updates.gameState);
       if ('teams' in updates) setTeams(updates.teams);
       if ('currentTurn' in updates) setCurrentTurn(updates.currentTurn);
@@ -463,7 +463,8 @@ export default function DogaclaVisualsFinal() {
       if ('winner' in updates) setWinner(updates.winner);
       if ('logs' in updates) setLogs(updates.logs);
 
-      if (roomId && db) {
+      // Tek oyunculu değilse ve firebase'e bağlıysa veritabanına yaz
+      if (!isSinglePlayer && roomId && db) {
           try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId), updates); } 
           catch (e) { console.error("Sync error:", e); }
       }
@@ -471,7 +472,7 @@ export default function DogaclaVisualsFinal() {
 
   // --- MULTIPLAYER LISTENER ---
   useEffect(() => {
-      if (!user || !roomId || !db) return;
+      if (!user || !roomId || !db || isSinglePlayer) return;
       const unsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId), (snap) => {
           if (snap.exists()) {
               const data = snap.data();
@@ -506,7 +507,7 @@ export default function DogaclaVisualsFinal() {
           }
       }, (err) => console.error(err));
       return () => unsub();
-  }, [user, roomId]);
+  }, [user, roomId, isSinglePlayer]);
 
   useEffect(() => {
       const unlockAudio = () => { playSynthSound('click', false); document.removeEventListener('touchstart', unlockAudio); document.removeEventListener('click', unlockAudio); };
@@ -526,27 +527,53 @@ export default function DogaclaVisualsFinal() {
   }, [soundEnabled, assets.music_bg]);
 
   const addLog = (msg) => { const newLogs = [`• ${msg}`, ...logs].slice(0, 15); syncGame({ logs: newLogs }); };
-  const triggerRemoteEvent = (eventData) => syncGame({ eventTrigger: eventData });
+  
+  const triggerRemoteEvent = (eventData) => {
+      if (isSinglePlayer) {
+          // Tek oyunculu modda Firebase'i beklemeden doğrudan yerel çalıştır.
+          if (eventData.type === 'reaction') { setReactions(p => [...p, { id: Date.now()+Math.random(), emoji: eventData.emoji, x: Math.random()*80+10 }]); playSynthSound('click', soundEnabled); }
+          else if (eventData.type === 'confetti') { setConfetti(true); setTimeout(() => setConfetti(false), 2000); }
+          else if (eventData.type === 'audience') { setRandomEvent(eventData.data); setTimeout(() => setRandomEvent(null), 2500); }
+          return;
+      }
+      syncGame({ eventTrigger: eventData });
+  };
 
   const addReaction = (emoji) => { triggerRemoteEvent({ type: 'reaction', emoji }); setHypeMeter(Math.min(100, hypeMeter + 2)); syncGame({ hypeMeter: Math.min(100, hypeMeter + 2) }); };
   const removeReaction = useCallback((id) => setReactions(prev => prev.filter(r => r.id !== id)), []);
+
+  const startSinglePlayer = () => {
+      playSynthSound('click', soundEnabled);
+      setIsSinglePlayer(true);
+      setRoomId('');
+      setGameState('INTRO');
+      setTeams(INITIAL_TEAMS);
+      setCurrentTurn(0);
+      setHypeMeter(0);
+      setLogs(["DOĞAÇLA Tek Oyunculu Olarak Başladı!"]);
+  };
 
   const createRoom = async () => {
       if (!user || !db) return;
       const code = Math.random().toString(36).substring(2, 6).toUpperCase();
       const initialData = { gameState: 'INTRO', teams: INITIAL_TEAMS, currentTurn: 0, hypeMeter: 0, logs: ["Doğaçla'ya Hoş Geldiniz!"], hostUid: user.uid };
       await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code), initialData);
+      setIsSinglePlayer(false);
       setRoomId(code);
   };
   
   const joinRoom = async (code) => {
       if (!user || !db || code.length !== 4) return;
       const docSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code));
-      if (docSnap.exists()) setRoomId(code); 
+      if (docSnap.exists()) {
+          setIsSinglePlayer(false);
+          setRoomId(code); 
+      }
   };
 
   const resetGame = () => { 
       playSynthSound('click', soundEnabled);
+      setIsSinglePlayer(false);
       syncGame({ gameState: 'LOBBY', teams: INITIAL_TEAMS, currentTurn: 0, diceValue: null, activeCard: null, cardType: null, playingBonus: null, performanceTimer: 0, juryScore: 0, hypeMeter: 0, characterMood: 'idle', isRollingDice: false, showDiceModal: false, kuraRolling: false, finalists: [], directors: [], draftMission: null, customFinalCard: null, aiCards: [], finalTurnIndex: 0, winner: null, logs: ["Doğaçla Mobile Act I!"] });
       setRoomId('');
   };
@@ -746,20 +773,28 @@ export default function DogaclaVisualsFinal() {
                           <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-600 mb-2 tracking-widest leading-none drop-shadow-2xl">DOĞAÇLA</h1>
                       </>
                   )}
-                  <p className="text-gray-300 font-bold tracking-[0.3em] mb-12 uppercase text-xs drop-shadow-md">Multiplayer Edition</p>
+                  <p className="text-gray-300 font-bold tracking-[0.3em] mb-12 uppercase text-xs drop-shadow-md">Mobile Edition</p>
                   
-                  {!user ? ( <div className="animate-pulse text-neon-blue font-bold tracking-widest text-sm">Sunucuya Bağlanıyor...</div> ) : (
-                      <div className="flex flex-col gap-6 w-full max-w-sm">
-                          <button onClick={createRoom} className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-black font-black text-xl rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 transition">ODA KUR</button>
-                          <div className="relative flex items-center py-2">
-                              <div className="flex-grow border-t border-gray-800"></div><span className="flex-shrink-0 mx-4 text-gray-400 font-black text-xs tracking-widest">VEYA</span><div className="flex-grow border-t border-gray-800"></div>
-                          </div>
-                          <div className="flex gap-2">
-                              <input value={joinCodeInput} onChange={e => setJoinCodeInput(e.target.value.toUpperCase())} placeholder="ODA KODU" maxLength={4} className="flex-1 bg-black/60 backdrop-blur-md text-white text-center font-black text-2xl rounded-2xl border-2 border-gray-700 focus:border-neon-blue outline-none uppercase placeholder:text-gray-500 tracking-widest transition shadow-inner" />
-                              <button onClick={() => joinRoom(joinCodeInput)} disabled={joinCodeInput.length !== 4} className="px-6 py-4 bg-blue-600 disabled:bg-gray-800 text-white font-black text-lg rounded-2xl active:scale-95 transition disabled:active:scale-100 shadow-[0_0_20px_rgba(37,99,235,0.3)] disabled:shadow-none">KATIL</button>
-                          </div>
+                  <div className="flex flex-col gap-4 w-full max-w-sm">
+                      {/* TEK OYUNCULU BUTONU */}
+                      <button onClick={startSinglePlayer} className="w-full py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-black text-xl rounded-2xl shadow-[0_0_20px_rgba(168,85,247,0.3)] active:scale-95 transition">TEK OYUNCULU OYNA</button>
+                      
+                      <div className="relative flex items-center py-2">
+                          <div className="flex-grow border-t border-gray-800"></div><span className="flex-shrink-0 mx-4 text-gray-400 font-black text-xs tracking-widest">ÇOK OYUNCULU</span><div className="flex-grow border-t border-gray-800"></div>
                       </div>
-                  )}
+
+                      {!user ? ( 
+                          <div className="animate-pulse text-neon-blue font-bold tracking-widest text-sm py-4">Sunucuya Bağlanıyor...</div> 
+                      ) : (
+                          <>
+                              <button onClick={createRoom} className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-black font-black text-xl rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 transition">ODA KUR</button>
+                              <div className="flex gap-2">
+                                  <input value={joinCodeInput} onChange={e => setJoinCodeInput(e.target.value.toUpperCase())} placeholder="ODA KODU" maxLength={4} className="flex-1 bg-black/60 backdrop-blur-md text-white text-center font-black text-2xl rounded-2xl border-2 border-gray-700 focus:border-neon-blue outline-none uppercase placeholder:text-gray-500 tracking-widest transition shadow-inner" />
+                                  <button onClick={() => joinRoom(joinCodeInput)} disabled={joinCodeInput.length !== 4} className="px-6 py-4 bg-blue-600 disabled:bg-gray-800 text-white font-black text-lg rounded-2xl active:scale-95 transition disabled:active:scale-100 shadow-[0_0_20px_rgba(37,99,235,0.3)] disabled:shadow-none">KATIL</button>
+                              </div>
+                          </>
+                      )}
+                  </div>
               </div>
           </div>
       );
@@ -817,7 +852,8 @@ export default function DogaclaVisualsFinal() {
                       <span className="font-black text-base tracking-[0.1em] text-white">DOĞAÇLA</span>
                   </>
               )}
-              {roomId && <span className="ml-1 px-1.5 py-0.5 bg-gray-800 text-yellow-400 text-[10px] font-mono font-bold rounded border border-yellow-500/30 tracking-widest">ODA:{roomId}</span>}
+              {roomId && !isSinglePlayer && <span className="ml-1 px-1.5 py-0.5 bg-gray-800 text-yellow-400 text-[10px] font-mono font-bold rounded border border-yellow-500/30 tracking-widest">ODA:{roomId}</span>}
+              {isSinglePlayer && <span className="ml-1 px-1.5 py-0.5 bg-gray-800 text-purple-400 text-[10px] font-mono font-bold rounded border border-purple-500/30 tracking-widest flex items-center gap-1"><User size={10}/> TEKLİ</span>}
           </div>
           
           <div className="flex-1 max-w-[80px] mx-2 relative">
