@@ -106,7 +106,25 @@ jobs:
         
         cp ../App.jsx src/App.jsx
 
-    - name: 2. Videoları ve Görselleri İndirip Uygulamaya Göm
+    - name: 2. Firebase Veritabanını Uygulamaya Entegre Et
+      run: |
+        cd dogacla-mobil
+        cat << 'EOF' > setupFirebase.mjs
+        import fs from 'fs';
+        let code = fs.readFileSync('./src/App.jsx', 'utf8');
+        code = code.replace(/apiKey:\s*""/, 'apiKey: "AIzaSyBlQCUn6Uv1HXk1lrPQx92-vZtEA_KRehQ"');
+        code = code.replace(/authDomain:\s*""/, 'authDomain: "dogacla-ca144.firebaseapp.com"');
+        code = code.replace(/projectId:\s*""/, 'projectId: "dogacla-ca144"');
+        code = code.replace(/storageBucket:\s*""/, 'storageBucket: "dogacla-ca144.firebasestorage.app"');
+        code = code.replace(/messagingSenderId:\s*""/, 'messagingSenderId: "29430014172"');
+        code = code.replace(/appId:\s*""/, 'appId: "1:29430014172:web:15b8a5ef2f3df11e5b1419"');
+        fs.writeFileSync('./src/App.jsx', code);
+        console.log('Firebase veritabanı başarıyla entegre edildi!');
+        EOF
+        node setupFirebase.mjs
+        rm setupFirebase.mjs
+
+    - name: 3. Videoları ve Görselleri İndirip Uygulamaya Göm
       run: |
         cd dogacla-mobil
         cat << 'EOF' > downloadAssets.mjs
@@ -152,7 +170,7 @@ jobs:
         node downloadAssets.mjs
         rm downloadAssets.mjs
 
-    - name: 3. Android Çıktısını Hazırla (APK)
+    - name: 4. Android Çıktısını Hazırla (APK)
       run: |
         cd dogacla-mobil
         npx cap init "Dogacla" "com.oyun.dogacla" --web-dir dist
