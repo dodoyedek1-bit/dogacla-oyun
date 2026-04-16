@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Dices, Trophy, Star, ShieldAlert, Sparkles, Skull, Theater, 
   AlertTriangle, X, Volume2, VolumeX, RefreshCw, History, Bot, Zap, Flame, Crown, 
-  Ghost, Smartphone, Bird, Thermometer, Apple, HelpCircle, Music4, List, Plus, Minus, Clapperboard, Lightbulb, Drama, User, Users, Home, Share2, Copy
+  Ghost, Smartphone, Bird, Thermometer, Apple, HelpCircle, Music4, List, Plus, Minus, Clapperboard, Lightbulb, Drama, User, Users, Home, Share2, Copy, SkipForward
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS FOR MULTIPLAYER ---
@@ -222,24 +222,50 @@ const INITIAL_TEAMS = [
 
 const CARDS = {
   EASY: [ 
-    { title: { tr: "BOZUK ASANSÖR" }, mission: { tr: "Dar bir alanda sıkıştın. Bedeninle boğulma ve paniği göster." }, quotes: { 0: {tr: "Efendim, bu teneke kutuda piştik!"}, 1: {tr: "Sıkıştık! Kaburgalarım ezildi!"}, 2: {tr: "Ah demir kafes! İki ruhu hapseden..."}, 3: {tr: "Bu mekanik kutu modern insanın trajedisidir."} } }, 
-    { title: { tr: "KUTUP SOĞUĞU" }, mission: { tr: "Donuyorsun. Dişlerin birbirine çarpıyor. Isınmaya çalış." }, quotes: { 0: {tr: "Aman efendim, donuyorum! Burnum buza döndü!"}, 1: {tr: "Donduk! Yakın sobayı!"}, 2: {tr: "Ah, bu soğuk rüzgar kemiklerimi delip geçiyor."}, 3: {tr: "Bu soğuk, ruhun ateşini bile söndürüyor."} } } 
+    { title: { tr: "BOZUK ASANSÖR" }, mission: { tr: "Dar bir alanda sıkıştın. Bedeninle paniği göster." } },
+    { title: { tr: "KUTUP SOĞUĞU" }, mission: { tr: "Donuyorsun. Dişlerin birbirine çarpıyor. Isınmaya çalış." } },
+    { title: { tr: "ARAMAK" }, mission: { tr: "Gözlüğünü/telefonunu kaybettin, her yeri arıyorsun." } },
+    { title: { tr: "ACI BİBER" }, mission: { tr: "Yanlışlıkla dünyanın en acı biberini yedin. Tepki ver." } },
+    { title: { tr: "KÖPEK GEZDİRME" }, mission: { tr: "Görünmez ve çok yaramaz bir köpeği gezdirmeye çalış." } },
+    { title: { tr: "SİNEK SALDIRISI" }, mission: { tr: "Kulağının dibinde uçan bir sineği yakalamaya çalış." } },
+    { title: { tr: "AĞIR KUTU" }, mission: { tr: "İçi taş dolu görünmez bir kutuyu yerden kaldırmaya çalış." } },
+    { title: { tr: "SÜMÜKLÜ BÖCEK" }, mission: { tr: "Elinde yapışkan ve iğrenç bir sümüksü madde var." } },
+    { title: { tr: "TUVALET SIRASI" }, mission: { tr: "Acil tuvaletin geldi ama önünde çok uzun bir sıra var." } },
+    { title: { tr: "AYNA YANSIMASI" }, mission: { tr: "Aynanın karşısındasın, kendi yansımanla konuş/tartış." } }
   ],
   MEDIUM: [ 
-    { title: { tr: "UNUTKANLIK" }, mission: { tr: "Tam o an ne söyleyeceğini unuttun." }, quotes: { 0: {tr: "Eee... Efendim, dilimin ucundaydı!"}, 1: {tr: "Kelimeleri aklımdan çaldınız!"}, 2: {tr: "Ah, hafızam bana ihanet ediyor! Kelimeler kayıp."}, 3: {tr: "Sessizlik... En büyük replik söylenmeyendir."} } }, 
-    { title: { tr: "GÖRÜNMEZ ELMA" }, mission: { tr: "Elinde bir elma varmış gibi ye." }, quotes: { 0: {tr: "Aman efendim, bu elma değil elmas! Kırt!"}, 1: {tr: "Elimde hiçbir şey yok ama yiyorum!"}, 2: {tr: "Var olmayan bir meyvenin tadını hissediyorum."}, 3: {tr: "Görünmez bir obje yaratmak... İşte sanat budur."} } } 
+    { title: { tr: "UNUTKANLIK" }, mission: { tr: "Tam o an ne söyleyeceğini unuttun. Kıvırmaya çalış." } },
+    { title: { tr: "GÖRÜNMEZ ELMA" }, mission: { tr: "Elinde bir elma varmış gibi ye ve çekirdeğini at." } },
+    { title: { tr: "SARHOŞ ASTRONOT" }, mission: { tr: "Yerçekimsiz ortamda sarhoşmuş gibi hareket et." } },
+    { title: { tr: "HIÇKIRIK KRİZİ" }, mission: { tr: "Ciddi bir haber sunarken sürekli hıçkırık tutuyor." } },
+    { title: { tr: "YAVAŞ ÇEKİM" }, mission: { tr: "Biriyle kavga ediyormuşsun gibi yavaş çekimde hareket et." } },
+    { title: { tr: "TERS RÜZGAR" }, mission: { tr: "Çok şiddetli bir rüzgara karşı yürümeye çalış." } },
+    { title: { tr: "BOZUK OTOMAT" }, mission: { tr: "Kola otomatına paran sıkıştı, kolunu içine sokup çıkarmaya çalış." } },
+    { title: { tr: "TİKTOK DANSI" }, mission: { tr: "Ekrana bakarak kendi uydurduğun saçma bir dansı yap." } },
+    { title: { tr: "GÖRÜNMEZ ORKESTRA" }, mission: { tr: "Çılgın bir orkestra şefi gibi görünmez müzisyenleri yönet." } },
+    { title: { tr: "KAYGAN ZEMİN" }, mission: { tr: "Buz tutmuş bir yolda düşmemeye çalışarak yürü." } }
   ],
   HARD: [ 
-    { title: { tr: "SAHTE KRAL" }, mission: { tr: "Her şeyin kontrol altında olduğu yalanını söyleyen paniklemiş bir lider." }, quotes: { 0: {tr: "Kral benim! (Titrer)"}, 1: {tr: "Benim dediğim olur! Ben Kralım! Korkmuyorum..."}, 2: {tr: "Ah halkım! Bu taç çok ağır..."}, 3: {tr: "Sunduğum bu illüzyon sizin huzurunuz içindir."} } }, 
-    { title: { tr: "AĞLARKEN GÜLMEK" }, mission: { tr: "Çok üzücü bir şey anlatırken kahkaha at." }, quotes: { 0: {tr: "Hahaha! Ah, ne kadar üzücü!"}, 1: {tr: "Hahaha! Vah zavallı başım!"}, 2: {tr: "Gülümsemem, gözyaşlarımı saklayan bir maskedir."}, 3: {tr: "Trajedi ve komedi... Hayatın iki yüzü."} } } 
+    { title: { tr: "SAHTE KRAL" }, mission: { tr: "Her şeyin kontrol altında olduğu yalanını söyleyen paniklemiş bir lider." } },
+    { title: { tr: "AĞLARKEN GÜLMEK" }, mission: { tr: "Çok üzücü bir şey anlatırken sinir krizi geçirip kahkaha at." } },
+    { title: { tr: "İKİ KİŞİLİK KAVGA" }, mission: { tr: "Kendi kendinle (iki farklı karakter olarak) sözlü kavga et." } },
+    { title: { tr: "SESSİZ ÇIĞLIK" }, mission: { tr: "Boğazın düğümlenmiş, sesin çıkmıyor ama avazın çıktığı kadar bağır." } },
+    { title: { tr: "YARATIK SALDIRISI" }, mission: { tr: "Görünmez bir ahtapot tarafından yutuluyorsun, kurtulmaya çalış." } },
+    { title: { tr: "TER VE TİTREME" }, mission: { tr: "Hem donuyor hem de sıcaktan terliyormuşsun gibi hisset." } },
+    { title: { tr: "KULLANMA KILAVUZU" }, mission: { tr: "Bomba imha ediyorsun ama kılavuz Çince." } },
+    { title: { tr: "GERİYE AKAN ZAMAN" }, mission: { tr: "Yaptığın her hareketi ve söylediğin kelimeyi tersten oyna." } },
+    { title: { tr: "KOMİK CENAZE" }, mission: { tr: "Çok sevdiğin birinin cenazesinde gülmemeye çalışarak konuş." } },
+    { title: { tr: "HİPNOZ" }, mission: { tr: "Gözlerinle kameraya/seyirciye bakarak onları hipnotize etmeye çalış." } }
   ],
   FINAL: [ 
-    { title: { tr: "VEDA KONUŞMASI" }, mission: { tr: "Oyun bitiyor. Dramatik bir veda konuşması yap." }, quotes: { 0: {tr: "Sürçülisan ettiysek affola!"}, 1: {tr: "Ben kaçar!"}, 2: {tr: "Perde kapanırken, geriye gölgelerimiz kalır."}, 3: {tr: "Oyun biter, gerçek hayat başlar."} } } 
+    { title: { tr: "VEDA KONUŞMASI" }, mission: { tr: "Oyun bitiyor. Seyirciye dramatik ve epik bir veda konuşması yap." } } 
   ],
   OBSTACLE: [ 
-    { id: 'o1', text: { tr: "Sadece tek kelimelerle konuş." } }, 
-    { id: 'o2', text: { tr: "Açıklamanı şarkı söyleyerek yap." } }, 
-    { id: 'o3', text: { tr: "Göz teması kurma." } } 
+    { id: 'o1', text: { tr: "Sadece tek heceli kelimelerle konuş." } }, 
+    { id: 'o2', text: { tr: "Açıklamanı rap veya şarkı söyleyerek yap." } }, 
+    { id: 'o3', text: { tr: "Kameraya/Seyirciye sırtını dönerek oyna." } },
+    { id: 'o4', text: { tr: "Sürekli zıplayarak oynamak zorundasın." } },
+    { id: 'o5', text: { tr: "Gülme krizi! Her cümlenin sonuna kahkaha ekle." } }
   ],
   BONUS: [ 
     { id: 'tubi', name: 'Tubi', desc: { tr: 'Buradayım canım! Annen gibi düşün... Sana 20 saniye tavsiye vereceğim!' }, benefit: { tr: 'FİKİR AL' }, effect: 'idea' }, 
@@ -364,7 +390,6 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
     } else if (isObstacle) {
         titleText = UI[lang].obsCard; 
         missionText = getLocalizedText(card.text, lang); 
-        // Engel kartı mantığı değişti, artık ele alınıp saklanıyor.
         flavorText = "ENVANTERE EKLENDİ! Başkasının sırasında fırlat.";
         icon = <Skull size={32} className="text-red-500 animate-bounce"/>; characterVideoSrc = assets[`${baseKey}_scared`]; bgStyle = "bg-gradient-to-b from-red-600 to-rose-900"; accentColor = "text-red-200"; glowColor = "rgba(225, 29, 72, 0.5)";
     } else {
@@ -387,14 +412,14 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
                 <div className="absolute inset-0 z-10 flex flex-col justify-start p-0">
                     <div className={`relative w-full ${isBonus ? 'h-[50%]' : 'h-[40%]'} shrink-0 z-0 overflow-hidden flex items-center justify-center bg-black`}>
                          
-                         {/* ARKA PLAN BLUR (MIX BLEND SCREEN İPTAL EDİLDİ) */}
+                         {/* ARKA PLAN BLUR */}
                          {isBonus && assets[`bonus_${card.id}`] ? (
                              <AssetDisplay src={assets[`bonus_${card.id}`]} className="absolute inset-0 w-full h-full object-cover scale-[1.5] blur-2xl opacity-50 bg-transparent" alt="Blur Bg" />
                          ) : (
                              characterVideoSrc && <AssetDisplay src={characterVideoSrc} className="absolute inset-0 w-full h-full object-cover scale-[1.5] blur-2xl opacity-40 bg-transparent" alt="Blur Bg" />
                          )}
 
-                         {/* ANA VİDEO (MIX BLEND İPTAL EDİLDİ - ORİJİNAL RENGİNDE GÖRÜNÜR) */}
+                         {/* ANA VİDEO */}
                          {isBonus && assets[`bonus_${card.id}`] ? (
                              <AssetDisplay src={assets[`bonus_${card.id}`]} className={`relative z-10 w-full h-full object-contain object-center bg-transparent transition-transform duration-700 ${isPlaying ? 'scale-110 drop-shadow-[0_0_30px_rgba(255,200,0,0.8)]' : 'scale-100 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]'}`} alt="Bonus" />
                          ) : (
@@ -424,12 +449,6 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
                          )}
                     </div>
                 </div>
-                {mode === 'draw' && (
-                    <svg className="absolute inset-0 z-50 pointer-events-none w-full h-full" preserveAspectRatio="none">
-                        <rect id="curtain-left" x="0" y="0" width="50%" height="100%" fill="#8B0000" />
-                        <rect id="curtain-right" x="50%" y="0" width="50%" height="100%" fill="#8B0000" />
-                    </svg>
-                )}
             </div>
         </div>
     );
@@ -450,24 +469,14 @@ export default function DogaclaVisualsFinal() {
   const [isAppLoading, setIsAppLoading] = useState(true); 
   const [teamSelectMode, setTeamSelectMode] = useState(null);
   
-  // -- ZAR DURUMLARI --
   const [localDiceState, setLocalDiceState] = useState({ isRolling: false, teamIndex: null, showReveal: false });
-  
-  // YENİ: Başlangıç Karakter Kurası / Tanıtım (Reveal) Ekranı Durumu
-  const [revealState, setRevealState] = useState({
-      isActive: false,
-      mode: null,
-      count: 0,
-      selectedTeams: [],
-      currentIndex: 0,
-      isRolling: false
-  });
+  const [revealState, setRevealState] = useState({ isActive: false, mode: null, count: 0, selectedTeams: [], currentIndex: 0, isRolling: false });
   
   // -- Synced Game States --
   const [gameState, setGameState] = useState('LOBBY'); 
   const [teams, setTeams] = useState(INITIAL_TEAMS);
-  const [players, setPlayers] = useState({}); // { uid: teamId }
-  const [readyPlayers, setReadyPlayers] = useState({}); // { uid: true }
+  const [players, setPlayers] = useState({}); 
+  const [readyPlayers, setReadyPlayers] = useState({}); 
   const [targetTeamCount, setTargetTeamCount] = useState(4); 
   const [hostUid, setHostUid] = useState(null); 
   const [currentTurn, setCurrentTurn] = useState(0);
@@ -517,11 +526,10 @@ export default function DogaclaVisualsFinal() {
       }
   }, [user]); 
 
-  // Başlangıç Karakter Kurası / Tanıtımı Mantığı (Zamanlamalar)
+  // Başlangıç Karakter Kurası / Tanıtımı Mantığı
   useEffect(() => {
       if (!revealState.isActive) return;
       let timeout;
-
       if (revealState.isRolling) {
           playSynthSound('roll', soundEnabled);
           timeout = setTimeout(() => {
@@ -542,21 +550,14 @@ export default function DogaclaVisualsFinal() {
               }
           }, 3500); 
       }
-
       return () => clearTimeout(timeout);
   }, [revealState.isActive, revealState.isRolling, revealState.currentIndex, revealState.count, revealState.mode, revealState.selectedTeams, soundEnabled]);
 
   // --- FIREBASE AUTH ---
   useEffect(() => {
-      if (!auth) {
-          setAuthError("Firebase modülü başlatılamadı.");
-          return;
-      }
-      
+      if (!auth) { setAuthError("Firebase modülü başlatılamadı."); return; }
       const connectionTimeout = setTimeout(() => {
-          if (!user) {
-              setAuthError("Bağlantı zaman aşımına uğradı. İnternetinizi kontrol edin veya 'Tek Oyunculu' devam edin.");
-          }
+          if (!user) setAuthError("Bağlantı zaman aşımına uğradı. İnternetinizi kontrol edin veya 'Tek Oyunculu' devam edin.");
       }, 5000);
 
       const initAuth = async () => {
@@ -564,12 +565,9 @@ export default function DogaclaVisualsFinal() {
               const hasCanvasConfig = typeof __firebase_config !== 'undefined' && __firebase_config;
               if (hasCanvasConfig && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                   await signInWithCustomToken(auth, __initial_auth_token);
-              } else {
-                  await signInAnonymously(auth);
-              }
+              } else { await signInAnonymously(auth); }
           } catch (e) { 
-              console.error("Auth Error", e); 
-              setAuthError(e.message || "Giriş reddedildi.");
+              console.error("Auth Error", e); setAuthError(e.message || "Giriş reddedildi.");
           }
       };
       initAuth();
@@ -578,11 +576,10 @@ export default function DogaclaVisualsFinal() {
           if (u) clearTimeout(connectionTimeout);
           setUser(u);
       });
-      
       return () => { unsub(); clearTimeout(connectionTimeout); };
   }, []);
 
-  // --- MULTIPLAYER SYNC SENDER ---
+  // --- KİLİTLENMEYE KARŞI BİRLEŞTİRİLMİŞ (BUNDLED) SYNC SENDER ---
   const syncGame = async (updates) => {
       if ('gameState' in updates) setGameState(updates.gameState);
       if ('teams' in updates) setTeams(updates.teams);
@@ -700,88 +697,42 @@ export default function DogaclaVisualsFinal() {
   const promptSinglePlayer = () => setTeamSelectMode('single');
   const promptMultiPlayer = () => setTeamSelectMode('multi');
 
-  const shuffleTeams = (count) => {
-      const shuffled = [...INITIAL_TEAMS].sort(() => 0.5 - Math.random());
-      return shuffled.slice(0, count).sort((a, b) => a.id - b.id);
-  };
-
   const handleTeamSelection = (count, mode) => {
       playSynthSound('click', soundEnabled);
-      const activeTeams = shuffleTeams(count);
-      setRevealState({
-          isActive: true,
-          mode: mode,
-          count: count,
-          selectedTeams: activeTeams,
-          currentIndex: 0,
-          isRolling: true 
-      });
+      const activeTeams = [...INITIAL_TEAMS].sort(() => 0.5 - Math.random()).slice(0, count).sort((a, b) => a.id - b.id);
+      setRevealState({ isActive: true, mode: mode, count: count, selectedTeams: activeTeams, currentIndex: 0, isRolling: true });
   };
 
   const startSinglePlayer = (count, activeTeams) => {
-      setIsSinglePlayer(true);
-      setRoomId('');
-      setTeams(activeTeams);
-      setTargetTeamCount(count);
-      setGameState('INTRO');
-      setCurrentTurn(0);
-      setHypeMeter(0);
-      setTeamSelectMode(null);
-      setLogs(["DOĞAÇLA Tek Oyunculu Olarak Başladı!"]);
+      setIsSinglePlayer(true); setRoomId(''); setTeams(activeTeams); setTargetTeamCount(count); setGameState('INTRO'); setCurrentTurn(0); setHypeMeter(0); setTeamSelectMode(null); setLogs(["DOĞAÇLA Tek Oyunculu Olarak Başladı!"]);
   };
 
   const createRoom = async (count, activeTeams) => {
       if (!user || !db) return;
       try {
           const code = Math.random().toString(36).substring(2, 6).toUpperCase();
-          const initialData = { 
-              gameState: 'INTRO', 
-              teams: activeTeams, 
-              targetTeamCount: count,
-              players: {},
-              readyPlayers: {},
-              hostUid: user.uid,
-              currentTurn: 0, hypeMeter: 0, logs: ["Doğaçla'ya Hoş Geldiniz!"] 
-          };
+          const initialData = { gameState: 'INTRO', teams: activeTeams, targetTeamCount: count, players: {}, readyPlayers: {}, hostUid: user.uid, currentTurn: 0, hypeMeter: 0, logs: ["Doğaçla'ya Hoş Geldiniz!"] };
           await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code), initialData);
-          setIsSinglePlayer(false);
-          setRoomId(code);
-          setTeamSelectMode(null);
-          setAuthError(null);
-      } catch (err) {
-          console.error(err);
-          setAuthError("Oda kurulamadı: " + err.message);
-      }
+          setIsSinglePlayer(false); setRoomId(code); setTeamSelectMode(null); setAuthError(null);
+      } catch (err) { console.error(err); setAuthError("Oda kurulamadı: " + err.message); }
   };
   
   const joinRoom = async (code) => {
       if (!user || !db || code.length !== 4) return;
       try {
           const docSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code));
-          if (docSnap.exists()) {
-              setIsSinglePlayer(false);
-              setRoomId(code); 
-              setAuthError(null);
-          } else {
-              setAuthError("HATA: Böyle bir oda kodu bulunamadı!");
-          }
-      } catch(err) {
-          console.error(err);
-          setAuthError("Odaya Katılma Hatası: " + err.message);
-      }
+          if (docSnap.exists()) { setIsSinglePlayer(false); setRoomId(code); setAuthError(null); } 
+          else { setAuthError("HATA: Böyle bir oda kodu bulunamadı!"); }
+      } catch(err) { console.error(err); setAuthError("Odaya Katılma Hatası: " + err.message); }
   };
 
   const joinTeamWithDice = () => {
       if (!user) return;
       playSynthSound('roll', soundEnabled);
       setLocalDiceState({ isRolling: true, teamIndex: null, showReveal: false });
-      
       setTimeout(() => {
           const teamCounts = Array(teams.length).fill(0);
-          Object.values(players).forEach(tId => {
-              const index = teams.findIndex(t => t.id === tId);
-              if (index !== -1) teamCounts[index]++;
-          });
+          Object.values(players).forEach(tId => { const index = teams.findIndex(t => t.id === tId); if (index !== -1) teamCounts[index]++; });
           const minCount = Math.min(...teamCounts);
           const availableTeamIndices = teamCounts.map((c, i) => c === minCount ? i : -1).filter(i => i !== -1);
           const chosenIndex = availableTeamIndices[Math.floor(Math.random() * availableTeamIndices.length)];
@@ -789,11 +740,9 @@ export default function DogaclaVisualsFinal() {
           
           setLocalDiceState({ isRolling: false, teamIndex: chosenIndex, showReveal: false });
           playSynthSound('click', soundEnabled);
-          
           setTimeout(() => {
               playSynthSound('success', soundEnabled);
               setLocalDiceState({ isRolling: false, teamIndex: chosenIndex, showReveal: true });
-
               setTimeout(() => {
                   setLocalDiceState({ isRolling: false, teamIndex: null, showReveal: false });
                   syncGame({ players: { ...players, [user.uid]: assignedTeam } });
@@ -804,18 +753,10 @@ export default function DogaclaVisualsFinal() {
   };
 
   const resetGame = () => { 
-      playSynthSound('click', soundEnabled);
-      setIsSinglePlayer(false);
+      playSynthSound('click', soundEnabled); setIsSinglePlayer(false);
       syncGame({ gameState: 'LOBBY', teams: INITIAL_TEAMS, players: {}, readyPlayers: {}, targetTeamCount: 4, hostUid: null, currentTurn: 0, diceValue: null, activeCard: null, cardType: null, playingBonus: null, performanceTimer: 0, juryScore: 0, hypeMeter: 0, characterMood: 'idle', isRollingDice: false, showDiceModal: false, kuraRolling: false, finalists: [], directors: [], draftMission: null, customFinalCard: null, aiCards: [], finalTurnIndex: 0, winner: null, logs: ["Doğaçla Mobile Act I!"] });
       setRoomId('');
   };
-
-  const triggerFinalTest = () => {
-      const newTeams = teams.map((t, i) => { if (i === 0 || i === 1) return { ...t, pos: 35, score: 150 - i }; return { ...t, pos: 10, score: 50 }; });
-      syncGame({ teams: newTeams }); setTimeout(checkFinals, 100);
-  };
-
-  const getCurrentCharacterAsset = () => { const baseKey = `team${currentTeam.id}`; return assets[`${baseKey}_${characterMood}`] || assets[`${baseKey}_idle`] || assets[baseKey]; };
 
   const triggerAudienceEvent = () => {
       if (Math.random() < 0.15) { 
@@ -844,30 +785,24 @@ export default function DogaclaVisualsFinal() {
   
   const askAICritic = async () => { if (!activeCard) return; setCriticLoading(true); setTimeout(() => { addLog(`🤖 ${UI[lang].aiComment}: "${getLocalizedText(TEAM_INFO[currentTeam.id].style, lang)}!"`); setCriticLoading(false); playSynthSound('click', soundEnabled); }, 1500); };
   
-  const checkFinals = () => { 
-      const finishers = teams.filter(t => t.pos >= 35); 
+  const checkFinals = (latestTeams) => { 
+      const finishers = latestTeams.filter(t => t.pos >= 35); 
       if (finishers.length > 0) { 
-          const sorted = [...teams].sort((a, b) => b.score - a.score); 
-          syncGame({ finalists: sorted.slice(0, 2), directors: sorted.slice(2, 4), finalTurnIndex: 0, currentTurn: teams.findIndex(t => t.id === sorted[0].id), draftMission: null, gameState: 'FINALS_DIRECTOR_INPUT' }); playSynthSound('success', soundEnabled);
-      } else { nextTurn(); }
+          const sorted = [...latestTeams].sort((a, b) => b.score - a.score); 
+          syncGame({ finalists: sorted.slice(0, 2), directors: sorted.slice(2, 4), finalTurnIndex: 0, currentTurn: latestTeams.findIndex(t => t.id === sorted[0].id), draftMission: null, gameState: 'FINALS_DIRECTOR_INPUT' }); playSynthSound('success', soundEnabled);
+      } else {
+          syncGame({ gameState: 'ROLL', diceValue: null, currentTurn: (currentTurn + 1) % latestTeams.length, characterMood: 'idle' });
+      }
   };
 
   const throwObstacle = (index) => {
       if (!myTeam || isMyTurn) return;
       const obstacleToThrow = myTeam.heldObstacles[index];
       const newTeams = [...teams];
-      
       const myTeamIndex = newTeams.findIndex(t => t.id === myTeam.id);
-      newTeams[myTeamIndex] = {
-          ...newTeams[myTeamIndex],
-          heldObstacles: newTeams[myTeamIndex].heldObstacles.filter((_, i) => i !== index)
-      };
-      
+      newTeams[myTeamIndex] = { ...newTeams[myTeamIndex], heldObstacles: newTeams[myTeamIndex].heldObstacles.filter((_, i) => i !== index) };
       const activeTeamIndex = newTeams.findIndex(t => t.id === currentTeam.id);
-      newTeams[activeTeamIndex] = {
-          ...newTeams[activeTeamIndex],
-          activeObstacles: [...newTeams[activeTeamIndex].activeObstacles, obstacleToThrow]
-      };
+      newTeams[activeTeamIndex] = { ...newTeams[activeTeamIndex], activeObstacles: [...newTeams[activeTeamIndex].activeObstacles, obstacleToThrow] };
 
       syncGame({ teams: newTeams, characterMood: 'scared' });
       playSynthSound('scared', soundEnabled);
@@ -922,11 +857,19 @@ export default function DogaclaVisualsFinal() {
           setTeams(currentTeams); 
           playSynthSound('click', soundEnabled); await new Promise(resolve => setTimeout(resolve, 200)); 
       } 
-      syncGame({ teams: currentTeams });
       
-      if (targetPos === 35) { checkFinals(); } else { 
+      if (targetPos === 35) { 
+          const finishers = currentTeams.filter(t => t.pos >= 35); 
+          if (finishers.length > 0) { 
+              const sorted = [...currentTeams].sort((a, b) => b.score - a.score); 
+              syncGame({ teams: currentTeams, finalists: sorted.slice(0, 2), directors: sorted.slice(2, 4), finalTurnIndex: 0, currentTurn: currentTeams.findIndex(t => t.id === sorted[0].id), draftMission: null, gameState: 'FINALS_DIRECTOR_INPUT' }); playSynthSound('success', soundEnabled);
+          }
+      } else { 
+          syncGame({ teams: currentTeams });
           const type = BOARD_MAP[targetPos].type; 
-          if(type === 'start') nextTurn(); else drawCard(type); 
+          if(type === 'start') {
+              syncGame({ gameState: 'ROLL', diceValue: null, currentTurn: (currentTurn + 1) % currentTeams.length, characterMood: 'idle' });
+          } else drawCard(type); 
       } 
   };
   
@@ -955,28 +898,29 @@ export default function DogaclaVisualsFinal() {
       syncGame({ cardType: type, characterMood: newMood, activeCard: cardData, gameState: 'CARD' }); 
   };
   
+  // YENİ: KİLİTLENMEYE KARŞI BİRLEŞTİRİLMİŞ SENKRONİZASYON 
   const handleCardAction = () => { 
       playSynthSound('click', soundEnabled); 
       if (cardType === 'bonus') { 
           const newTeams = teams.map((t, i) => i === currentTurn ? { ...t, bonuses: [...t.bonuses, activeCard] } : t);
-          syncGame({ teams: newTeams, activeCard: null }); 
+          syncGame({ teams: newTeams, activeCard: null, gameState: 'ROLL', diceValue: null, currentTurn: (currentTurn + 1) % teams.length, characterMood: 'idle' }); 
           addLog(lang === 'tr' ? `${TEAM_INFO[currentTeam.id].name} bonus kaptı!` : `${TEAM_INFO[currentTeam.id].name} got bonus!`); 
-          triggerRemoteEvent({ type: 'confetti' }); nextTurn(); 
+          triggerRemoteEvent({ type: 'confetti' }); 
       } else if (cardType === 'obstacle') { 
           const newTeams = teams.map((t, i) => i === currentTurn ? { ...t, heldObstacles: [...(t.heldObstacles || []), activeCard] } : t);
-          syncGame({ teams: newTeams, activeCard: null });
+          syncGame({ teams: newTeams, activeCard: null, gameState: 'ROLL', diceValue: null, currentTurn: (currentTurn + 1) % teams.length, characterMood: 'idle' });
           addLog(`${TEAM_INFO[currentTeam.id].name} bir Engel Kartı kazandı!`);
-          nextTurn();
       } else { 
-          const timer = cardType === 'easy' ? 60 : (cardType === 'final' ? 120 : 90);
-          syncGame({ performanceTimer: timer, gameState: cardType === 'final' ? 'FINALS_PLAY' : 'PERFORM' }); setTimerKey(p => p + 1); 
+          syncGame({ performanceTimer: 10, gameState: 'PRE_PERFORM' }); 
+          setTimerKey(p => p + 1); 
       } 
   };
-  
-  const assignObstacleToRival = (targetId) => { const newTeams = teams.map(t => t.id === targetId ? { ...t, activeObstacles: [...t.activeObstacles, activeCard] } : t); syncGame({ teams: newTeams, activeCard: null }); nextTurn(); };
-  const updateJuryScore = (delta) => { const newScore = Math.min(Math.max(juryScore+delta, -5), 15); syncGame({ juryScore: newScore }); playSynthSound('click', soundEnabled); };
-  
+
+  // YENİ: OY PUSULASI ÇİFT TIKLAMAYI ÖNLER VE VERİLERİ BİRLEŞTİRİR
   const submitManualVote = useCallback(() => { 
+      // Jürinin üst üste basmasını ve oyunun donmasını engeller
+      if (gameState !== 'VOTE' && gameState !== 'FINALS_VOTE') return;
+
       playSynthSound('success', soundEnabled); 
       let finalScore = juryScore; 
       if(voteData.roleplay) finalScore += 2; if(voteData.obstacleOvercome) finalScore += 2; if(voteData.fail) finalScore = -2; finalScore += (voteData.bonusScore || 0); 
@@ -990,25 +934,62 @@ export default function DogaclaVisualsFinal() {
       const targetId = isFinal && finalists[finalTurnIndex] ? finalists[finalTurnIndex].id : currentTeam.id; 
       const newTeams = teams.map(t => t.id === targetId ? { ...t, score: t.score + finalScore, activeObstacles: [] } : t);
       
-      syncGame({ teams: newTeams, juryScore: 0, hypeMeter: newHype, characterMood: newMood });
       setVoteData({ roleplay: false, obstacleOvercome: false, fail: false, bonusScore: 0 }); 
-      
+
+      // Tüm değişiklikler paketlenip TEK BİR defada Firebase'e yollanır, böylece UI kimse için donmaz!
+      const updates = { teams: newTeams, juryScore: 0, hypeMeter: newHype, characterMood: newMood, activeCard: null };
+
       if (isFinal) { 
-          if (finalTurnIndex === 0) { syncGame({ finalTurnIndex: 1, currentTurn: teams.findIndex(t => t.id === finalists[1].id), gameState: 'FINALS_PREP' }); } 
-          else calculateWinner(); 
+          if (finalTurnIndex === 0) { 
+              updates.finalTurnIndex = 1;
+              updates.currentTurn = newTeams.findIndex(t => t.id === finalists[1].id);
+              updates.gameState = 'FINALS_PREP';
+              syncGame(updates);
+          } 
+          else {
+              const winnerTeam = newTeams.find(t => t.id === finalists[0].id).score > newTeams.find(t => t.id === finalists[1].id).score ? finalists[0] : finalists[1];
+              updates.winner = winnerTeam;
+              updates.gameState = 'END';
+              syncGame(updates);
+              triggerRemoteEvent({ type: 'confetti' });
+          }
       } else { 
-          syncGame({ activeCard: null }); 
-          if (newTeams.find(t=>t.id===currentTeam.id).pos === 35) setTimeout(checkFinals, 100); else nextTurn(); 
+          const hasFinished = newTeams.find(t=>t.id===currentTeam.id).pos === 35;
+          if (hasFinished) {
+              const sorted = [...newTeams].sort((a, b) => b.score - a.score);
+              updates.finalists = sorted.slice(0, 2);
+              updates.directors = sorted.slice(2, 4);
+              updates.finalTurnIndex = 0;
+              updates.currentTurn = newTeams.findIndex(t => t.id === sorted[0].id);
+              updates.draftMission = null;
+              updates.gameState = 'FINALS_DIRECTOR_INPUT';
+              syncGame(updates);
+              playSynthSound('success', soundEnabled);
+          } else {
+              updates.gameState = 'ROLL';
+              updates.diceValue = null;
+              updates.currentTurn = (currentTurn + 1) % teams.length;
+              updates.characterMood = 'idle'; // Oylama bitince karakter normale döner
+              syncGame(updates);
+          }
       } 
-  }, [gameState, juryScore, voteData, finalists, finalTurnIndex, currentTeam, soundEnabled, isGoldenMic, hypeMeter, lang, teams, characterMood]);
+  }, [gameState, juryScore, voteData, finalists, finalTurnIndex, currentTeam, soundEnabled, isGoldenMic, hypeMeter, lang, teams, characterMood, currentTurn]);
   
   const finishPerformance = () => {
-      if (gameState === 'FINALS_PLAY') { if (finalTurnIndex === 0) syncGame({ gameState: 'FINALS_TRANSITION' }); else syncGame({ gameState: 'FINALS_CASTING' }); } 
+      if (gameState === 'PRE_PERFORM') {
+          const timer = cardType === 'easy' ? 60 : (cardType === 'final' ? 120 : 90);
+          syncGame({ performanceTimer: timer, gameState: cardType === 'final' ? 'FINALS_PLAY' : 'PERFORM' }); 
+          setTimerKey(p => p + 1);
+      }
+      else if (gameState === 'FINALS_PLAY') { 
+          if (finalTurnIndex === 0) syncGame({ gameState: 'FINALS_TRANSITION' }); 
+          else syncGame({ gameState: 'FINALS_CASTING' }); 
+      } 
       else syncGame({ gameState: 'VOTE' });
   };
 
   const startNextFinalist = () => { syncGame({ finalTurnIndex: 1, currentTurn: teams.findIndex(t => t.id === finalists[1].id), gameState: 'FINALS_PREP' }); playSynthSound('click', soundEnabled); };
-  const nextTurn = () => { syncGame({ gameState: 'ROLL', diceValue: null, currentTurn: (currentTurn + 1) % teams.length, characterMood: 'idle' }); };
+  
   const prepareBonus = (bonusIndex) => syncGame({ playingBonus: currentTeam.bonuses[bonusIndex] });
   const executeBonusPower = () => {
       triggerRemoteEvent({ type: 'confetti' });
@@ -1019,6 +1000,8 @@ export default function DogaclaVisualsFinal() {
       const newTeams = teams.map(t => t.id === currentTeam.id ? { ...t, bonuses: t.bonuses.filter(b => b.id !== playingBonus.id) } : t);
       syncGame({ teams: newTeams, playingBonus: null, performanceTimer: newTimer });
   };
+
+  const getCurrentCharacterAsset = () => { const baseKey = `team${currentTeam.id}`; return assets[`${baseKey}_${characterMood}`] || assets[`${baseKey}_idle`] || assets[baseKey]; };
 
   // --- LOBBY & TEAM SELECT SCREEN RENDER ---
   if (gameState === 'LOBBY') {
@@ -1499,19 +1482,34 @@ export default function DogaclaVisualsFinal() {
                       )
                   )}
                   {gameState === 'MOVING' && <div className="text-neon-blue font-black animate-pulse text-center text-xl sm:text-2xl tracking-[0.2em] py-5">{UI[lang].enteringStage}</div>}
-                  {gameState === 'TARGET_OBSTACLE' && (
-                      isMyTurn ? (
-                          <div className="w-full overflow-x-auto flex gap-2 no-scrollbar">
-                              {teams.filter(t => t.id !== currentTeam.id).map(t => (
-                                  <button key={t.id} onClick={() => assignObstacleToRival(t.id)} className={`flex-1 min-w-[100px] p-4 rounded-xl border-2 border-gray-700 bg-gray-800 flex flex-col items-center gap-2 active:bg-red-900/40 active:border-red-500 transition`}>
-                                      <ShieldAlert size={28} className="text-red-500"/><span className="text-sm sm:text-base font-black whitespace-nowrap">{TEAM_INFO[t.id].name}</span>
-                                  </button>
-                              ))}
-                          </div>
-                      ) : (
-                          <div className="w-full py-4 text-center font-bold text-gray-400 bg-gray-900 border border-gray-700 rounded-xl">⏳ {TEAM_INFO[currentTeam.id].name} hedef seçiyor...</div>
-                      )
+                  
+                  {/* YENİ: SABOTAJ BEKLEME SÜRESİ (10 SANİYE) */}
+                  {gameState === 'PRE_PERFORM' && (
+                      <div className="w-full flex flex-col gap-4 text-center">
+                          <h3 className="text-xl font-black text-red-500 animate-pulse uppercase tracking-widest">SABOTAJ SÜRESİ</h3>
+                          <Timer key={timerKey} duration={performanceTimer} onFinish={finishPerformance} soundEnabled={soundEnabled} />
+                          
+                          {!isMyTurn && myTeam?.heldObstacles?.length > 0 && (
+                              <div className="mt-2 border-t border-gray-700 pt-4">
+                                  <div className="text-red-500 font-bold text-xs mb-2">😈 HEMEN BİR ENGEL FIRLAT!</div>
+                                  <div className="flex gap-2 overflow-x-auto no-scrollbar justify-center">
+                                      {myTeam.heldObstacles.map((obs, i) => (
+                                          <button key={i} onClick={() => throwObstacle(i)} className="px-4 py-3 bg-red-900/50 border-2 border-red-500 rounded-xl text-sm font-bold text-red-100 whitespace-nowrap active:scale-95 shadow-[0_0_15px_rgba(239,68,68,0.5)]">
+                                              <Skull size={16} className="inline mr-1 mb-0.5"/> {getLocalizedText(obs.text, lang)}
+                                          </button>
+                                      ))}
+                                  </div>
+                              </div>
+                          )}
+                          {isMyTurn && (
+                              <p className="text-gray-400 text-sm font-bold px-4">Rakiplerinin sana engel atması için son saniyeler, hazırlan!</p>
+                          )}
+                          {(isHost || isSinglePlayer) && (
+                              <button onClick={finishPerformance} className="mt-2 px-4 py-3 bg-white/10 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 active:bg-white/20"><SkipForward size={16}/> SÜREYİ ATLA (HEMEN BAŞLA)</button>
+                          )}
+                      </div>
                   )}
+
                   {gameState === 'PERFORM' && (
                       <div className="w-full flex flex-col gap-4">
                           <div className="flex justify-between items-end px-2">
@@ -1554,11 +1552,17 @@ export default function DogaclaVisualsFinal() {
                   )}
                   {gameState === 'VOTE' && (
                       <div className="w-full flex flex-col gap-4">
-                          {isMyTurn ? (
+                          {isMyTurn && !isSinglePlayer ? (
                               <div className="bg-gray-800 border-2 border-gray-600 p-6 rounded-2xl text-center shadow-inner">
-                                  <Users size={48} className="mx-auto text-yellow-500 mb-4 animate-pulse" />
-                                  <h3 className="text-xl sm:text-2xl font-black text-white mb-2 uppercase tracking-widest">JÜRİ KARAR VERİYOR</h3>
-                                  <p className="text-gray-400 text-sm sm:text-base">Performansın değerlendiriliyor. Lütfen diğer takımların puan vermesini bekle...</p>
+                                  <div className="flex gap-3 justify-center mb-4">
+                                       {teams.filter(t => t.id !== currentTeam.id).map(t => (
+                                           <div key={t.id} className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 ${t.border} overflow-hidden bg-black shadow-lg animate-pulse`}>
+                                               <AssetDisplay src={assets[`team${t.id}_thinking`] || assets[`team${t.id}_idle`]} className="w-full h-full object-cover object-top" />
+                                           </div>
+                                       ))}
+                                  </div>
+                                  <h3 className="text-xl sm:text-2xl font-black text-yellow-400 mb-2 uppercase tracking-widest">JÜRİ KARAR VERİYOR</h3>
+                                  <p className="text-gray-300 text-sm sm:text-base">Performansın değerlendiriliyor. Lütfen diğer takımların puan vermesini bekle...</p>
                               </div>
                           ) : (
                               <>
