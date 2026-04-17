@@ -205,7 +205,6 @@ const GAME_ASSETS = {
     bonus_cihad: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/cicu_karti.mp4", 
 };
 
-// Takımlara başlangıçta "heldObstacles" eklendi
 const INITIAL_TEAMS = [
   { id: 0, color: 'bg-orange-500', border: 'border-orange-500', text: 'text-orange-500', icon: '🤡', score: 0, pos: 0, bonuses: [], heldObstacles: [], activeObstacles: [] },
   { id: 1, color: 'bg-red-600', border: 'border-red-600', text: 'text-red-600', icon: '👺', score: 0, pos: 0, bonuses: [], heldObstacles: [], activeObstacles: [] },
@@ -440,7 +439,7 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, activeAssets, curren
                 <div className={`absolute inset-0 ${bgStyle} z-0`}></div>
                 
                 <div className="absolute inset-0 z-10 flex flex-col justify-start p-0">
-                    <div className={`relative w-full h-[45%] shrink-0 z-0 overflow-hidden flex items-center justify-center bg-black`}>
+                    <div className={`relative w-full h-[55%] shrink-0 z-0 overflow-hidden flex items-center justify-center bg-black`}>
                          
                          {/* ARKA PLAN BLUR SADECE BONUS İÇİN */}
                          {isBonus && !isHiddenFromOpponent && activeAssets[`bonus_${card.id}`] && (
@@ -458,8 +457,7 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, activeAssets, curren
                              (isObstacle && isHiddenFromOpponent) ? (
                                  <Skull size={100} className="text-red-500 animate-bounce relative z-10 drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]" />
                              ) : (
-                                 // ZOOM HATASI DÜZELTİLDİ: object-cover silinip object-contain yapıldı
-                                 characterVideoSrc && <AssetDisplay src={characterVideoSrc} className="relative z-10 w-full h-full object-contain object-bottom transition-transform duration-700" alt="Character" />
+                                 characterVideoSrc && <AssetDisplay src={characterVideoSrc} className="relative z-10 w-full h-full object-contain object-center transition-transform duration-700" alt="Character" />
                              )
                          )}
 
@@ -577,17 +575,23 @@ export default function DogaclaVisualsFinal() {
           const newBlobs = {};
           let count = 0;
           
-          // Videoları gerçekten indirip Blob URL'ye çeviriyoruz. 
-          // Bu sayede oyun içi yüklenmeler sıfıra iniyor (Gerçek Embedded).
           for (const key of keys) {
               if (!isMounted) return;
               try {
                   const res = await fetch(GAME_ASSETS[key]);
                   const blob = await res.blob();
-                  newBlobs[key] = URL.createObjectURL(blob);
+                  const blobUrl = URL.createObjectURL(blob);
+                  newBlobs[key] = blobUrl;
+                  
+                  // Görsel motor darboğazını engellemek için gizli donanım önbelleklemesi
+                  const vid = document.createElement('video');
+                  vid.src = blobUrl;
+                  vid.preload = 'auto';
+                  vid.muted = true;
+                  vid.load();
               } catch (e) {
                   console.warn("Preload failed for", key);
-                  newBlobs[key] = GAME_ASSETS[key]; // Hata olursa internetten devam et
+                  newBlobs[key] = GAME_ASSETS[key];
               }
               count++;
               setLoadingProgress(Math.floor((count / keys.length) * 100));
@@ -595,11 +599,10 @@ export default function DogaclaVisualsFinal() {
           
           if (isMounted) {
               setBlobAssets(newBlobs);
-              setTimeout(() => setIsAppLoading(false), 500); // %100 olunca oyunu başlat
+              setTimeout(() => setIsAppLoading(false), 500); 
           }
       };
       
-      // Çok yavaş internet ihtimaline karşı 12 saniye failsafe
       const failsafe = setTimeout(() => {
           if (isMounted && isAppLoading) setIsAppLoading(false);
       }, 12000); 
@@ -924,7 +927,6 @@ export default function DogaclaVisualsFinal() {
       setTimeout(() => syncGame({ characterMood: 'idle' }), 3000);
   };
 
-  // --- YENİ: IŞIK HIZINDA YAPAY ZEKA GÖREV OLUŞTURUCUSU ---
   const generateDraftMission = async () => {
       if (!directorInput.trim()) return;
       playSynthSound('click', soundEnabled); syncGame({ gameState: 'FINALS_GENERATING' });
@@ -949,7 +951,6 @@ export default function DogaclaVisualsFinal() {
       playSynthSound('click', soundEnabled); syncGame({ gameState: 'FINALS_GENERATING' });
       const apiKey = ""; const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
       
-      // Hızlandırmak için yapay zekadan karakter iç seslerini sildik, sadece ana görevi yazacak.
       const promptText = `Şu tiyatro görevini temel al: "${getLocalizedText(draftMission, 'tr')}". Lütfen bu görevi 3 farklı sahne tarzına göre uyarla. Hem Türkçe (tr) hem İngilizce (en) üret. Lütfen SADECE başlık, görev (mission) ve açıklama (desc) üret. ÇOK KISA CÜMLELER KUR. Maksimum 2 cümle.`;
       
       const schema = { 
@@ -973,7 +974,6 @@ export default function DogaclaVisualsFinal() {
               } catch(err) { if(i===2) throw err; await new Promise(r=>setTimeout(r,delay)); delay*=2; }
           }
           if(resultData && resultData.length > 0) { 
-              // Yapay Zekanın eksik bıraktığı replikleri yerel (lokal) olarak hızlıca ekliyoruz.
               const fastCards = resultData.map(c => ({
                   ...c,
                   quotes: getDynamicQuotesDual(directorInput.trim(), c.styleType || 'ABSURD')
@@ -1055,7 +1055,6 @@ export default function DogaclaVisualsFinal() {
       } 
   };
 
-  // --- YENİ: SENKRONİZE OYLAMA İŞLEMCİSİ (Beklemeli) ---
   const processVotingResult = useCallback((scores) => {
       let avgScore = 0;
       if (scores.length > 0) {
@@ -1118,10 +1117,9 @@ export default function DogaclaVisualsFinal() {
       }
   }, [gameState, finalists, finalTurnIndex, currentTeam.id, teams, isGoldenMic, hypeMeter, soundEnabled, lang, characterMood]);
 
-  // YENİ: Oyuncunun Oyunu Güvenli Şekilde Göndermesi
   const submitManualVote = useCallback(() => { 
       if (gameState !== 'VOTE' && gameState !== 'FINALS_VOTE') return;
-      if (juryVotes[user?.uid] !== undefined) return; // Zaten oy verdiyse engelle
+      if (juryVotes[user?.uid] !== undefined) return; 
 
       playSynthSound('success', soundEnabled); 
       let calcScore = localJuryScore; 
@@ -1136,13 +1134,11 @@ export default function DogaclaVisualsFinal() {
       if (isSinglePlayer) {
           processVotingResult([calcScore]);
       } else {
-          // Direkt Firestore alanını güncelleyerek anlık çakışmaları engelliyoruz.
           const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
           updateDoc(roomRef, { [`juryVotes.${user.uid}`]: calcScore }).catch(e => console.error("Vote error", e));
       }
   }, [gameState, localJuryScore, voteData, isSinglePlayer, processVotingResult, user, juryVotes, soundEnabled, roomId]);
 
-  // YENİ: Oylar Tamamlandığında Veya Host Zorladığında Sonucu Hesapla
   useEffect(() => {
       if (!isHost || isSinglePlayer) return;
       if (gameState === 'VOTE' || gameState === 'FINALS_VOTE') {
@@ -1150,7 +1146,6 @@ export default function DogaclaVisualsFinal() {
           const eligibleVoters = Object.keys(players).filter(uid => players[uid] !== performingTeamId);
           
           if (eligibleVoters.length > 0 && eligibleVoters.every(uid => juryVotes[uid] !== undefined)) {
-              // Herkes oyunu verdi, sonucu hesapla!
               processVotingResult(Object.values(juryVotes));
           }
       }
@@ -1823,12 +1818,14 @@ export default function DogaclaVisualsFinal() {
                               </div>
                           )}
 
+                          {/* İPUCU BUTONU */}
                           {isMyTurn && (
                               <button onClick={requestHint} className="w-full py-3 bg-yellow-600/20 border-2 border-yellow-500/50 rounded-xl font-bold text-yellow-400 flex justify-center items-center gap-2 active:bg-yellow-500/40 transition mb-2 shadow-[0_0_15px_rgba(250,204,21,0.2)]">
                                   <HelpCircle size={20} /> İPUCU AL (Süreyi Durdurur)
                               </button>
                           )}
 
+                          {/* SABOTAJ / ENGEL FIRLATMA MENÜSÜ */}
                           {!isMyTurn && myTeam?.heldObstacles?.length > 0 && (
                               <div className="mt-2 border-t border-gray-700 pt-4">
                                   <div className="text-red-500 font-bold text-xs mb-2 text-center">😈 SABOTE ET (ENGEL FIRLAT)</div>
