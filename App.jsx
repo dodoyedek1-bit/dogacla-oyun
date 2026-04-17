@@ -83,15 +83,6 @@ const getDynamicQuotesDual = (prompt, type) => {
     else return { "0": { tr: `Sus pus oldum! '${p}' derdimi abartılı el kol hareketleriyle anlatacağım.` }, "1": { tr: `Dilimi yuttum! '${p}' olayını görünmez duvara çarparak oynayacağım.` }, "2": { tr: `Kelimeler kifayetsiz... '${p}' acısını yere yığılarak göstereceğim.` }, "3": { tr: `En keskin hiciv... Hiç konuşmadan '${p}' konusunu aşağılayacağım.` } };
 };
 
-const generateMockCardsDual = (prompt, draftMissionText) => {
-    const p = prompt.toUpperCase();
-    return [
-        { title: { tr: "DRAMATİK " + p }, mission: { tr: getLocalizedText(draftMissionText, 'tr') }, hint: { tr: "Kendini yere at, ağla, abartılı dramatik hareketler yap." }, quotes: getDynamicQuotesDual(prompt, 'DRAMATIC') },
-        { title: { tr: "ABSÜRT " + p }, mission: { tr: getLocalizedText(draftMissionText, 'tr') }, hint: { tr: "Saçmala, garip sesler çıkar, fizik kurallarına aykırı davran." }, quotes: getDynamicQuotesDual(prompt, 'ABSURD') },
-        { title: { tr: "SESSİZ " + p }, mission: { tr: getLocalizedText(draftMissionText, 'tr') }, hint: { tr: "Hiç konuşma! Sadece mimik ve pandomim kullanarak anlat." }, quotes: getDynamicQuotesDual(prompt, 'SILENT') }
-    ];
-};
-
 const UI = {
     tr: {
         start: "BAŞLA", rollDice: "ZAR AT", drawingLots: "KURA ÇEKİLİYOR...", rollingDice: "ZAR ATILIYOR...",
@@ -142,12 +133,11 @@ const AssetDisplay = ({ src, className = '', style = {}, alt = '' }) => {
     const isVideo = typeof src === 'string' && (src.toLowerCase().endsWith('.mp4') || src.toLowerCase().endsWith('.webm'));
     
     if (isVideo) {
-        const hasBgClass = className && className.includes('bg-');
         return (
             <video 
                 key={src} 
                 src={src} 
-                className={`${className} ${hasBgClass ? '' : 'bg-transparent'} transition-opacity duration-700 ease-in`} 
+                className={`${className} transition-opacity duration-700 ease-in`} 
                 style={{...style, pointerEvents: 'none', opacity: isLoaded ? 1 : 0}} 
                 autoPlay loop muted playsInline webkit-playsinline="true" disablePictureInPicture preload="auto"
                 onCanPlayThrough={() => setIsLoaded(true)}
@@ -214,6 +204,7 @@ const GAME_ASSETS = {
     bonus_cihad: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/cicu_karti.mp4", 
 };
 
+// Takımlara başlangıçta "heldObstacles" eklendi
 const INITIAL_TEAMS = [
   { id: 0, color: 'bg-orange-500', border: 'border-orange-500', text: 'text-orange-500', icon: '🤡', score: 0, pos: 0, bonuses: [], heldObstacles: [], activeObstacles: [] },
   { id: 1, color: 'bg-red-600', border: 'border-red-600', text: 'text-red-600', icon: '👺', score: 0, pos: 0, bonuses: [], heldObstacles: [], activeObstacles: [] },
@@ -221,7 +212,7 @@ const INITIAL_TEAMS = [
   { id: 3, color: 'bg-blue-600', border: 'border-blue-600', text: 'text-blue-600', icon: '🏛️', score: 0, pos: 0, bonuses: [], heldObstacles: [], activeObstacles: [] },
 ];
 
-// DEVASA GÖREV HAVUZU (100+ Eşsiz Senaryo)
+// DEVASA GÖREV HAVUZU
 const CARDS = {
   EASY: [ 
     { title: { tr: "BOZUK ASANSÖR" }, mission: { tr: "Dar bir alanda sıkıştın. Bedeninle paniği göster." }, hint: { tr: "Nefes alışını hızlandır, görünmez dar duvarlara ellerinle vurarak klostrofobiyi hissettir." }, quotes: { 0: {tr: "Aman efendim, asansör bozuldu! İmdat!"}, 1: {tr: "Ulan kapı açıl! Sıkıştım kaldım burada!"}, 2: {tr: "Ah bu demir kafes, ruhumun daraldığı zindan..."}, 3: {tr: "Modern hayatın harikası asansör, bizi fare gibi kapana kıstırdı!"} } }, 
@@ -365,7 +356,7 @@ const TeamDice3D = ({ winnerId, isRolling, assets, teams }) => {
     const renderFace = (teamIndex) => {
         const team = teams[teamIndex % teams.length];
         const assetSrc = assets[`team${team.id}_idle`] || assets[`team${team.id}`];
-        return <div className="w-full h-full flex items-center justify-center bg-black border-2 border-[#D4AF37] rounded-lg overflow-hidden shadow-[inset_0_0_20px_rgba(212,175,55,0.5)] drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">{assetSrc ? <AssetDisplay src={assetSrc} className="w-full h-full object-cover object-top" alt={`Team ${team.id}`} /> : <span className="text-[#D4AF37] text-3xl">T{team.id+1}</span>}</div>;
+        return <div className="w-full h-full flex items-center justify-center bg-black border-2 border-[#D4AF37] rounded-lg overflow-hidden shadow-[inset_0_0_20px_rgba(212,175,55,0.5)]"><AssetDisplay src={assetSrc} className="w-full h-full object-cover object-top" alt={`Team ${team.id}`} /></div>;
     };
 
     return (
@@ -415,15 +406,17 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
     let titleText = "", missionText = "", flavorText = "", icon = <Drama size={32} className="text-[#D4AF37]"/>, characterVideoSrc = null, bgStyle = "bg-neutral-900", accentColor = "text-white", glowColor = "rgba(0,0,0,0.6)";
     const baseKey = `team${currentTeamId}`;
 
+    const isHiddenFromOpponent = !isMyTurn && (isBonus || isObstacle) && mode === 'draw';
+
     if (isBonus) {
-        titleText = getLocalizedText(card.name, lang) || "BONUS"; 
-        missionText = getLocalizedText(card.quote, lang); // BONUSLAR İÇİN DİREKT KARAKTER REPLİĞİ YAZILIR
-        flavorText = `${UI[lang]?.oppCard || "FIRSAT KARTI"} ✦ ${getLocalizedText(card.benefit, lang)}`;
+        titleText = isHiddenFromOpponent ? "GİZLİ BONUS" : (getLocalizedText(card.name, lang) || "BONUS"); 
+        missionText = isHiddenFromOpponent ? "Rakip bir Fırsat Kartı çekti. Sahnede kullanmak üzere envanterine eklendi!" : getLocalizedText(card.quote, lang);
+        flavorText = isHiddenFromOpponent ? "GİZLİ KART" : `${UI[lang]?.oppCard || "FIRSAT KARTI"} ✦ ${getLocalizedText(card.benefit, lang)}`;
         icon = <Sparkles size={32} className="text-blue-400 animate-pulse"/>; bgStyle = isPlaying ? "bg-gradient-to-b from-yellow-600 to-red-900" : "bg-gradient-to-b from-indigo-600 to-blue-900"; accentColor = isPlaying ? "text-yellow-200" : "text-indigo-200"; glowColor = isPlaying ? "rgba(255, 200, 0, 0.8)" : "rgba(99, 102, 241, 0.5)";
     } else if (isObstacle) {
-        titleText = UI[lang].obsCard; 
-        missionText = getLocalizedText(card.text, lang); 
-        flavorText = "ENVANTERE EKLENDİ! Başkasının sırasında fırlat.";
+        titleText = isHiddenFromOpponent ? "GİZLİ ENGEL" : UI[lang].obsCard; 
+        missionText = isHiddenFromOpponent ? "Rakip bir Sabotaj Kartı çekti. Başkalarının performansı sırasında fırlatabilir!" : getLocalizedText(card.text, lang); 
+        flavorText = isHiddenFromOpponent ? "GİZLİ KART" : "ENVANTERE EKLENDİ! Başkasının sırasında fırlat.";
         icon = <Skull size={32} className="text-red-500 animate-bounce"/>; characterVideoSrc = assets[`${baseKey}_scared`]; bgStyle = "bg-gradient-to-b from-red-600 to-rose-900"; accentColor = "text-red-200"; glowColor = "rgba(225, 29, 72, 0.5)";
     } else {
         const fallbackTitle = UI[lang] ? UI[lang].improv : "DOĞAÇLAMA";
@@ -442,22 +435,32 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/90 backdrop-blur-sm overflow-hidden px-4">
             {isPlaying && isBonus && <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,200,0,0.3)_0%,transparent_70%)] animate-pulse"></div>}
             
-            <div ref={cardRef} className={`relative w-full max-w-[90vw] sm:max-w-sm h-[75vh] max-h-[600px] rounded-3xl overflow-hidden shadow-2xl flex flex-col opacity-100 border border-white/20 [mask-image:radial-gradient(white,black)] [-webkit-mask-image:-webkit-radial-gradient(white,black)] transform-gpu`} style={{ boxShadow: `0 10px 40px -10px ${glowColor}` }}>
+            {/* Safari köşe yuvarlatma (border-radius) animasyon hatasını önlemek için transform ve isolation kullanıldı */}
+            <div ref={cardRef} className={`relative w-full max-w-[90vw] sm:max-w-sm h-[75vh] max-h-[600px] rounded-3xl overflow-hidden shadow-2xl flex flex-col opacity-100 border border-white/20`} style={{ boxShadow: `0 10px 40px -10px ${glowColor}`, WebkitMaskImage: '-webkit-radial-gradient(white, black)', transform: 'translateZ(0)' }}>
                 <div className={`absolute inset-0 ${bgStyle} z-0`}></div>
                 
                 <div className="absolute inset-0 z-10 flex flex-col justify-start p-0">
-                    <div className={`relative w-full h-[48%] shrink-0 z-0 overflow-hidden rounded-t-3xl flex items-center justify-center bg-black`}>
+                    <div className={`relative w-full h-[52%] shrink-0 z-0 overflow-hidden flex items-center justify-center bg-black`}>
                          
                          {/* ARKA PLAN BLUR SADECE BONUS İÇİN */}
-                         {isBonus && assets[`bonus_${card.id}`] && (
+                         {isBonus && !isHiddenFromOpponent && assets[`bonus_${card.id}`] && (
                              <AssetDisplay src={assets[`bonus_${card.id}`]} className="absolute inset-0 w-full h-full object-cover scale-[1.5] blur-2xl opacity-60 bg-transparent" alt="Blur Bg" />
                          )}
 
-                         {/* ANA VİDEO (Tam Sığdırma ve Siyah Arka Plan) */}
-                         {isBonus && assets[`bonus_${card.id}`] ? (
-                             <AssetDisplay src={assets[`bonus_${card.id}`]} className={`relative z-10 w-full h-full object-contain object-center transition-transform duration-700 ${isPlaying ? 'scale-110 drop-shadow-[0_0_30px_rgba(255,200,0,0.8)]' : 'scale-100 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]'}`} alt="Bonus" />
+                         {/* ANA VİDEO VEYA GİZLİ İKON */}
+                         {isBonus ? (
+                             isHiddenFromOpponent ? (
+                                 <Sparkles size={100} className="text-blue-500 animate-pulse relative z-10 drop-shadow-[0_0_20px_rgba(59,130,246,0.8)]" />
+                             ) : (
+                                 assets[`bonus_${card.id}`] ? <AssetDisplay src={assets[`bonus_${card.id}`]} className={`relative z-10 w-full h-full object-contain object-center transition-transform duration-700 ${isPlaying ? 'scale-110 drop-shadow-[0_0_30px_rgba(255,200,0,0.8)]' : 'scale-100 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]'}`} alt="Bonus" /> : null
+                             )
                          ) : (
-                             characterVideoSrc && <AssetDisplay src={characterVideoSrc} className="relative z-10 w-full h-full object-contain object-bottom transition-transform duration-700" alt="Character" />
+                             (isObstacle && isHiddenFromOpponent) ? (
+                                 <Skull size={100} className="text-red-500 animate-bounce relative z-10 drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]" />
+                             ) : (
+                                 /* ZOOM SORUNUNU KÖKÜNDEN ÇÖZEN VE TAM SIĞDIRAN KOD (object-contain) */
+                                 characterVideoSrc && <AssetDisplay src={characterVideoSrc} className="relative z-10 w-full h-full object-contain object-bottom transition-transform duration-700" alt="Character" />
+                             )
                          )}
 
                         <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-black via-black/80 to-transparent z-20"></div>
@@ -479,7 +482,7 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
                              </button>
                          ) : (
                              <div className="stagger-item opacity-0 w-full mt-auto py-4 rounded-xl font-bold text-sm sm:text-base tracking-widest uppercase bg-black/50 text-gray-400 border border-white/10">
-                                ⏳ {TEAM_INFO[currentTeamId].name} Karar Veriyor...
+                                ⏳ {TEAM_INFO[currentTeamId].name} Kartı Okuyor...
                              </div>
                          )}
                     </div>
