@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Dices, Trophy, Star, ShieldAlert, Sparkles, Skull, Theater, 
   AlertTriangle, X, Volume2, VolumeX, RefreshCw, History, Bot, Zap, Flame, Crown, 
-  Ghost, Smartphone, Bird, Thermometer, Apple, HelpCircle, Music4, List, Plus, Minus, Clapperboard, Lightbulb, Drama, User, Users, Home, Share2, Copy, SkipForward
+  Ghost, Smartphone, Bird, Thermometer, Apple, HelpCircle, Music4, List, Plus, Minus, Clapperboard, Lightbulb, Drama, User, Users, Home, Share2, Copy, SkipForward, BookOpen
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS FOR MULTIPLAYER ---
@@ -58,7 +58,7 @@ const playSynthSound = (type, enabled) => {
           noiseGain.gain.setValueAtTime(0.05, now); noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5); noise.start(now);
       } else if (type === 'click') {
           osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); gain.gain.setValueAtTime(0.05, now); osc.start(now); osc.stop(now + 0.05);
-      } else if (type === 'success') {
+      } else if (type === 'success' || type === 'powerup') {
           const playNote = (f, t, dur) => { const o=ctx.createOscillator(); const g=ctx.createGain(); o.type='square'; o.connect(g); g.connect(ctx.destination); o.frequency.value=f; g.gain.setValueAtTime(0.05, now+t); g.gain.exponentialRampToValueAtTime(0.001, now+t+dur); o.start(now+t); o.stop(now+t+dur); };
           playNote(523.25, 0, 0.2); playNote(659.25, 0.1, 0.2); playNote(783.99, 0.2, 0.4); playNote(1046.50, 0.4, 0.6);
       } else if (type === 'scared') {
@@ -76,7 +76,6 @@ const getLocalizedText = (obj, lang) => {
     return obj[lang] || obj.tr || obj.en || "";
 };
 
-// --- DICTIONARY & DATA ---
 const getDynamicQuotesDual = (prompt, type) => {
     const p = prompt.toLowerCase();
     if (type === 'DRAMATIC') return { "0": { tr: `Aman efendim! Bu '${p}' beni bitirecek. Sahnede ağlayıp sızlayacağım!` }, "1": { tr: `Bana dram deme ulan! '${p}' yüzünden sinir küpüne döndüm, bağıracağım!` }, "2": { tr: `Ah, '${p}'... Acımı tüm salona şiirsel bir dille haykıracağım.` }, "3": { tr: `Trajedi mi? '${p}' ile deliliğe sürükleniyormuş gibi yapacağım.` } };
@@ -87,9 +86,9 @@ const getDynamicQuotesDual = (prompt, type) => {
 const generateMockCardsDual = (prompt, draftMissionText) => {
     const p = prompt.toUpperCase();
     return [
-        { title: { tr: "DRAMATİK " + p }, mission: { tr: getLocalizedText(draftMissionText, 'tr') }, desc: { tr: "En inandırıcı dramı yapan kazanır." }, quotes: getDynamicQuotesDual(prompt, 'DRAMATIC') },
-        { title: { tr: "ABSÜRT " + p }, mission: { tr: getLocalizedText(draftMissionText, 'tr') }, desc: { tr: "Seyirciyi en çok güldüren kazanır." }, quotes: getDynamicQuotesDual(prompt, 'ABSURD') },
-        { title: { tr: "SESSİZ " + p }, mission: { tr: getLocalizedText(draftMissionText, 'tr') }, desc: { tr: "En iyi fiziksel performansı sergileyen kazanır." }, quotes: getDynamicQuotesDual(prompt, 'SILENT') }
+        { title: { tr: "DRAMATİK " + p }, mission: { tr: getLocalizedText(draftMissionText, 'tr') }, hint: { tr: "Kendini yere at, ağla, abartılı dramatik hareketler yap." }, quotes: getDynamicQuotesDual(prompt, 'DRAMATIC') },
+        { title: { tr: "ABSÜRT " + p }, mission: { tr: getLocalizedText(draftMissionText, 'tr') }, hint: { tr: "Saçmala, garip sesler çıkar, fizik kurallarına aykırı davran." }, quotes: getDynamicQuotesDual(prompt, 'ABSURD') },
+        { title: { tr: "SESSİZ " + p }, mission: { tr: getLocalizedText(draftMissionText, 'tr') }, hint: { tr: "Hiç konuşma! Sadece mimik ve pandomim kullanarak anlat." }, quotes: getDynamicQuotesDual(prompt, 'SILENT') }
     ];
 };
 
@@ -116,6 +115,8 @@ const UI = {
         rulesContent: [
             { title: "🎭 Sahneye Çık", text: "Zar at ve ilerle. Durduğun kareye göre kart çek." },
             { title: "⏱️ Performans", text: "Karttaki senaryoyu süre bitmeden canlandır." },
+            { title: "✨ Bonus (Fırsat) Kartları", text: "Mavi karelerden kazanılır ve saklanır. Kendi sahne sıran geldiğinde, süren işlerken alttaki menüden bonusuna tıklayıp gücünü (ekstra süre, kopya vs.) kullanabilirsin!" },
+            { title: "😈 Engel (Sabotaj) Kartları", text: "Siyah karelerden kazanılıp envanterde saklanır. Başka bir rakip sahneye çıkarken, 10 saniyelik 'Sabotaj Süresi' içinde ona engel fırlatarak performansını zorlaştırabilirsin." },
             { title: "⚖️ Jüri Oylaması", text: "Diğer oyuncular jüri olur. Role girmek ekstra puan kazandırır." },
             { title: "🌟 Altın Mikrofon", text: "Seyirciyi coştur! Bar dolduğunda alacağın puan ikiye katlanır." },
             { title: "🎬 Büyük Final", text: "35'e ulaşıldığında en iyi 2 takım finale çıkar. Kaybedenler finali yazar!" },
@@ -157,7 +158,7 @@ const AssetDisplay = ({ src, className = '', style = {}, alt = '' }) => {
     return (
         <img 
             src={src} 
-            className={`${className} object-cover transition-opacity duration-700 ease-in`} 
+            className={`${className} transition-opacity duration-700 ease-in`} 
             style={{...style, opacity: isLoaded ? 1 : 0}} 
             alt={alt} 
             onLoad={() => setIsLoaded(true)} 
@@ -220,63 +221,97 @@ const INITIAL_TEAMS = [
   { id: 3, color: 'bg-blue-600', border: 'border-blue-600', text: 'text-blue-600', icon: '🏛️', score: 0, pos: 0, bonuses: [], heldObstacles: [], activeObstacles: [] },
 ];
 
+// DEVASA GÖREV HAVUZU (100+ Eşsiz Senaryo)
 const CARDS = {
   EASY: [ 
-    { title: { tr: "BOZUK ASANSÖR" }, mission: { tr: "Dar bir alanda sıkıştın. Bedeninle paniği göster." } },
-    { title: { tr: "KUTUP SOĞUĞU" }, mission: { tr: "Donuyorsun. Dişlerin birbirine çarpıyor. Isınmaya çalış." } },
-    { title: { tr: "ARAMAK" }, mission: { tr: "Gözlüğünü/telefonunu kaybettin, her yeri arıyorsun." } },
-    { title: { tr: "ACI BİBER" }, mission: { tr: "Yanlışlıkla dünyanın en acı biberini yedin. Tepki ver." } },
-    { title: { tr: "KÖPEK GEZDİRME" }, mission: { tr: "Görünmez ve çok yaramaz bir köpeği gezdirmeye çalış." } },
-    { title: { tr: "SİNEK SALDIRISI" }, mission: { tr: "Kulağının dibinde uçan bir sineği yakalamaya çalış." } },
-    { title: { tr: "AĞIR KUTU" }, mission: { tr: "İçi taş dolu görünmez bir kutuyu yerden kaldırmaya çalış." } },
-    { title: { tr: "SÜMÜKLÜ BÖCEK" }, mission: { tr: "Elinde yapışkan ve iğrenç bir sümüksü madde var." } },
-    { title: { tr: "TUVALET SIRASI" }, mission: { tr: "Acil tuvaletin geldi ama önünde çok uzun bir sıra var." } },
-    { title: { tr: "AYNA YANSIMASI" }, mission: { tr: "Aynanın karşısındasın, kendi yansımanla konuş/tartış." } }
+    { title: { tr: "BOZUK ASANSÖR" }, mission: { tr: "Dar bir alanda sıkıştın. Bedeninle paniği göster." }, hint: { tr: "Nefes alışını hızlandır, görünmez dar duvarlara ellerinle vurarak klostrofobiyi hissettir." }, quotes: { 0: {tr: "Aman efendim, asansör bozuldu! İmdat!"}, 1: {tr: "Ulan kapı açıl! Sıkıştım kaldım burada!"}, 2: {tr: "Ah bu demir kafes, ruhumun daraldığı zindan..."}, 3: {tr: "Modern hayatın harikası asansör, bizi fare gibi kapana kıstırdı!"} } }, 
+    { title: { tr: "KUTUP SOĞUĞU" }, mission: { tr: "Donuyorsun. Dişlerin birbirine çarpıyor. Isınmaya çalış." }, hint: { tr: "Kollarına sarıl, ayaklarını yere vurarak kan dolaşımını hızlandırmaya çalış, nefesini ellerine üfle." }, quotes: { 0: {tr: "Aman efendim, donuyorum! Burnum buza döndü!"}, 1: {tr: "Donduk! Yakın sobayı!"}, 2: {tr: "Ah, bu soğuk rüzgar kemiklerimi delip geçiyor."}, 3: {tr: "Bu soğuk, ruhun ateşini bile söndürüyor."} } },
+    { title: { tr: "ARAMAK" }, mission: { tr: "Gözlüğünü/telefonunu kaybettin, her yeri arıyorsun." }, hint: { tr: "Ceplerini panikle karıştır, hayali koltuk minderlerinin arasına bak, abartılı tepkiler ver." }, quotes: { 0: {tr: "Efendim cüzdan yok! Cüzdanı yemişler!"}, 1: {tr: "Nerede ulan bu meret? Buraya koymuştum!"}, 2: {tr: "Kayıp bir eşya mı, yoksa kayıp bir hafıza mı aradığım?"}, 3: {tr: "Kendi koyduğu şeyi bulamayan aciz insanlık..."} } },
+    { title: { tr: "ACI BİBER" }, mission: { tr: "Yanlışlıkla dünyanın en acı biberini yedin. Tepki ver." }, hint: { tr: "Dilin yanıyormuş gibi ağzını açıp elinle yelle, hayali su bardaklarını kafana dik." }, quotes: { 0: {tr: "Yandım anam yandım! Ağzımda ateş var!"}, 1: {tr: "Su verin! İtfaiye çağırın!"}, 2: {tr: "Bu ne cehennem ateşi! Dilim kavruluyor!"}, 3: {tr: "Acı yemek ne büyük bir ahmaklıktır."} } },
+    { title: { tr: "KÖPEK GEZDİRME" }, mission: { tr: "Görünmez ve çok yaramaz bir köpeği gezdirmeye çalış." }, hint: { tr: "Tasmayı sıkıca tut, köpek seni çekiyormuş gibi öne doğru savrul, yere eğilip sevmeye çalış." }, quotes: { 0: {tr: "Aman efendim, dur gitme! Koparacaksın kolumu!"}, 1: {tr: "Oğlum dursana! Ulan ne laf anlamaz hayvansın!"}, 2: {tr: "Ah vahşi doğa, bu tasmayla seni ehlileştiremem."}, 3: {tr: "Hayvanı gezdirdiğini sanan insan, aslında kendi gezdiriliyordur."} } },
+    { title: { tr: "SİNEK SALDIRISI" }, mission: { tr: "Kulağının dibinde uçan bir sineği yakalamaya çalış." }, hint: { tr: "Havada görünmez bir noktayı takip et, aniden ellerini çırp ve kendi yüzüne tokat at." }, quotes: { 0: {tr: "Efendim gitmiyor bu meret, yapıştı yüzüme!"}, 1: {tr: "Gel buraya! Şap! Ah yüzüm!"}, 2: {tr: "Küçük bir haşere, koskoca aklımı nasıl da çeliyor... "}, 3: {tr: "Doğanın en sinir bozucu icadı: Sinek."} } },
+    { title: { tr: "AĞIR KUTU" }, mission: { tr: "İçi taş dolu görünmez bir kutuyu yerden kaldırmaya çalış." }, hint: { tr: "Bacaklarını kırarak eğil, yüzünü buruştur, kutuyu zorla kaldırıp kaslarının titrediğini göster." }, quotes: { 0: {tr: "Aman efendim, fıtık oldum! Bu ne ağırlık!"}, 1: {tr: "Hoooop! Belim koptu! Taş mı var bunun içinde?"}, 2: {tr: "Bu yük, omuzlarımdaki dünyanın ağırlığı sanki."}, 3: {tr: "İnsan kendi yarattığı yüklerin altında böyle ezilir."} } },
+    { title: { tr: "SÜMÜKLÜ BÖCEK" }, mission: { tr: "Elinde yapışkan ve iğrenç bir sümüksü madde var." }, hint: { tr: "Parmaklarını iğrenerek birbirinden ayır, elini silkelemeye çalış, yüzünü miden bulanmış gibi yap." }, quotes: { 0: {tr: "İyyy efendim bu ne biçim bir vıcık vıcık şey!"}, 1: {tr: "Midem kalktı! Nereye sileceğim ben bunu!"}, 2: {tr: "Ah, iğrençliğin en somut hali parmaklarımda."}, 3: {tr: "Doğanın sümüksü şakası."} } },
+    { title: { tr: "TUVALET SIRASI" }, mission: { tr: "Acil tuvaletin geldi ama önünde çok uzun bir sıra var." }, hint: { tr: "Bacaklarını birbirine dola, yerinde zıpla, kıvran ve öndeki hayali kişilere acele etmelerini işaret et." }, quotes: { 0: {tr: "Efendim patlayacağım! İzin verin geçeyim!"}, 1: {tr: "Hadi be kardeşim! Altıma kaçıracağım!"}, 2: {tr: "Ah zaman! Hiç bu kadar yavaş akmamıştın."}, 3: {tr: "İnsanın en ilkel çaresizliği."} } },
+    { title: { tr: "AYNA YANSIMASI" }, mission: { tr: "Aynanın karşısındasın, kendi yansımanla konuş/tartış." }, hint: { tr: "Saçını/üstünü düzelt, sonra kendi kendine kızmaya başla, aynadaki hayali kişiye parmak salla." }, quotes: { 0: {tr: "Ne bakıyorsun bana öyle efendim? Sensin çirkin!"}, 1: {tr: "Ulan ne yakışıklı adamım be! Kimseye benzemem!"}, 2: {tr: "Ayna ayna... Yüzümdeki bu keder kime ait?"}, 3: {tr: "Aynada gördüğün en büyük yalan, kendinsin."} } },
+    { title: { tr: "SICAK KUM" }, mission: { tr: "Çıplak ayakla kızgın kumlarda yürümeye çalışıyorsun." }, hint: { tr: "Ayaklarını hızla havaya kaldır, sekiyormuş gibi yürü, yüzünü buruştur." }, quotes: { 0: {tr: "Aman efendim yandım! Ayaklarım tavuk gibi kızardı!"}, 1: {tr: "Hoppa! Zıpla zıpla! Çöl mü burası ulan!"}, 2: {tr: "Cehennemin ateşi ayak tabanlarımdan ruhuma sızıyor."}, 3: {tr: "Tatil dedikleri eziyetin bedeli."} } },
+    { title: { tr: "SAKIZ YAPIŞMASI" }, mission: { tr: "Ayakkabının altına dev bir sakız yapıştı, kurtulmaya çalış." }, hint: { tr: "Ayağını yere sürterek kazı, elinle koparmaya çalışıp eline yapıştır." }, quotes: { 0: {tr: "Efendim bu ne biçim sakız, asfaltı kaldırdı!"}, 1: {tr: "Ulan sündü de sündü! Çık artık!"}, 2: {tr: "Geçmişin günahları gibi yakamı bırakmıyor bu illet."}, 3: {tr: "Yere çöp atmanın karması seni buldu."} } },
+    { title: { tr: "DİŞ AĞRISI" }, mission: { tr: "Aniden korkunç bir diş ağrısı saplandı." }, hint: { tr: "Yanağını tut, gözlerini sıkıca yum, konuşurken ağzını yamult." }, quotes: { 0: {tr: "Aman efendim beynime vurdu! Kerpeten getirin!"}, 1: {tr: "Ah dişim! Söküp atacağım şimdi!"}, 2: {tr: "Bir kemik parçasının ruhuma verdiği bu eziyet..."}, 3: {tr: "Diş perisi bu sefer can almaya gelmiş."} } },
+    { title: { tr: "DAR PANTOLON" }, mission: { tr: "Yıkanıp küçülmüş aşırı dar bir pantolonu giymeye çalış." }, hint: { tr: "Zıplayarak çek, göbeğini içeri çekip nefesini tut, fermuarı çekerken zorlan." }, quotes: { 0: {tr: "Efendim nefes alamıyorum! Korset gibi sardı!"}, 1: {tr: "Ulan patlayacak dikişler! Kim küçülttü bunu!"}, 2: {tr: "Kendi yarattığım bu kumaş hapishanesinde esirim."}, 3: {tr: "Moda uğruna çekilen absürt çileler."} } },
+    { title: { tr: "DONDURMA DÜŞÜŞÜ" }, mission: { tr: "Dev külah dondurman eriyip düşmek üzere, toparlamaya çalış." }, hint: { tr: "Elini hızla çevir, damlayan yerleri yalamaya çalış, panikle sağa sola dön." }, quotes: { 0: {tr: "Aman efendim şelale gibi akıyor! Tutun!"}, 1: {tr: "Gitti dondurma! Lan bari damlasını yalayım!"}, 2: {tr: "Tıpkı umutlarım gibi, ellerimde eriyip gidiyor."}, 3: {tr: "Yerçekimi, tatlı keyfimi yine bozdu."} } },
+    { title: { tr: "HAPŞIRIK" }, mission: { tr: "Çok önemli bir şey anlatırken sürekli hapşırıyorsun." }, hint: { tr: "Cümlenin tam ortasında kriz geçirerek hapşır ve özür dileyerek devam et." }, quotes: { 0: {tr: "Efendim konu şu ki... HAPŞU! Affedersiniz..."}, 1: {tr: "Bakın dinleyin beni... HAPŞU! Ulan burnum koptu!"}, 2: {tr: "Sözlerimin derinliği... HAPŞU! Uçup gitti rüzgarla..."}, 3: {tr: "Mikropların ciddiyetime suikastı."} } },
+    { title: { tr: "SIVI SABUN" }, mission: { tr: "Eline çok fazla sıvı sabun aldın ve köpürüp taşıyor." }, hint: { tr: "Ellerini çılgınca birbirine sürt, köpüğü üstüne başına sıçratıyormuş gibi panikle." }, quotes: { 0: {tr: "Aman efendim bitmiyor bu köpük! Boğulacağım!"}, 1: {tr: "Ulan her yerim sabun oldu! Verin bir havlu!"}, 2: {tr: "Temizlenmek isterken, köpükten bir dağın altında kaldım."}, 3: {tr: "Modern temizliğin çıldırtan bedeli."} } },
+    { title: { tr: "GÖZÜNE TOZ KAÇMASI" }, mission: { tr: "Gözüne kocaman bir toz kaçtı ve yaşarıyor." }, hint: { tr: "Tek gözünü sıkıca kapat, elinle ovuştur, kör olmuş gibi etrafı yokla." }, quotes: { 0: {tr: "Efendim kör oldum! Gözüm çıktı yerinden!"}, 1: {tr: "Üfleyin ulan şu gözüme! Yanıyor!"}, 2: {tr: "Bir zerre toz, dünyamı karanlığa boğdu..."}, 3: {tr: "Koskoca insan, bir toza yenik düşüyor."} } },
+    { title: { tr: "KOKMUŞ ÇORAP" }, mission: { tr: "Yerde bulduğun bir çorabın kokusuna maruz kaldın." }, hint: { tr: "Burnunu parmaklarınla tıka, miden bulanmış gibi yapıp öğür, kafanı geri çek." }, quotes: { 0: {tr: "Aman efendim bu ne biçim koku! Ölü fare mi var içinde!"}, 1: {tr: "Iyy! Atın lan şunu çöpe! Midem kalktı!"}, 2: {tr: "Ah, insanlığın bıraktığı bu zehirli koku..."}, 3: {tr: "Biyolojik bir silah olarak kirli çorap."} } },
+    { title: { tr: "YAPIŞKAN KAPI" }, mission: { tr: "Görünmez bir kapının kolu eline yapıştı, bırakamıyorsun." }, hint: { tr: "Elini kolundan kurtarmaya çalış, bacaklarınla kapıyı it, tüm gücünle asıl." }, quotes: { 0: {tr: "Efendim bırakmıyor bu meret beni! Kolum kopacak!"}, 1: {tr: "Ulan kim sürdü buraya bu yapışkanı! Açıl!"}, 2: {tr: "Kapalı kapılar sadece ruhumu değil, bedenimi de esir aldı."}, 3: {tr: "Gitmene izin vermeyen eşyalar..."} } }
   ],
   MEDIUM: [ 
-    { title: { tr: "UNUTKANLIK" }, mission: { tr: "Tam o an ne söyleyeceğini unuttun. Kıvırmaya çalış." } },
-    { title: { tr: "GÖRÜNMEZ ELMA" }, mission: { tr: "Elinde bir elma varmış gibi ye ve çekirdeğini at." } },
-    { title: { tr: "SARHOŞ ASTRONOT" }, mission: { tr: "Yerçekimsiz ortamda sarhoşmuş gibi hareket et." } },
-    { title: { tr: "HIÇKIRIK KRİZİ" }, mission: { tr: "Ciddi bir haber sunarken sürekli hıçkırık tutuyor." } },
-    { title: { tr: "YAVAŞ ÇEKİM" }, mission: { tr: "Biriyle kavga ediyormuşsun gibi yavaş çekimde hareket et." } },
-    { title: { tr: "TERS RÜZGAR" }, mission: { tr: "Çok şiddetli bir rüzgara karşı yürümeye çalış." } },
-    { title: { tr: "BOZUK OTOMAT" }, mission: { tr: "Kola otomatına paran sıkıştı, kolunu içine sokup çıkarmaya çalış." } },
-    { title: { tr: "TİKTOK DANSI" }, mission: { tr: "Ekrana bakarak kendi uydurduğun saçma bir dansı yap." } },
-    { title: { tr: "GÖRÜNMEZ ORKESTRA" }, mission: { tr: "Çılgın bir orkestra şefi gibi görünmez müzisyenleri yönet." } },
-    { title: { tr: "KAYGAN ZEMİN" }, mission: { tr: "Buz tutmuş bir yolda düşmemeye çalışarak yürü." } }
+    { title: { tr: "UNUTKANLIK" }, mission: { tr: "Tam o an ne söyleyeceğini unuttun. Kıvırmaya çalış." }, hint: { tr: "Gözlerini tavana dik, 'Eee, hımm' diyerek düşünüyormuş gibi yap, saçmala." }, quotes: { 0: {tr: "Eee... Efendim, dilimin ucundaydı!"}, 1: {tr: "Kelimeleri aklımdan çaldınız!"}, 2: {tr: "Ah, hafızam bana ihanet ediyor! Kelimeler kayıp."}, 3: {tr: "Sessizlik... En büyük replik söylenmeyendir."} } }, 
+    { title: { tr: "GÖRÜNMEZ ELMA" }, mission: { tr: "Elinde bir elma varmış gibi ye ve çekirdeğini at." }, hint: { tr: "Elmayı gömleğine sil, ısırırken yüksek bir ses çıkar, suyunu damlatıyormuş gibi yap." }, quotes: { 0: {tr: "Aman efendim, bu elma değil elmas! Kırt!"}, 1: {tr: "Elimde hiçbir şey yok ama yiyorum!"}, 2: {tr: "Var olmayan bir meyvenin tadını hissediyorum."}, 3: {tr: "Görünmez bir obje yaratmak... İşte sanat budur."} } },
+    { title: { tr: "SARHOŞ ASTRONOT" }, mission: { tr: "Yerçekimsiz ortamda sarhoşmuş gibi hareket et." }, hint: { tr: "Ağır ve süzülerek hareket et, dengeni kaybetmiş gibi geriye doğru yavaşça devril." }, quotes: { 0: {tr: "Aman efendim, uzayda başım dönüyor, uçuyorum!"}, 1: {tr: "Hooop! Yakalayın beni! Gezegenler etrafımda dönüyor!"}, 2: {tr: "Yıldızların arasında kaybolmuş sarhoş bir ruhum ben."}, 3: {tr: "Yerçekimi bile bu saçmalığı durduramıyor."} } },
+    { title: { tr: "HIÇKIRIK KRİZİ" }, mission: { tr: "Ciddi bir haber sunarken sürekli hıçkırık tutuyor." }, hint: { tr: "Omuzlarını aniden yukarı kaldırarak hıçkır, ciddi yüz ifadeni bozmadan devam etmeye çalış." }, quotes: { 0: {tr: "Efendim bugün... (Hıck!) çok önemli bir... (Hıck!)"}, 1: {tr: "Ulan durmuyor! (Hıck!) Getirin bir bardak su!"}, 2: {tr: "Trajik bir hikaye bu... (Hıck!) Ah bu bedenim bana isyan ediyor!"}, 3: {tr: "Ciddiyetin hıçkırıkla imtihanı."} } },
+    { title: { tr: "YAVAŞ ÇEKİM" }, mission: { tr: "Biriyle kavga ediyormuşsun gibi yavaş çekimde hareket et." }, hint: { tr: "Ağzını kocaman açarak 'Hayıııır' diye bağır, hayali bir yumruğu çok yavaşça yemiş gibi savrul." }, quotes: { 0: {tr: "Neeeee yaaaaaapııııyooorsuuuun efeeendiiiiim!"}, 1: {tr: "Aaaah! Vurmaaa ulaaaan!"}, 2: {tr: "Zamaaaan donduuuu... Acıııı yavaaaaşça büyüyyoooor..."}, 3: {tr: "Kavgaaadaaa bileee estetiik."} } },
+    { title: { tr: "TERS RÜZGAR" }, mission: { tr: "Çok şiddetli bir rüzgara karşı yürümeye çalış." }, hint: { tr: "Gövdeni öne eğ, görünmez bir duvara yaslanıyormuş gibi bacaklarını zorlanarak at." }, quotes: { 0: {tr: "Aman efendim uçacağım! Uçurtma oldum!"}, 1: {tr: "Ulan bu ne rüzgar! Ağzım burnum yer değiştirdi!"}, 2: {tr: "Doğanın gazabı karşısında bir kum tanesiyim sadece!"}, 3: {tr: "Rüzgara karşı yürümek, hayata karşı yürümektir."} } },
+    { title: { tr: "BOZUK OTOMAT" }, mission: { tr: "Kola otomatına paran sıkıştı, kolunu içine sokup çıkarmaya çalış." }, hint: { tr: "Makineye tekme at, kolunu omuza kadar makineye sokup sıkışmış gibi panikle çekiştir." }, quotes: { 0: {tr: "Aman efendim param gitti! Geri ver paramı makine!"}, 1: {tr: "Ulan kırarım seni! Ver lan kolamı!"}, 2: {tr: "Bir demir yığını, umutlarımı çaldı."}, 3: {tr: "Kapitalizmin en net özeti: Paran gider, ürün gelmez."} } },
+    { title: { tr: "TİKTOK DANSI" }, mission: { tr: "Ekrana bakarak kendi uydurduğun saçma bir dansı yap." }, hint: { tr: "Yüzüne sahte bir gülümseme yerleştir, el kol hareketlerini robotik ve tekrarlı şekilde yap." }, quotes: { 0: {tr: "Aman efendim nasıl beğeni alıyoruz böyle iyi mi?"}, 1: {tr: "Ulan ne şekillere girdim iki beğeni için!"}, 2: {tr: "Ruhumun boşluğunu, bu saçma dansla dolduruyorum."}, 3: {tr: "Dijital kölelikte yeni bir seviye."} } },
+    { title: { tr: "GÖRÜNMEZ ORKESTRA" }, mission: { tr: "Çılgın bir orkestra şefi gibi görünmez müzisyenleri yönet." }, hint: { tr: "Elindeki görünmez çubukla havayı yar, saçlarını savur, kemanlara ve davullara gir işareti ver." }, quotes: { 0: {tr: "Girin kemanlar! Hoop davullar! Aman efendim harika!"}, 1: {tr: "Ulan yanlış çaldın! Sana diyorum flütçü!"}, 2: {tr: "Bu sessiz senfoni, kalbimin çığlığıdır."}, 3: {tr: "Hiçlikten müzik yaratmak..."} } },
+    { title: { tr: "KAYGAN ZEMİN" }, mission: { tr: "Buz tutmuş bir yolda düşmemeye çalışarak yürü." }, hint: { tr: "Kollarını iki yana açıp dengede durmaya çalış, ayakların altından kayıyormuş gibi kısa adımlar at." }, quotes: { 0: {tr: "Aman efendim buz pateni yapıyoruz sanki!"}, 1: {tr: "Eyvah! Kafa göz yarılacak şimdi!"}, 2: {tr: "Bu kaygan yol, hayatın ne kadar güvensiz olduğunun kanıtı."}, 3: {tr: "Düşüşü bekleyen komik insanlık."} } },
+    { title: { tr: "PANDOMİMCİ HAPİSTE" }, mission: { tr: "Görünmez bir cam kutunun içine hapsoldun." }, hint: { tr: "Ellerini görünmez bir cama daya, etrafını yokla, duvarları itmeye çalış." }, quotes: { 0: {tr: "Efendim çıkamıyorum! Cam var burada cam!"}, 1: {tr: "Kim kapattı ulan beni buraya! Kıracağım şimdi!"}, 2: {tr: "Özgürlüğüm bir hiçliğin ardında tutsak."}, 3: {tr: "Sessizliğin en klasik ve klişe zindanı."} } },
+    { title: { tr: "KÖTÜ ÇEVİRMEN" }, mission: { tr: "Yabancı bir turiste yol tarif et, ama dil bilmiyorsun." }, hint: { tr: "Abartılı el kol hareketleri yap, anlamsız sesler çıkarıp yön işaret et." }, quotes: { 0: {tr: "Efendim no no, go düz! And den dön right!"}, 1: {tr: "Ulan anlamıyor ki! Bak kardeşim, böyle dümdüz!"}, 2: {tr: "Kelimelerin kifayetsizliği, dillerin duvarına çarpıyor."}, 3: {tr: "İletişimsizliğin evrensel komedisi."} } },
+    { title: { tr: "ŞİŞME BOT" }, mission: { tr: "Ağzınla devasa bir şişme botu şişirmeye çalışıyorsun." }, hint: { tr: "Derin nefes al, yanaklarını şişirerek abartılı şekilde üfle, yorulup başın dönsün." }, quotes: { 0: {tr: "Efendim ciğerim soldu! Bitmiyor bu!"}, 1: {tr: "Püfff! Ulan hava kaçırıyor galiba, delik mi bu!"}, 2: {tr: "Nefesimle hayat veriyorum bu cansız plastiğe."}, 3: {tr: "Pompa almamak için ciğerini heba eden ahmak."} } },
+    { title: { tr: "YALAN MAKİNESİ" }, mission: { tr: "Yalan söyledikçe elektrik çarpan bir koltuktasın." }, hint: { tr: "Konuşurken aniden sarsıl, çırpın, sonra hiçbir şey olmamış gibi devam et." }, quotes: { 0: {tr: "Ben hiç yalan s-söylemem efen... Bzzzt! Ah!"}, 1: {tr: "Ulan dürüst adamım ben! Bzzzt! Yandım!"}, 2: {tr: "Gerçekler acıdır... Bzzzt! Gerçekten acıymış!"}, 3: {tr: "Teknoloji, dürüstlüğü zorla aşılıyor."} } },
+    { title: { tr: "BOZUK ROBOT" }, mission: { tr: "Şarjı bitmek üzere olan ve bozulup tekleyen bir robotsun." }, hint: { tr: "Hareketlerini kesik kesik yap, 'Bip bop' sesleri çıkar, yavaşça enerjin bitsin." }, quotes: { 0: {tr: "E-efendim... S-sistem çök... Bip..."}, 1: {tr: "Ulan şarj... Bitti... Fişe takın beni..."}, 2: {tr: "Metal kalbim... Yavaşlıyor... Karanlık..."}, 3: {tr: "Yapay zekanın fişi çekilinceki çaresizliği."} } },
+    { title: { tr: "SESSİZ SİNEMA YARIŞMASI" }, mission: { tr: "Çok uzun bir film ismini sessiz sinema ile anlatmaya çalışıyorsun." }, hint: { tr: "Parmaklarınla kelime sayısını göster, abartılı hareketlerle anlat, karşı taraf anlamayınca sinirlen." }, quotes: { 0: {tr: "Efendim iki kelime! Birinci kelime, uçuyor! Yok anlamadı!"}, 1: {tr: "Ulan sağır mısın dilsiz mi! Bak, böyle kocaman!"}, 2: {tr: "Anlamı hecelere böldüm ama nafile."}, 3: {tr: "İnsanların anlama kapasitesi tam bir trajedi."} } },
+    { title: { tr: "MAYMUN TAKLİDİ" }, mission: { tr: "Bir maymunun vücuduna hapsolmuş bir insansın." }, hint: { tr: "Koltukaltlarını kaşı, muz soyuyormuş gibi yap ama aynı zamanda ciddi konuşmaya çalış." }, quotes: { 0: {tr: "Efendim ben aslında... Uu uu aa aa! Muz verin!"}, 1: {tr: "Ne bakıyorsunuz ulan! Uu aa! Kaşınıyor sırtım!"}, 2: {tr: "Evrimin tersine döndüğü bu acımasız beden..."}, 3: {tr: "İçimizdeki ilkel doğanın uyanışı."} } },
+    { title: { tr: "AŞIRI ACI KAHVE" }, mission: { tr: "Çok sıcak ve acı bir kahveyi yudumladın." }, hint: { tr: "Ağzını yakmış gibi 'Hah, hıh' yap, dilini dışarı çıkar, bardağı elinde salla." }, quotes: { 0: {tr: "Yandım anam! Bu ne biçim kahve efendim, katran gibi!"}, 1: {tr: "Iyy! Ulan boğazım delindi be!"}, 2: {tr: "Bu siyah sıvı, ruhum kadar acı ve karanlık."}, 3: {tr: "İnsanın uyanmak için kendine ettiği eziyet."} } },
+    { title: { tr: "ARIZALI KUKLA" }, mission: { tr: "İpleri birbirine karışmış bir kukla gibi hareket et." }, hint: { tr: "Bir kolun yukarı kalkarken diğeri garip bir şekilde bükülsün, kendi kontrolünü kaybet." }, quotes: { 0: {tr: "Aman efendim iplerim dolandı! Kolum nerede!"}, 1: {tr: "Çekin ulan şu ipleri düzgün! Boynum büküldü!"}, 2: {tr: "Görünmez efendilerin elinde bir oyuncağım sadece."}, 3: {tr: "Özgür iradenin koca bir yalan olduğunun kanıtı."} } },
+    { title: { tr: "SIKIŞMIŞ KAVANOZ" }, mission: { tr: "Kapağı asla açılmayan bir turşu kavanozunu açmaya çalış." }, hint: { tr: "Kavanozu iki elinle sıkıca kavra, yüzünü buruşturarak tüm gücünle çevir, tişörtünle açmayı dene." }, quotes: { 0: {tr: "Efendim açılmıyor bu namussuz! Fıtık oldum!"}, 1: {tr: "Verin ulan kıracağım şimdi bunu! İnat inat!"}, 2: {tr: "Küçücük bir kapak, koca insan iradesine meydan okuyor."}, 3: {tr: "Turşu yemek için verilen bu anlamsız savaş..."} } }
   ],
   HARD: [ 
-    { title: { tr: "SAHTE KRAL" }, mission: { tr: "Her şeyin kontrol altında olduğu yalanını söyleyen paniklemiş bir lider." } },
-    { title: { tr: "AĞLARKEN GÜLMEK" }, mission: { tr: "Çok üzücü bir şey anlatırken sinir krizi geçirip kahkaha at." } },
-    { title: { tr: "İKİ KİŞİLİK KAVGA" }, mission: { tr: "Kendi kendinle (iki farklı karakter olarak) sözlü kavga et." } },
-    { title: { tr: "SESSİZ ÇIĞLIK" }, mission: { tr: "Boğazın düğümlenmiş, sesin çıkmıyor ama avazın çıktığı kadar bağır." } },
-    { title: { tr: "YARATIK SALDIRISI" }, mission: { tr: "Görünmez bir ahtapot tarafından yutuluyorsun, kurtulmaya çalış." } },
-    { title: { tr: "TER VE TİTREME" }, mission: { tr: "Hem donuyor hem de sıcaktan terliyormuşsun gibi hisset." } },
-    { title: { tr: "KULLANMA KILAVUZU" }, mission: { tr: "Bomba imha ediyorsun ama kılavuz Çince." } },
-    { title: { tr: "GERİYE AKAN ZAMAN" }, mission: { tr: "Yaptığın her hareketi ve söylediğin kelimeyi tersten oyna." } },
-    { title: { tr: "KOMİK CENAZE" }, mission: { tr: "Çok sevdiğin birinin cenazesinde gülmemeye çalışarak konuş." } },
-    { title: { tr: "HİPNOZ" }, mission: { tr: "Gözlerinle kameraya/seyirciye bakarak onları hipnotize etmeye çalış." } }
+    { title: { tr: "SAHTE KRAL" }, mission: { tr: "Her şeyin kontrol altında olduğu yalanını söyleyen paniklemiş bir lider." }, hint: { tr: "Titreyerek gülümse, terini sil, kekele ama sürekli 'her şey yolunda' mesajı ver." }, quotes: { 0: {tr: "Ben kralım efendim! T-Tabii ki korkmuyorum!"}, 1: {tr: "Benim dediğim olur! B-Bana güvenin!"}, 2: {tr: "Tacım titriyor, ama maskem düşmemeli..."}, 3: {tr: "Güç, korkunun en büyük örtüsüdür."} } }, 
+    { title: { tr: "AĞLARKEN GÜLMEK" }, mission: { tr: "Çok üzücü bir şey anlatırken sinir krizi geçirip kahkaha at." }, hint: { tr: "Önce hıçkırarak ağla, sonra aniden gözyaşları içinde çılgınca gülmeye başla." }, quotes: { 0: {tr: "Hahaha! Çok komik efendim... Ah kalbim! Hahaha!"}, 1: {tr: "Ulan ne kadar komik... (Ağlar) Hahaha! Vah bana!"}, 2: {tr: "Gözyaşlarım kahkahama karışıyor, aklım deliliğe... "}, 3: {tr: "Trajedi ve komedi birbirine bu kadar yakındır işte."} } },
+    { title: { tr: "İKİ KİŞİLİK KAVGA" }, mission: { tr: "Kendi kendinle (iki farklı karakter olarak) sözlü kavga et." }, hint: { tr: "Sürekli sağa ve sola dönerek beden dilini ve ses tonunu değiştir, kendini tokatla." }, quotes: { 0: {tr: "-Sen sus efendim! -Asıl sen sus kaba adam!"}, 1: {tr: "-Ne vuruyorsun lan! -Hak ettin oğlum!"}, 2: {tr: "İçimdeki iki ruh savaşıyor, bedenim bir savaş alanı."}, 3: {tr: "Şizofreninin sahnede hayat buluşu."} } },
+    { title: { tr: "SESSİZ ÇIĞLIK" }, mission: { tr: "Boğazın düğümlenmiş, sesin çıkmıyor ama avazın çıktığı kadar bağır." }, hint: { tr: "Yüzünü kıpkırmızı yap, boyun damarlarını şişir, ağzını kocaman aç ama SIFIR ses çıkar." }, quotes: { 0: {tr: "(Sessizce) İMDAT EFENDİM, KİMSE DUYMUYOR MU!"}, 1: {tr: "(Sessizce) ULAN YARDIM EDİN PATLAYACAĞIM!"}, 2: {tr: "(Sessizce) Dünyaya haykırıyorum, ama evren sağır..."}, 3: {tr: "(Sessizce) En gürültülü sessizlik."} } },
+    { title: { tr: "YARATIK SALDIRISI" }, mission: { tr: "Görünmez bir ahtapot tarafından yutuluyorsun, kurtulmaya çalış." }, hint: { tr: "Boynuna dolanan kolları çekiştir, nefessiz kalmış gibi yap, yerde sürünerek boğuş." }, quotes: { 0: {tr: "Aman efendim bırak boynumu! Bu ne biçim yaratık!"}, 1: {tr: "Ulan yapışma koluma! Kopartacağım seni!"}, 2: {tr: "Bu canavar beni karanlığa, dibe çekiyor..."}, 3: {tr: "Kendi yarattığı canavarlarla boğuşan insan."} } },
+    { title: { tr: "TER VE TİTREME" }, mission: { tr: "Hem donuyor hem de sıcaktan terliyormuşsun gibi hisset." }, hint: { tr: "Bir yandan dişlerini çatırdatarak titre, diğer yandan alnından ter siliyormuş gibi yap." }, quotes: { 0: {tr: "Aman efendim hem dondum hem piştim!"}, 1: {tr: "Ulan bu ne biçim hastalık, içim titriyor dışım yanıyor!"}, 2: {tr: "Bedenim araf'ta kalmış, ne sıcak ne soğuk... "}, 3: {tr: "Biyolojik sistemin tamamen çöküşü."} } },
+    { title: { tr: "KULLANMA KILAVUZU" }, mission: { tr: "Bomba imha ediyorsun ama kılavuz Çince." }, hint: { tr: "Hayali kağıdı ters çevir, panikle terini sil, kırmızı ve mavi kablolar arasında titre." }, quotes: { 0: {tr: "Aman efendim bu yazılar ters! Kırmızı mı mavi mi!"}, 1: {tr: "Ulan patlayacağız! Nerede Türkçe yazıyor burada!"}, 2: {tr: "Ölüm ile yaşam arasındaki ince çizgi... Ve ben okuyamıyorum."}, 3: {tr: "Bilinmezliğin karşısındaki çaresiz panik."} } },
+    { title: { tr: "GERİYE AKAN ZAMAN" }, mission: { tr: "Yaptığın her hareketi ve söylediğin kelimeyi tersten oyna." }, hint: { tr: "Geri geri yürü, nesneleri yere koymak yerine yerden eline uçuyormuş gibi al." }, quotes: { 0: {tr: "!midnefe namA !muroyidiy ireg ireG"}, 1: {tr: "!nalU !muroyüşüd eyireG"}, 2: {tr: "...royıkla zısmısatnah namaz, haA"}, 3: {tr: "!kılmaçamras rib lısaN"} } },
+    { title: { tr: "KOMİK CENAZE" }, mission: { tr: "Çok sevdiğin birinin cenazesinde gülmemeye çalışarak konuş." }, hint: { tr: "Ağlıyormuş gibi yaparken dudaklarını ısırıp kıkırdamayı bastırmaya çalış." }, quotes: { 0: {tr: "Efendim çok iyi bir insandı... (Kıkırdar) Çok özleyeceğiz..."}, 1: {tr: "Ulan rahmetli de hep güldürürdü bizi... (Kahkahayı bastırır)"}, 2: {tr: "Ah kara toprak! (Gülümser) Gözyaşlarım kilitlendi..."}, 3: {tr: "Ölümün absürtlüğüne gülmek..."} } },
+    { title: { tr: "HİPNOZ" }, mission: { tr: "Gözlerinle kameraya/seyirciye bakarak onları hipnotize etmeye çalış." }, hint: { tr: "Gözlerini kocaman aç, ellerini yavaşça sarkaç gibi salla, gizemli bir ses tonu kullan." }, quotes: { 0: {tr: "Aman efendim gözlerime bakın... Çok uykunuz geldi..."}, 1: {tr: "Bana bak ulan! İki saniyede uyuturum seni!"}, 2: {tr: "Ruhunuzu bana teslim edin... Göz kapaklarınız ağırlaşıyor..."}, 3: {tr: "Bir zihnin diğerini esir alma çabası."} } },
+    { title: { tr: "DÜNYANIN SONU" }, mission: { tr: "Meteor çarpmasına 10 saniye kalmış, televizyonda son haberi sunuyorsun." }, hint: { tr: "Mikrofonu tut, hızlıca konuş, sonra masanın altına saklanıp bağır." }, quotes: { 0: {tr: "Sayın seyirciler, hakkınızı helal edin, taş düşüyor!"}, 1: {tr: "Ulan meteor geliyor meteor! Kaçın kurtarın kendinizi!"}, 2: {tr: "Gökyüzü alevler içinde yarılıyor, son sahnemiz geldi!"}, 3: {tr: "Sonunda bu saçma gezegenden kurtuluyoruz."} } },
+    { title: { tr: "GÖRÜNMEZ KILIÇ" }, mission: { tr: "Dünyanın en zorlu görünmez kılıç dövüşünü tek başına yap." }, hint: { tr: "Havaya kılıç salla, darbe almış gibi geriye sendele, epik hareketler yap." }, quotes: { 0: {tr: "Hiyah! Aman efendim kolumu kestiler!"}, 1: {tr: "Gel lan buraya! Al sana şovalyelik!"}, 2: {tr: "Bu çelik, onurumu ve kanımı taşıyor!"}, 3: {tr: "Olmayan bir düşmana sallanan zavallı bir kılıç."} } },
+    { title: { tr: "HAFIZA KAYBI" }, mission: { tr: "Tam şu an kim olduğunu unuttun, ellerine ve etrafına bakarak anlamaya çalış." }, hint: { tr: "Ellerine şaşkınca bak, yüzünü yokla, 'Ben kimim, burası neresi?' der gibi oyna." }, quotes: { 0: {tr: "Aman efendim, ben kimin nesiyim? Adım neydi!"}, 1: {tr: "Burası neresi ulan! Siz kimsiniz!"}, 2: {tr: "Bir boşluktayım... Geçmişim bir rüya gibi silindi."}, 3: {tr: "Hafıza yoksa, dert de yoktur."} } },
+    { title: { tr: "VAMPİR TERAPİSİ" }, mission: { tr: "Kan görmeye dayanamayan ve bayılan bir vampirsin." }, hint: { tr: "Dişlerini göster ama hayali bir kan görünce miden bulansın ve bayılacak gibi ol." }, quotes: { 0: {tr: "Efendim kan mı o! İyyy içim kalktı!"}, 1: {tr: "Ulan ketçap verin bana, ben bunu içemem!"}, 2: {tr: "Lanet olsun bu doğama, kızıl sıvı beni dehşete düşürüyor."}, 3: {tr: "Kendi varoluşundan iğrenen bir ölümsüz."} } },
+    { title: { tr: "ÇOK KİŞİLİ BEDEN" }, mission: { tr: "Bedenini üç farklı kişi kontrol ediyormuş gibi oyna." }, hint: { tr: "Sağ elin sol eline vursun, ayağın kendi kendine yürümeye çalışsın, farklı sesler çıkar." }, quotes: { 0: {tr: "Aman efendim sol kolum bana isyan ediyor!"}, 1: {tr: "Ulan bacağım dur! Gitme oraya!"}, 2: {tr: "Bedenim bir savaş alanı, ruhlarım birbiriyle çarpışıyor."}, 3: {tr: "Kendi içinde bölünen zavallı insanlık."} } },
+    { title: { tr: "TELEPATİ" }, mission: { tr: "Sadece zihin gücüyle karşındaki nesneyi uçurmaya çalış." }, hint: { tr: "Gözlerini kocaman aç, ellerini objeye doğru tut, aşırı zorlanıyormuş gibi titremeye başla." }, quotes: { 0: {tr: "Efendim kalkmıyor bu! Beynim yandı!"}, 1: {tr: "Kalk ulan yukarı! Patlayacak kafam!"}, 2: {tr: "Zihnimin gücü, maddenin ağırlığına yenik düşüyor... "}, 3: {tr: "İnsanın sınırlarını zorlayan o aptal çabası."} } },
+    { title: { tr: "CANLI YAYIN KAZASI" }, mission: { tr: "Haber sunarken arkanda beliren bir hayaleti fark edip çaktırmamaya çalış." }, hint: { tr: "Kameraya ciddi bakarken aniden arkana dönüp irkil, sonra zorla gülümseyip devam et." }, quotes: { 0: {tr: "Sayın seyirciler... Arkamda biri mi var efendim!"}, 1: {tr: "Bugün hava çok... Bismillahirrahmanirrahim!"}, 2: {tr: "Karanlığın içinden gelen bu silüet de ne?"}, 3: {tr: "Medya her şeyi saklar, hayaletleri bile."} } },
+    { title: { tr: "GÖRÜNMEZ MERDİVEN" }, mission: { tr: "Kuvvetli bir fırtınada sallanan görünmez bir merdivenden in." }, hint: { tr: "Ayaklarını yüksekten yavaşça aşağı bas, rüzgardan savruluyormuş gibi tutunmaya çalış." }, quotes: { 0: {tr: "Aman efendim düşeceğim! Tutun beni!"}, 1: {tr: "Ulan kayıyor ayağım! Bittik!"}, 2: {tr: "Uçuruma inen bu görünmez basamaklar..."}, 3: {tr: "Düşüşün kaçınılmaz olduğu o ince çizgi."} } },
+    { title: { tr: "SAHTE ÇEVİRMEN" }, mission: { tr: "Sahnede dünyanın en karmaşık dilini uydurup kendini çevir." }, hint: { tr: "Anlamsız garip sesler çıkar, sonra dönüp 'Burada diyor ki...' diyerek uyduruk şeyler söyle." }, quotes: { 0: {tr: "Habele hubele! Yani diyor ki efendim, merhaba."}, 1: {tr: "Maka maku şaka! Diyor ki ulan dağılın buradan!"}, 2: {tr: "Krakatoa memento! Ruhun derinliklerinden bir mesaj... "}, 3: {tr: "Dilin bir aldatmaca olduğunu kanıtlayan an."} } },
+    { title: { tr: "HIZLANDIRILMIŞ VİDEO" }, mission: { tr: "Normal bir yemeği 10x hızlandırılmış bir videodaymışsın gibi ye." }, hint: { tr: "Ellerini robotik ve aşırı hızlı şekilde ağzına götür, çiğneme hareketini komik bir hızda yap." }, quotes: { 0: {tr: "Amanefendimbunasılyemektiknefesalamadım!"}, 1: {tr: "Ulangittilokmalarboğazımatakıldı!"}, 2: {tr: "Zamanınacımasızhızıkarşısındaezilenben..."}, 3: {tr: "Tüketimçılgınlığınınsonnoktası."} } }
   ],
   FINAL: [ 
-    { title: { tr: "VEDA KONUŞMASI" }, mission: { tr: "Oyun bitiyor. Seyirciye dramatik ve epik bir veda konuşması yap." } } 
+    { title: { tr: "VEDA KONUŞMASI" }, mission: { tr: "Oyun bitiyor. Seyirciye dramatik ve epik bir veda konuşması yap." }, hint: { tr: "Seyirciyi selamla, ağlıyormuş gibi yap, sahnenin tozunu yuttuğunu hissettir." }, quotes: { 0: {tr: "Sürçülisan ettiysek affola, İbiş kaçar efendim!"}, 1: {tr: "Hadi bana eyvallah! İyi güldük ulan!"}, 2: {tr: "Perde kapanırken, geriye gölgelerimiz kalır... Elveda!"}, 3: {tr: "Oyun biter, gerçek hayat denilen tiyatro başlar."} } } 
   ],
   OBSTACLE: [ 
-    { id: 'o1', text: { tr: "Sadece tek heceli kelimelerle konuş." } }, 
-    { id: 'o2', text: { tr: "Açıklamanı rap veya şarkı söyleyerek yap." } }, 
-    { id: 'o3', text: { tr: "Kameraya/Seyirciye sırtını dönerek oyna." } },
-    { id: 'o4', text: { tr: "Sürekli zıplayarak oynamak zorundasın." } },
-    { id: 'o5', text: { tr: "Gülme krizi! Her cümlenin sonuna kahkaha ekle." } }
+    { id: 'o1', text: { tr: "Sadece TEK HECELİ kelimeler kurarak oyna!" }, ruleDesc: { tr: "Rakip performans boyunca sadece 'Evet, Gel, Bak' gibi TEK HECELİ kelimeler kurmak zorunda kalır." } }, 
+    { id: 'o2', text: { tr: "Müzikal gibi! ŞARKI SÖYLEYEREK anlat!" }, ruleDesc: { tr: "Rakip görevini normal konuşarak değil, rap yaparak veya şarkı söyleyerek anlatmak zorundadır." } }, 
+    { id: 'o3', text: { tr: "Asla kameraya bakma! SIRTIN DÖNÜK oyna!" }, ruleDesc: { tr: "Rakip performans boyunca asla seyirciye/kameraya bakamaz, hep arkası dönük oynamak zorundadır." } },
+    { id: 'o4', text: { tr: "Durmak yok! Sürekli ZIPLAYARAK oyna!" }, ruleDesc: { tr: "Rakip yerinde duramaz! Tüm sahne boyunca sürekli zıplayarak rol yapmak zorundadır." } },
+    { id: 'o5', text: { tr: "Her cümlenin sonuna bir KAHKAHA patlat!" }, ruleDesc: { tr: "Görev ne kadar acıklı olursa olsun, rakip kurduğu her cümlenin sonuna kahkaha eklemek zorundadır." } },
+    { id: 'o6', text: { tr: "Mimik yasak! Kesik kesik bir ROBOT gibi oyna!" }, ruleDesc: { tr: "Rakibin mimikleri silinir. Kesik kesik robot hareketleri ve mekanik bir sesle oynamak zorundadır." } },
+    { id: 'o7', text: { tr: "Dudaklarını BİRBİRİNE DEĞDİRMEDEN (B, P, M) konuş!" }, ruleDesc: { tr: "Rakip konuşurken dudaklarını birbirine değdiremez. Değerse jüri anında eksi puan verir!" } },
+    { id: 'o8', text: { tr: "Her 5 saniyede bir heykel gibi DON ve bekle!" }, ruleDesc: { tr: "Rakip oynarken her 5 saniyede bir video donmuş gibi heykel olup beklemek zorundadır." } }
   ],
   BONUS: [ 
-    { id: 'tubi', name: 'Tubi', desc: { tr: 'Buradayım canım! Annen gibi düşün... Sana 20 saniye tavsiye vereceğim!' }, benefit: { tr: 'FİKİR AL' }, effect: 'idea' }, 
-    { id: 'kubi', name: 'Kubi', desc: { tr: 'Kalem elimde! Bu sahneye bir kişi daha yazıyorum. Kalabalık olsun!' }, benefit: { tr: 'EKSTRA KARAKTER' }, effect: 'char' }, 
-    { id: 'mali', name: 'Mali', desc: { tr: 'Hesapladım, bu işten kârlı çıkarız.' }, benefit: { tr: '+2 PUAN' }, effect: 'score' }, 
-    { id: 'kubo', name: 'Kubo', desc: { tr: 'Kestik! Olmadı, baştan alıyoruz ama süreyi uzatıyorum.' }, benefit: { tr: '+30 SANİYE' }, effect: 'time' }, 
-    { id: 'madox', name: 'Madox', desc: { tr: 'Bu sahnenin türü beni sıktı. Değiştirildi!' }, benefit: { tr: 'TÜRÜ DEĞİŞTİR' }, effect: 'genre' }, 
-    { id: 'dputiyat', name: 'Dpütiyat', desc: { tr: 'Yalnız olmak yok! Birini kap, sahneye fırlat.' }, benefit: { tr: 'OYUNCU DAVET ET' }, effect: 'add_player' }, 
-    { id: 'gulec', name: 'Güleç', desc: { tr: 'Harika! Bir alkış tufanı yaratıyorum!' }, benefit: { tr: 'ALKIŞ BONUSU' }, effect: 'applause' }, 
-    { id: 'sadic', name: 'Sadıç', desc: { tr: 'Hayat bir kumardır kardeşim! Zarları atıyorum!' }, benefit: { tr: 'ŞANS ZARI' }, effect: 'gamble' }, 
-    { id: 'cihad', name: 'Cihad', desc: { tr: 'Cebimde bir sürpriz var... Kullan onu!' }, benefit: { tr: 'SÜRPRİZ OBJE' }, effect: 'double' } 
+    { id: 'tubi', name: 'Tubi', quote: { tr: 'Buradayım canım! Annen gibi düşün... Sana taktik vereceğim!' }, ruleDesc: { tr: 'Süren durur ve 10 saniye boyunca sahnede ne yapacağını düşünme/okuma fırsatı bulursun.' }, benefit: { tr: 'FİKİR AL' }, effect: 'idea' }, 
+    { id: 'kubi', name: 'Kubi', quote: { tr: 'Kalem elimde! Bu sahneye bir kişi daha yazıyorum. Kalabalık olsun!' }, ruleDesc: { tr: 'Sahnene uydurma bir yan karakter eklersin. Tek başına değil, onunla kavga ediyor/konuşuyormuş gibi oynarsın.' }, benefit: { tr: 'EKSTRA KARAKTER' }, effect: 'char' }, 
+    { id: 'mali', name: 'Mali', quote: { tr: 'Hesapladım, bu işten kârlı çıkarız.' }, ruleDesc: { tr: 'Jüri oylamasına gerek kalmadan performansına banko +2 puan eklenir.' }, benefit: { tr: '+2 PUAN' }, effect: 'score' }, 
+    { id: 'kubo', name: 'Kubo', quote: { tr: 'Kestik! Olmadı, baştan alıyoruz ama süreyi uzatıyorum.' }, ruleDesc: { tr: 'Zamanın daraldığında sürene anında +30 saniye ekler.' }, benefit: { tr: '+30 SANİYE' }, effect: 'time' }, 
+    { id: 'madox', name: 'Madox', quote: { tr: 'Bu sahnenin türü beni sıktı. Değiştirildi!' }, ruleDesc: { tr: 'Görevini anında iptal eder ve sana yeni bir rastgele görev çektirir.' }, benefit: { tr: 'TÜRÜ DEĞİŞTİR' }, effect: 'genre' }, 
+    { id: 'dputiyat', name: 'Dpütiyat', quote: { tr: 'Yalnız olmak yok! Birini kap, sahneye fırlat.' }, ruleDesc: { tr: 'İstediğin bir rakibi sahneye çağırıp görevini onunla oynamasını istersin.' }, benefit: { tr: 'OYUNCU DAVET ET' }, effect: 'add_player' }, 
+    { id: 'gulec', name: 'Güleç', quote: { tr: 'Harika! Bir alkış tufanı yaratıyorum!' }, ruleDesc: { tr: 'Seyirci coşkusu (Altın Mikrofon) anında %100 dolar, alacağın puanlar 2 ile çarpılır.' }, benefit: { tr: 'ALKIŞ BONUSU' }, effect: 'applause' }, 
+    { id: 'sadic', name: 'Sadıç', quote: { tr: 'Hayat bir kumardır kardeşim! Zarları atıyorum!' }, ruleDesc: { tr: 'Şans zarı atar. %50 ihtimalle +10 Puan kazandırır, %50 ihtimalle -10 Puan kaybettirir.' }, benefit: { tr: 'ŞANS ZARI' }, effect: 'gamble' }, 
+    { id: 'cihad', name: 'Cihad', quote: { tr: 'Cebimde bir sürpriz var... Kullan onu!' }, ruleDesc: { tr: 'Sahneye anında dahil edebileceğin rastgele saçma bir obje (hayali) verir.' }, benefit: { tr: 'SÜRPRİZ OBJE' }, effect: 'double' } 
   ]
 };
 
@@ -308,7 +343,6 @@ const ConfettiExplosion = () => (
     </div>
 );
 
-// ZAR ZIPLAMA VE DÖNME ANİMASYONLARI (Normal Sayı Zarı)
 const Dice3D = ({ value, isRolling }) => {
     const [currentClass, setCurrentClass] = useState('');
     useEffect(() => { if (isRolling) setCurrentClass('rolling'); else if (value) setCurrentClass(`show-${value}`); }, [value, isRolling]);
@@ -321,7 +355,6 @@ const Dice3D = ({ value, isRolling }) => {
     );
 };
 
-// ZAR ZIPLAMA VE DÖNME ANİMASYONLARI (Karakter Kura Zarı)
 const TeamDice3D = ({ winnerId, isRolling, assets, teams }) => {
     const [currentClass, setCurrentClass] = useState('');
     useEffect(() => { 
@@ -332,7 +365,7 @@ const TeamDice3D = ({ winnerId, isRolling, assets, teams }) => {
     const renderFace = (teamIndex) => {
         const team = teams[teamIndex % teams.length];
         const assetSrc = assets[`team${team.id}_idle`] || assets[`team${team.id}`];
-        return <div className="w-full h-full flex items-center justify-center bg-black border-2 border-[#D4AF37] rounded-lg overflow-hidden shadow-[inset_0_0_20px_rgba(212,175,55,0.5)]">{assetSrc ? <AssetDisplay src={assetSrc} className="w-full h-full object-cover object-top" alt={`Team ${team.id}`} /> : <span className="text-[#D4AF37] text-3xl">T{team.id+1}</span>}</div>;
+        return <div className="w-full h-full flex items-center justify-center bg-black border-2 border-[#D4AF37] rounded-lg overflow-hidden shadow-[inset_0_0_20px_rgba(212,175,55,0.5)] drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">{assetSrc ? <AssetDisplay src={assetSrc} className="w-full h-full object-cover object-top" alt={`Team ${team.id}`} /> : <span className="text-[#D4AF37] text-3xl">T{team.id+1}</span>}</div>;
     };
 
     return (
@@ -371,7 +404,7 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
     };
 
     const triggerAction = () => {
-        if (!isMyTurn) return; // Sadece sırası gelen tıklayabilir
+        if (!isMyTurn) return; 
         if (mode === 'play' && window.anime && cardRef.current) {
             window.anime({ targets: cardRef.current, scale: [1, 1.2], opacity: [1, 0], duration: 300, easing: 'easeInExpo', complete: onAction });
         } else onAction();
@@ -379,12 +412,12 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
 
     if (!card) return null;
     const isBonus = type === 'bonus'; const isObstacle = type === 'obstacle'; const isFinal = type === 'final'; const isPlaying = mode === 'play';
-    let titleText = "", missionText = "", flavorText = "", icon = <Drama size={32} className="text-[#D4AF37]"/>, characterVideoSrc = null, bgStyle = "bg-neutral-900", accentColor = "text-white", glowColor = "rgba(255,255,255,0.1)";
+    let titleText = "", missionText = "", flavorText = "", icon = <Drama size={32} className="text-[#D4AF37]"/>, characterVideoSrc = null, bgStyle = "bg-neutral-900", accentColor = "text-white", glowColor = "rgba(0,0,0,0.6)";
     const baseKey = `team${currentTeamId}`;
 
     if (isBonus) {
         titleText = getLocalizedText(card.name, lang) || "BONUS"; 
-        missionText = getLocalizedText(card.desc, lang); 
+        missionText = getLocalizedText(card.quote, lang); // BONUSLAR İÇİN DİREKT KARAKTER REPLİĞİ YAZILIR
         flavorText = `${UI[lang]?.oppCard || "FIRSAT KARTI"} ✦ ${getLocalizedText(card.benefit, lang)}`;
         icon = <Sparkles size={32} className="text-blue-400 animate-pulse"/>; bgStyle = isPlaying ? "bg-gradient-to-b from-yellow-600 to-red-900" : "bg-gradient-to-b from-indigo-600 to-blue-900"; accentColor = isPlaying ? "text-yellow-200" : "text-indigo-200"; glowColor = isPlaying ? "rgba(255, 200, 0, 0.8)" : "rgba(99, 102, 241, 0.5)";
     } else if (isObstacle) {
@@ -393,42 +426,44 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
         flavorText = "ENVANTERE EKLENDİ! Başkasının sırasında fırlat.";
         icon = <Skull size={32} className="text-red-500 animate-bounce"/>; characterVideoSrc = assets[`${baseKey}_scared`]; bgStyle = "bg-gradient-to-b from-red-600 to-rose-900"; accentColor = "text-red-200"; glowColor = "rgba(225, 29, 72, 0.5)";
     } else {
-        titleText = isFinal ? getLocalizedText(card.title, lang) : UI[lang].improv; 
+        const fallbackTitle = UI[lang] ? UI[lang].improv : "DOĞAÇLAMA";
+        titleText = isFinal ? (getLocalizedText(card.title, lang) || fallbackTitle) : fallbackTitle; 
         missionText = getLocalizedText(card.mission, lang);
         const quoteStr = getRandomCardText(card, currentTeamId, lang);
         flavorText = quoteStr ? `"${quoteStr}"` : getLocalizedText(card.desc, lang);
         icon = getCardIcon(missionText + " " + titleText, <Drama size={32} className="text-[#D4AF37]"/>);
-        if(type === 'easy') { characterVideoSrc = assets[`${baseKey}_happy`]; bgStyle = "bg-gradient-to-b from-emerald-500 to-teal-800"; accentColor = "text-emerald-100"; titleText = UI[lang].easyLevel; } 
-        else if(type === 'medium') { characterVideoSrc = assets[`${baseKey}_thinking`]; bgStyle = "bg-gradient-to-b from-amber-500 to-orange-800"; accentColor = "text-amber-100"; titleText = UI[lang].medLevel; } 
-        else if(type === 'hard') { bgStyle = "bg-gradient-to-b from-rose-500 to-red-800"; accentColor = "text-rose-100"; characterVideoSrc = assets[`${baseKey}_scared`]; titleText = UI[lang].hardLevel; } 
+        if(type === 'easy') { characterVideoSrc = assets[`${baseKey}_happy`]; bgStyle = "bg-gradient-to-b from-emerald-500 to-teal-800"; accentColor = "text-emerald-100"; titleText = UI[lang]?.easyLevel || "KOLAY SEVİYE"; } 
+        else if(type === 'medium') { characterVideoSrc = assets[`${baseKey}_thinking`]; bgStyle = "bg-gradient-to-b from-amber-500 to-orange-800"; accentColor = "text-amber-100"; titleText = UI[lang]?.medLevel || "ORTA SEVİYE"; } 
+        else if(type === 'hard') { bgStyle = "bg-gradient-to-b from-rose-500 to-red-800"; accentColor = "text-rose-100"; characterVideoSrc = assets[`${baseKey}_scared`]; titleText = UI[lang]?.hardLevel || "ZOR SEVİYE"; } 
         else if(type === 'final') { bgStyle = "bg-gradient-to-b from-yellow-600 via-orange-600 to-red-900"; accentColor = "text-yellow-100"; characterVideoSrc = assets[`${baseKey}_scared`]; }
     }
 
     return (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/90 backdrop-blur-sm overflow-hidden px-4">
-            {isPlaying && <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,200,0,0.3)_0%,transparent_70%)] animate-pulse"></div>}
-            <div ref={cardRef} className={`relative w-full max-w-[90vw] sm:max-w-sm h-[75vh] max-h-[600px] rounded-3xl overflow-hidden shadow-2xl flex flex-col opacity-100 border border-white/20`} style={{ boxShadow: `0 10px 40px -10px ${glowColor}` }}>
+            {isPlaying && isBonus && <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,200,0,0.3)_0%,transparent_70%)] animate-pulse"></div>}
+            
+            <div ref={cardRef} className={`relative w-full max-w-[90vw] sm:max-w-sm h-[75vh] max-h-[600px] rounded-3xl overflow-hidden shadow-2xl flex flex-col opacity-100 border border-white/20 [mask-image:radial-gradient(white,black)] [-webkit-mask-image:-webkit-radial-gradient(white,black)] transform-gpu`} style={{ boxShadow: `0 10px 40px -10px ${glowColor}` }}>
                 <div className={`absolute inset-0 ${bgStyle} z-0`}></div>
+                
                 <div className="absolute inset-0 z-10 flex flex-col justify-start p-0">
-                    <div className={`relative w-full ${isBonus ? 'h-[50%]' : 'h-[40%]'} shrink-0 z-0 overflow-hidden flex items-center justify-center bg-black`}>
+                    <div className={`relative w-full h-[48%] shrink-0 z-0 overflow-hidden rounded-t-3xl flex items-center justify-center bg-black`}>
                          
-                         {/* ARKA PLAN BLUR */}
-                         {isBonus && assets[`bonus_${card.id}`] ? (
-                             <AssetDisplay src={assets[`bonus_${card.id}`]} className="absolute inset-0 w-full h-full object-cover scale-[1.5] blur-2xl opacity-50 bg-transparent" alt="Blur Bg" />
-                         ) : (
-                             characterVideoSrc && <AssetDisplay src={characterVideoSrc} className="absolute inset-0 w-full h-full object-cover scale-[1.5] blur-2xl opacity-40 bg-transparent" alt="Blur Bg" />
+                         {/* ARKA PLAN BLUR SADECE BONUS İÇİN */}
+                         {isBonus && assets[`bonus_${card.id}`] && (
+                             <AssetDisplay src={assets[`bonus_${card.id}`]} className="absolute inset-0 w-full h-full object-cover scale-[1.5] blur-2xl opacity-60 bg-transparent" alt="Blur Bg" />
                          )}
 
-                         {/* ANA VİDEO */}
+                         {/* ANA VİDEO (Tam Sığdırma ve Siyah Arka Plan) */}
                          {isBonus && assets[`bonus_${card.id}`] ? (
-                             <AssetDisplay src={assets[`bonus_${card.id}`]} className={`relative z-10 w-full h-full object-contain object-center bg-transparent transition-transform duration-700 ${isPlaying ? 'scale-110 drop-shadow-[0_0_30px_rgba(255,200,0,0.8)]' : 'scale-100 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]'}`} alt="Bonus" />
+                             <AssetDisplay src={assets[`bonus_${card.id}`]} className={`relative z-10 w-full h-full object-contain object-center transition-transform duration-700 ${isPlaying ? 'scale-110 drop-shadow-[0_0_30px_rgba(255,200,0,0.8)]' : 'scale-100 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]'}`} alt="Bonus" />
                          ) : (
-                             characterVideoSrc && <AssetDisplay src={characterVideoSrc} className="relative z-10 w-full h-full object-contain object-top bg-transparent transition-transform duration-700 drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]" alt="Character" />
+                             characterVideoSrc && <AssetDisplay src={characterVideoSrc} className="relative z-10 w-full h-full object-contain object-bottom transition-transform duration-700" alt="Character" />
                          )}
 
                         <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-black via-black/80 to-transparent z-20"></div>
                     </div>
-                    <div className={`relative z-30 flex-1 flex flex-col items-center justify-start text-center px-6 pb-6 ${isBonus ? '-mt-4 pt-4' : '-mt-6'}`}>
+                    
+                    <div className={`relative z-30 flex-1 flex flex-col items-center justify-start text-center px-6 pb-6 -mt-6`}>
                          <div className={`p-4 rounded-full bg-black/60 border border-[#D4AF37]/50 mb-4 backdrop-blur-md inline-flex justify-center shadow-xl`}>
                              {isPlaying ? <Zap size={32} className="text-yellow-400 animate-pulse"/> : icon}
                          </div>
@@ -440,7 +475,7 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
                          
                          {isMyTurn ? (
                              <button onClick={triggerAction} className={`stagger-item opacity-0 w-full mt-auto py-4 rounded-xl font-black text-base sm:text-lg tracking-widest uppercase shadow-[0_5px_20px_rgba(0,0,0,0.5)] transition-all active:scale-95 ${isPlaying || isFinal ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black border-2 border-white animate-pulse' : 'bg-white text-black'}`}>
-                                {isObstacle ? "ENVANTERE AL" : (isPlaying ? (UI[lang]?.unleashPower || "GÜCÜ KULLAN") : (isBonus ? (UI[lang]?.accept || "KABUL ET") : (UI[lang]?.stageYours || "SAHNE SENİN")))}
+                                {isObstacle ? "ENVANTERE AL (Rakibe At)" : (isPlaying ? (UI[lang]?.unleashPower || "GÜCÜ KULLAN") : (isBonus ? "ENVANTERE AL (Sıranda Kullan)" : (UI[lang]?.stageYours || "SAHNE SENİN")))}
                              </button>
                          ) : (
                              <div className="stagger-item opacity-0 w-full mt-auto py-4 rounded-xl font-bold text-sm sm:text-base tracking-widest uppercase bg-black/50 text-gray-400 border border-white/10">
@@ -449,6 +484,12 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
                          )}
                     </div>
                 </div>
+                {mode === 'draw' && (
+                    <svg className="absolute inset-0 z-50 pointer-events-none w-full h-full" preserveAspectRatio="none">
+                        <rect id="curtain-left" x="0" y="0" width="50%" height="100%" fill="#8B0000" />
+                        <rect id="curtain-right" x="50%" y="0" width="50%" height="100%" fill="#8B0000" />
+                    </svg>
+                )}
             </div>
         </div>
     );
@@ -485,7 +526,6 @@ export default function DogaclaVisualsFinal() {
   const [cardType, setCardType] = useState(null);
   const [playingBonus, setPlayingBonus] = useState(null);
   const [performanceTimer, setPerformanceTimer] = useState(0);
-  const [juryScore, setJuryScore] = useState(0);
   const [hypeMeter, setHypeMeter] = useState(0); 
   const [characterMood, setCharacterMood] = useState('idle');
   const [isRollingDice, setIsRollingDice] = useState(false);
@@ -501,16 +541,24 @@ export default function DogaclaVisualsFinal() {
   const [winner, setWinner] = useState(null);
   const [logs, setLogs] = useState(["DOĞAÇLA Çok Oyunculu Sürümüne Hoş Geldiniz!"]);
   
+  // İPUCU (HINT) SİSTEMİ EŞZAMANLI STATE'LERİ
+  const [isTimerPaused, setIsTimerPaused] = useState(false);
+  const [showHintModal, setShowHintModal] = useState(false);
+
   // -- Strictly Local UI States --
+  const [localJuryScore, setLocalJuryScore] = useState(0); 
   const [voteData, setVoteData] = useState({ roleplay: false, obstacleOvercome: false, fail: false, bonusScore: 0 });
   const [reactions, setReactions] = useState([]);
   const [confetti, setConfetti] = useState(false); 
   const [randomEvent, setRandomEvent] = useState(null);
   const [showRules, setShowRules] = useState(false);
   const [showLogsMenu, setShowLogsMenu] = useState(false);
+  const [showCardInfoMenu, setShowCardInfoMenu] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [timerKey, setTimerKey] = useState(0); 
   const [criticLoading, setCriticLoading] = useState(false);
+  const [hintTimerLeft, setHintTimerLeft] = useState(10); 
+  const [bonusAlert, setBonusAlert] = useState(null);
 
   useEffect(() => {
       const timer = setTimeout(() => setIsAppLoading(false), 2500);
@@ -553,6 +601,24 @@ export default function DogaclaVisualsFinal() {
       return () => clearTimeout(timeout);
   }, [revealState.isActive, revealState.isRolling, revealState.currentIndex, revealState.count, revealState.mode, revealState.selectedTeams, soundEnabled]);
 
+  // İpucu Geri Sayım Sayacı (Yerel)
+  useEffect(() => {
+      if (showHintModal) {
+          setHintTimerLeft(10);
+          const timer = setInterval(() => {
+              setHintTimerLeft(prev => {
+                  if (prev <= 1) {
+                      clearInterval(timer);
+                      if (isMyTurn) closeHint(); 
+                      return 0;
+                  }
+                  return prev - 1;
+              });
+          }, 1000);
+          return () => clearInterval(timer);
+      }
+  }, [showHintModal]);
+
   // --- FIREBASE AUTH ---
   useEffect(() => {
       if (!auth) { setAuthError("Firebase modülü başlatılamadı."); return; }
@@ -593,7 +659,6 @@ export default function DogaclaVisualsFinal() {
       if ('cardType' in updates) setCardType(updates.cardType);
       if ('playingBonus' in updates) setPlayingBonus(updates.playingBonus);
       if ('performanceTimer' in updates) setPerformanceTimer(updates.performanceTimer);
-      if ('juryScore' in updates) setJuryScore(updates.juryScore);
       if ('hypeMeter' in updates) setHypeMeter(updates.hypeMeter);
       if ('characterMood' in updates) setCharacterMood(updates.characterMood);
       if ('isRollingDice' in updates) setIsRollingDice(updates.isRollingDice);
@@ -607,6 +672,8 @@ export default function DogaclaVisualsFinal() {
       if ('finalTurnIndex' in updates) setFinalTurnIndex(updates.finalTurnIndex);
       if ('winner' in updates) setWinner(updates.winner);
       if ('logs' in updates) setLogs(updates.logs);
+      if ('isTimerPaused' in updates) setIsTimerPaused(updates.isTimerPaused);
+      if ('showHintModal' in updates) setShowHintModal(updates.showHintModal);
 
       if (!isSinglePlayer && roomId && db) {
           try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId), updates); } 
@@ -632,7 +699,6 @@ export default function DogaclaVisualsFinal() {
               if (data.cardType !== undefined) setCardType(data.cardType);
               if (data.playingBonus !== undefined) setPlayingBonus(data.playingBonus);
               if (data.performanceTimer !== undefined) setPerformanceTimer(data.performanceTimer);
-              if (data.juryScore !== undefined) setJuryScore(data.juryScore);
               if (data.hypeMeter !== undefined) setHypeMeter(data.hypeMeter);
               if (data.characterMood !== undefined) setCharacterMood(data.characterMood);
               if (data.isRollingDice !== undefined) setIsRollingDice(data.isRollingDice);
@@ -646,11 +712,18 @@ export default function DogaclaVisualsFinal() {
               if (data.finalTurnIndex !== undefined) setFinalTurnIndex(data.finalTurnIndex);
               if (data.winner !== undefined) setWinner(data.winner);
               if (data.logs !== undefined) setLogs(data.logs);
+              if (data.isTimerPaused !== undefined) setIsTimerPaused(data.isTimerPaused);
+              if (data.showHintModal !== undefined) setShowHintModal(data.showHintModal);
               
               if (data.eventTrigger) {
                   if (data.eventTrigger.type === 'reaction') { setReactions(p => [...p, { id: Date.now()+Math.random(), emoji: data.eventTrigger.emoji, x: Math.random()*80+10 }]); playSynthSound('click', soundEnabled); }
                   else if (data.eventTrigger.type === 'confetti') { setConfetti(true); setTimeout(() => setConfetti(false), 2000); }
                   else if (data.eventTrigger.type === 'audience') { setRandomEvent(data.eventTrigger.data); setTimeout(() => setRandomEvent(null), 2500); }
+                  else if (data.eventTrigger.type === 'bonus_alert') {
+                      setBonusAlert(data.eventTrigger.data);
+                      playSynthSound('powerup', soundEnabled);
+                      setTimeout(() => setBonusAlert(null), 6000);
+                  }
               }
           }
       }, (err) => console.error(err));
@@ -686,6 +759,11 @@ export default function DogaclaVisualsFinal() {
           if (eventData.type === 'reaction') { setReactions(p => [...p, { id: Date.now()+Math.random(), emoji: eventData.emoji, x: Math.random()*80+10 }]); playSynthSound('click', soundEnabled); }
           else if (eventData.type === 'confetti') { setConfetti(true); setTimeout(() => setConfetti(false), 2000); }
           else if (eventData.type === 'audience') { setRandomEvent(eventData.data); setTimeout(() => setRandomEvent(null), 2500); }
+          else if (eventData.type === 'bonus_alert') {
+              setBonusAlert(eventData.data);
+              playSynthSound('powerup', soundEnabled);
+              setTimeout(() => setBonusAlert(null), 6000);
+          }
           return;
       }
       syncGame({ eventTrigger: eventData });
@@ -754,8 +832,10 @@ export default function DogaclaVisualsFinal() {
 
   const resetGame = () => { 
       playSynthSound('click', soundEnabled); setIsSinglePlayer(false);
-      syncGame({ gameState: 'LOBBY', teams: INITIAL_TEAMS, players: {}, readyPlayers: {}, targetTeamCount: 4, hostUid: null, currentTurn: 0, diceValue: null, activeCard: null, cardType: null, playingBonus: null, performanceTimer: 0, juryScore: 0, hypeMeter: 0, characterMood: 'idle', isRollingDice: false, showDiceModal: false, kuraRolling: false, finalists: [], directors: [], draftMission: null, customFinalCard: null, aiCards: [], finalTurnIndex: 0, winner: null, logs: ["Doğaçla Mobile Act I!"] });
+      syncGame({ gameState: 'LOBBY', teams: INITIAL_TEAMS, players: {}, readyPlayers: {}, targetTeamCount: 4, hostUid: null, currentTurn: 0, diceValue: null, activeCard: null, cardType: null, playingBonus: null, performanceTimer: 0, hypeMeter: 0, characterMood: 'idle', isRollingDice: false, showDiceModal: false, kuraRolling: false, finalists: [], directors: [], draftMission: null, customFinalCard: null, aiCards: [], finalTurnIndex: 0, winner: null, logs: ["Doğaçla Mobile Act I!"], isTimerPaused: false, showHintModal: false });
+      setLocalJuryScore(0);
       setRoomId('');
+      setShowCardInfoMenu(false);
   };
 
   const triggerAudienceEvent = () => {
@@ -898,7 +978,6 @@ export default function DogaclaVisualsFinal() {
       syncGame({ cardType: type, characterMood: newMood, activeCard: cardData, gameState: 'CARD' }); 
   };
   
-  // YENİ: KİLİTLENMEYE KARŞI BİRLEŞTİRİLMİŞ SENKRONİZASYON 
   const handleCardAction = () => { 
       playSynthSound('click', soundEnabled); 
       if (cardType === 'bonus') { 
@@ -916,13 +995,16 @@ export default function DogaclaVisualsFinal() {
       } 
   };
 
-  // YENİ: OY PUSULASI ÇİFT TIKLAMAYI ÖNLER VE VERİLERİ BİRLEŞTİRİR
+  const updateLocalJuryScore = (delta) => { 
+      setLocalJuryScore(prev => Math.min(Math.max(prev + delta, -5), 15)); 
+      playSynthSound('click', soundEnabled); 
+  };
+
   const submitManualVote = useCallback(() => { 
-      // Jürinin üst üste basmasını ve oyunun donmasını engeller
       if (gameState !== 'VOTE' && gameState !== 'FINALS_VOTE') return;
 
       playSynthSound('success', soundEnabled); 
-      let finalScore = juryScore; 
+      let finalScore = localJuryScore; 
       if(voteData.roleplay) finalScore += 2; if(voteData.obstacleOvercome) finalScore += 2; if(voteData.fail) finalScore = -2; finalScore += (voteData.bonusScore || 0); 
       
       let newHype = hypeMeter;
@@ -935,9 +1017,9 @@ export default function DogaclaVisualsFinal() {
       const newTeams = teams.map(t => t.id === targetId ? { ...t, score: t.score + finalScore, activeObstacles: [] } : t);
       
       setVoteData({ roleplay: false, obstacleOvercome: false, fail: false, bonusScore: 0 }); 
+      setLocalJuryScore(0); 
 
-      // Tüm değişiklikler paketlenip TEK BİR defada Firebase'e yollanır, böylece UI kimse için donmaz!
-      const updates = { teams: newTeams, juryScore: 0, hypeMeter: newHype, characterMood: newMood, activeCard: null };
+      const updates = { teams: newTeams, hypeMeter: newHype, characterMood: newMood, activeCard: null };
 
       if (isFinal) { 
           if (finalTurnIndex === 0) { 
@@ -969,11 +1051,11 @@ export default function DogaclaVisualsFinal() {
               updates.gameState = 'ROLL';
               updates.diceValue = null;
               updates.currentTurn = (currentTurn + 1) % teams.length;
-              updates.characterMood = 'idle'; // Oylama bitince karakter normale döner
+              updates.characterMood = 'idle';
               syncGame(updates);
           }
       } 
-  }, [gameState, juryScore, voteData, finalists, finalTurnIndex, currentTeam, soundEnabled, isGoldenMic, hypeMeter, lang, teams, characterMood, currentTurn]);
+  }, [gameState, localJuryScore, voteData, finalists, finalTurnIndex, currentTeam, soundEnabled, isGoldenMic, hypeMeter, lang, teams, characterMood, currentTurn]);
   
   const finishPerformance = () => {
       if (gameState === 'PRE_PERFORM') {
@@ -991,14 +1073,97 @@ export default function DogaclaVisualsFinal() {
   const startNextFinalist = () => { syncGame({ finalTurnIndex: 1, currentTurn: teams.findIndex(t => t.id === finalists[1].id), gameState: 'FINALS_PREP' }); playSynthSound('click', soundEnabled); };
   
   const prepareBonus = (bonusIndex) => syncGame({ playingBonus: currentTeam.bonuses[bonusIndex] });
+  
   const executeBonusPower = () => {
       triggerRemoteEvent({ type: 'confetti' });
       let newTimer = performanceTimer;
-      if (playingBonus.effect === 'time') { newTimer += 30; addLog(lang === 'tr' ? "+30 Saniye!" : "+30 Sec!"); } 
-      else if (playingBonus.effect === 'score') { setVoteData(p => ({...p, bonusScore: (p.bonusScore || 0) + 2})); addLog(lang === 'tr' ? "Gizli +2 Puan!" : "Secret +2 Points!"); } 
-      else { addLog(lang === 'tr' ? `${getLocalizedText(playingBonus.name, lang)} gücü!` : `${getLocalizedText(playingBonus.name, lang)} power!`); }
-      const newTeams = teams.map(t => t.id === currentTeam.id ? { ...t, bonuses: t.bonuses.filter(b => b.id !== playingBonus.id) } : t);
-      syncGame({ teams: newTeams, playingBonus: null, performanceTimer: newTimer });
+      let newHype = hypeMeter;
+      let newCard = activeCard;
+      let bonusMsg = "";
+      let color = "text-blue-400";
+      let pointDelta = 0;
+
+      // Dinamik Rol-Play Bonus Duyuruları
+      const getRoleplayMsg = (effect) => {
+          const msgs = {
+              'time': ["Zamanı büktü! Yönetmen araya girdi ve süreyi uzattı! (+30 Saniye)", "Tam sahne bitecekken ek süre kazandı! (+30 Saniye)"],
+              'score': ["Jüriye gizli bir rüşvet verildi! Temizinden +2 Puan!", "Kimse fark etmeden skoru +2 artırdı! Sinsice!"],
+              'applause': ["Seyirci çıldırdı! Altın Mikrofon artık aktif, X2 PUAN!", "Müthiş bir karizma! Seyirci coştu, Altın Mikrofon devrede!"],
+              'gamble_win': ["Hayat bir kumar! Zarlar atıldı, şans onunla: KASAYA +10 PUAN!", "Risk aldı ve başardı! Çöpe gitmeden büyük +10 PUAN!"],
+              'gamble_lose': ["Hayat bir kumar! Zarlar atıldı... Eyvah! -10 PUAN!", "Büyük risk, büyük hüsran! Zar kötü geldi: -10 PUAN!"],
+              'genre': ["Senaryoyu çöpe fırlattı! 'Ben bunu oynamam' deyip yeni rol kaptı!", "Yönetmen sinirlendi! 'Değiştirin bu sahneyi!' dedi, yepyeni bir rol geldi!"],
+              'default': ["Kimsenin beklemediği o efsanevi bonus devrede!", "Beklenmedik bir hamle! Sahnede büyük bir oyun çevirdi!"]
+          };
+          const arr = msgs[effect] || msgs['default'];
+          return arr[Math.floor(Math.random() * arr.length)];
+      };
+
+      if (playingBonus.effect === 'time') { 
+          newTimer += 30; 
+          bonusMsg = getRoleplayMsg('time');
+          color = "text-green-400";
+      } 
+      else if (playingBonus.effect === 'score') { 
+          pointDelta = 2;
+          bonusMsg = getRoleplayMsg('score');
+          color = "text-yellow-400";
+      }
+      else if (playingBonus.effect === 'applause') {
+          newHype = 100;
+          bonusMsg = getRoleplayMsg('applause');
+          color = "text-yellow-500";
+      }
+      else if (playingBonus.effect === 'gamble') {
+          const isWin = Math.random() > 0.5;
+          pointDelta = isWin ? 10 : -10;
+          bonusMsg = isWin ? getRoleplayMsg('gamble_win') : getRoleplayMsg('gamble_lose');
+          color = isWin ? "text-green-500" : "text-red-500";
+      }
+      else if (playingBonus.effect === 'genre') {
+          const list = [...CARDS.MEDIUM, ...CARDS.HARD];
+          newCard = list[Math.floor(Math.random() * list.length)];
+          bonusMsg = getRoleplayMsg('genre');
+          color = "text-purple-400";
+      }
+      else {
+          bonusMsg = getRoleplayMsg('default');
+          color = "text-pink-400";
+      }
+
+      triggerRemoteEvent({ 
+          type: 'bonus_alert', 
+          data: { 
+              teamName: TEAM_INFO[currentTeam.id].name, 
+              bonusName: getLocalizedText(playingBonus.name, lang),
+              msg: bonusMsg,
+              color: color
+          } 
+      });
+
+      const newTeams = teams.map(t => t.id === currentTeam.id ? { 
+          ...t, 
+          score: t.score + pointDelta,
+          bonuses: t.bonuses.filter(b => b.id !== playingBonus.id) 
+      } : t);
+
+      syncGame({ 
+          teams: newTeams, 
+          playingBonus: null, 
+          performanceTimer: newTimer,
+          hypeMeter: newHype,
+          activeCard: newCard
+      });
+  };
+
+  const requestHint = () => {
+      if (!isMyTurn || !activeCard?.hint) return;
+      playSynthSound('powerup', soundEnabled);
+      syncGame({ isTimerPaused: true, showHintModal: true });
+  };
+
+  const closeHint = () => {
+      playSynthSound('click', soundEnabled);
+      syncGame({ isTimerPaused: false, showHintModal: false });
   };
 
   const getCurrentCharacterAsset = () => { const baseKey = `team${currentTeam.id}`; return assets[`${baseKey}_${characterMood}`] || assets[`${baseKey}_idle`] || assets[baseKey]; };
@@ -1084,7 +1249,7 @@ export default function DogaclaVisualsFinal() {
               {isAppLoading && (
                   <div className="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center transition-opacity duration-500 px-4">
                       {assets.logo ? (
-                          <img src={assets.logo} alt="Loading Logo" className="w-48 sm:w-64 mb-6 animate-pulse drop-shadow-[0_0_20px_rgba(250,204,21,0.8)] object-contain" />
+                          <img src={assets.logo} alt="Loading Logo" className="w-48 sm:w-64 mb-6 animate-pulse drop-shadow-[0_0_20px_rgba(250,204,21,0.8)] object-contain bg-transparent" />
                       ) : (
                           <Theater size={80} className="text-yellow-500 animate-pulse mb-6 drop-shadow-[0_0_20px_rgba(250,204,21,0.8)]" />
                       )}
@@ -1099,7 +1264,7 @@ export default function DogaclaVisualsFinal() {
               
               <div className="relative z-10 flex flex-col items-center w-full mt-8 px-2">
                   {assets.logo ? (
-                      <img src={assets.logo} alt="DOĞAÇLA" className="w-48 sm:w-64 md:w-80 max-w-[80vw] mb-6 drop-shadow-[0_0_20px_rgba(250,204,21,0.6)] object-contain" />
+                      <img src={assets.logo} alt="DOĞAÇLA" className="w-48 sm:w-64 md:w-80 max-w-[80vw] mb-6 drop-shadow-[0_0_20px_rgba(250,204,21,0.6)] object-contain bg-transparent" />
                   ) : (
                       <>
                           <Theater size={80} className="text-yellow-500 mb-6 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" />
@@ -1235,6 +1400,37 @@ export default function DogaclaVisualsFinal() {
       {/* YEREL ZAR MODALI (Takım seçimi için) */}
       {renderLocalDice()}
 
+      {/* DEV BONUS DUYURU MODALI */}
+      {bonusAlert && (
+          <div className="fixed inset-0 z-[130] pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md animate-fade-in-up px-4">
+              <div className="bg-gray-900 border-4 border-blue-500 p-6 sm:p-10 rounded-3xl shadow-[0_0_50px_rgba(59,130,246,0.6)] text-center w-full max-w-[90vw] sm:max-w-md animate-pulse-fast">
+                  <Sparkles size={64} className="text-blue-400 mx-auto mb-4 animate-spin-slow" />
+                  <div className="text-blue-300 font-bold tracking-widest text-xs sm:text-sm mb-2 uppercase">🎭 {bonusAlert.teamName} BİR HAMLE YAPTI!</div>
+                  <h2 className="text-3xl sm:text-4xl font-black text-white mb-4 uppercase">{bonusAlert.bonusName}</h2>
+                  <div className="bg-black/50 border border-gray-700 rounded-2xl p-4">
+                      <p className={`text-lg sm:text-xl font-black ${bonusAlert.color} drop-shadow-md leading-snug`}>{bonusAlert.msg}</p>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* İPUCU MODALI (Zamanı Durdurur) */}
+      {showHintModal && (
+          <div className="fixed inset-0 z-[110] bg-black/95 flex flex-col items-center justify-center p-6 text-center backdrop-blur-lg">
+              <Lightbulb size={80} className="text-yellow-400 mb-6 animate-pulse" />
+              <h2 className="text-3xl font-black text-yellow-400 mb-4 tracking-widest uppercase">YÖNETMEN İPUCUSU</h2>
+              <p className="text-xl sm:text-2xl text-white mb-8 border-2 border-yellow-500/50 bg-black/50 p-6 rounded-2xl shadow-[0_0_30px_rgba(250,204,21,0.3)]">
+                  {getLocalizedText(activeCard?.hint, lang)}
+              </p>
+              <div className="text-6xl sm:text-7xl font-black text-neon-blue mb-8">{hintTimerLeft}</div>
+              {isMyTurn && (
+                  <button onClick={closeHint} className="px-8 py-4 w-full max-w-[90vw] sm:max-w-sm bg-white text-black font-black text-xl rounded-full active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.5)]">
+                      ANLADIM (DEVAM ET)
+                  </button>
+              )}
+          </div>
+      )}
+
       <div className="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000" style={{backgroundImage: assets.bg ? `url(${assets.bg})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black via-transparent to-black/80 pointer-events-none"></div>
 
@@ -1242,7 +1438,7 @@ export default function DogaclaVisualsFinal() {
       {myTeam && gameState !== 'LOBBY' && gameState !== 'INTRO' && (
          <div className="fixed top-16 right-2 sm:right-4 z-50 bg-black/80 border border-gray-600 rounded-xl p-2 flex items-center gap-2 shadow-lg backdrop-blur-md pointer-events-none">
             <div className={`w-8 h-8 rounded-full border-2 ${myTeam.border} overflow-hidden shadow-inner bg-black`}>
-               <AssetDisplay src={assets[`team${myTeam.id}_idle`]} />
+               <AssetDisplay src={assets[`team${myTeam.id}_idle`]} className="w-full h-full object-cover object-top" />
             </div>
             <div className="flex flex-col pr-2 border-r border-gray-700">
                <span className={`text-[10px] font-black leading-none uppercase ${myTeam.text}`}>{TEAM_INFO[myTeam.id].name}</span>
@@ -1261,7 +1457,7 @@ export default function DogaclaVisualsFinal() {
       <header className="fixed top-0 left-0 right-0 h-16 bg-black/50 border-b border-white/10 flex items-center justify-between px-2 sm:px-3 z-40 backdrop-blur-lg">
           <div className="flex items-center gap-1 sm:gap-2">
               {assets.logo ? (
-                  <img src={assets.logo} alt="Logo" className="h-8 sm:h-10 w-auto object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]"/>
+                  <img src={assets.logo} alt="Logo" className="h-8 sm:h-10 w-auto object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] bg-transparent"/>
               ) : (
                   <>
                       <Theater size={24} className="text-yellow-500"/>
@@ -1280,6 +1476,7 @@ export default function DogaclaVisualsFinal() {
           
           <div className="flex items-center gap-1 sm:gap-2">
               <button onClick={() => setSoundEnabled(!soundEnabled)} className="p-1.5 sm:p-2 text-gray-300 hover:text-white transition bg-white/10 rounded-lg">{soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
+              <button onClick={() => setShowCardInfoMenu(true)} className="p-1.5 sm:p-2 text-gray-300 hover:text-blue-400 transition bg-white/10 rounded-lg" title="Kart Rehberi"><BookOpen size={18} /></button>
               <button onClick={() => setShowRules(true)} className="p-1.5 sm:p-2 text-gray-300 hover:text-yellow-400 transition bg-white/10 rounded-lg"><HelpCircle size={18} /></button>
               <button onClick={() => setShowLogsMenu(true)} className="p-1.5 sm:p-2 text-gray-300 hover:text-white transition bg-white/10 rounded-lg"><List size={18} /></button>
               
@@ -1314,7 +1511,7 @@ export default function DogaclaVisualsFinal() {
         {gameState === 'INTRO' && (
             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 rounded-2xl h-full backdrop-blur-sm px-4">
                 {assets.logo ? (
-                    <img src={assets.logo} alt="DOĞAÇLA" className="w-40 sm:w-56 md:w-64 max-w-[70vw] mb-4 animate-pulse drop-shadow-[0_0_30px_rgba(250,204,21,0.5)] object-contain" />
+                    <img src={assets.logo} alt="DOĞAÇLA" className="w-40 sm:w-56 md:w-64 max-w-[70vw] mb-4 animate-pulse drop-shadow-[0_0_30px_rgba(250,204,21,0.5)] object-contain bg-transparent" />
                 ) : (
                     <h1 className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-600 animate-pulse mb-2 text-center leading-none">DOĞAÇLA<br/><span className="text-xl sm:text-2xl text-white tracking-widest font-light">ACT I</span></h1>
                 )}
@@ -1487,7 +1684,7 @@ export default function DogaclaVisualsFinal() {
                   {gameState === 'PRE_PERFORM' && (
                       <div className="w-full flex flex-col gap-4 text-center">
                           <h3 className="text-xl font-black text-red-500 animate-pulse uppercase tracking-widest">SABOTAJ SÜRESİ</h3>
-                          <Timer key={timerKey} duration={performanceTimer} onFinish={finishPerformance} soundEnabled={soundEnabled} />
+                          <Timer key={timerKey} duration={performanceTimer} onFinish={finishPerformance} soundEnabled={soundEnabled} isPaused={isTimerPaused} />
                           
                           {!isMyTurn && myTeam?.heldObstacles?.length > 0 && (
                               <div className="mt-2 border-t border-gray-700 pt-4">
@@ -1517,7 +1714,7 @@ export default function DogaclaVisualsFinal() {
                                   <button onClick={() => addReaction('👏')} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-green-600/20 border-2 border-green-500/50 flex items-center justify-center text-xl sm:text-2xl active:bg-green-500/40 shadow-lg">👏</button>
                                   <button onClick={() => addReaction('😂')} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-yellow-600/20 border-2 border-yellow-500/50 flex items-center justify-center text-xl sm:text-2xl active:bg-yellow-500/40 shadow-lg">😂</button>
                               </div>
-                              <Timer key={timerKey} duration={performanceTimer} onFinish={finishPerformance} soundEnabled={soundEnabled} />
+                              <Timer key={timerKey} duration={performanceTimer} onFinish={finishPerformance} soundEnabled={soundEnabled} isPaused={isTimerPaused} />
                           </div>
                           {currentTeam.bonuses.length > 0 && (
                               <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
@@ -1527,6 +1724,13 @@ export default function DogaclaVisualsFinal() {
                                       </button>
                                   ))}
                               </div>
+                          )}
+
+                          {/* İPUCU BUTONU */}
+                          {isMyTurn && (
+                              <button onClick={requestHint} className="w-full py-3 bg-yellow-600/20 border-2 border-yellow-500/50 rounded-xl font-bold text-yellow-400 flex justify-center items-center gap-2 active:bg-yellow-500/40 transition mb-2 shadow-[0_0_15px_rgba(250,204,21,0.2)]">
+                                  <HelpCircle size={20} /> İPUCU AL (Süreyi Durdurur)
+                              </button>
                           )}
 
                           {/* SABOTAJ / ENGEL FIRLATMA MENÜSÜ */}
@@ -1572,9 +1776,9 @@ export default function DogaclaVisualsFinal() {
                                       <button onClick={() => setVoteData(p => ({...p, fail: !p.fail}))} className={`flex-1 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-black border-2 transition ${voteData.fail ? 'bg-red-600 border-red-400 text-white shadow-[0_0_15px_red]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].fail}</button>
                                   </div>
                                   <div className="flex justify-between items-center px-4 py-2">
-                                      <button onClick={() => updateJuryScore(-1)} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-red-500/50 text-red-500 flex items-center justify-center active:bg-red-500/20 shadow-lg"><Minus size={28}/></button>
-                                      <span className="text-6xl sm:text-7xl font-mono font-black text-white drop-shadow-xl">{juryScore}</span>
-                                      <button onClick={() => updateJuryScore(1)} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-green-500/50 text-green-500 flex items-center justify-center active:bg-green-500/20 shadow-lg"><Plus size={28}/></button>
+                                      <button onClick={() => updateLocalJuryScore(-1)} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-red-500/50 text-red-500 flex items-center justify-center active:bg-red-500/20 shadow-lg"><Minus size={28}/></button>
+                                      <span className="text-6xl sm:text-7xl font-mono font-black text-white drop-shadow-xl">{localJuryScore}</span>
+                                      <button onClick={() => updateLocalJuryScore(1)} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-green-500/50 text-green-500 flex items-center justify-center active:bg-green-500/20 shadow-lg"><Plus size={28}/></button>
                                   </div>
                                   <div className="flex gap-3">
                                       <button onClick={askAICritic} className="w-16 bg-purple-900/50 border-2 border-purple-500 text-purple-300 rounded-2xl flex items-center justify-center active:bg-purple-800 shadow-md" disabled={criticLoading}><Bot size={32}/></button>
@@ -1597,10 +1801,18 @@ export default function DogaclaVisualsFinal() {
               </div>
               <div className="flex justify-between items-center bg-gray-900/50 p-4 sm:p-5 rounded-2xl border-2 border-yellow-500/30 shadow-inner">
                   <div className="text-sm sm:text-base text-yellow-500 font-bold uppercase tracking-widest">{UI[lang].time}</div>
-                  <Timer key={timerKey} duration={performanceTimer} onFinish={finishPerformance} soundEnabled={soundEnabled} />
+                  <Timer key={timerKey} duration={performanceTimer} onFinish={finishPerformance} soundEnabled={soundEnabled} isPaused={isTimerPaused} />
               </div>
+
+              {/* İPUCU BUTONU FİNALDE DE GEÇERLİ */}
+              {isMyTurn && (
+                  <button onClick={requestHint} className="w-full mt-3 py-3 bg-yellow-600/20 border-2 border-yellow-500/50 rounded-xl font-bold text-yellow-400 flex justify-center items-center gap-2 active:bg-yellow-500/40 transition shadow-[0_0_15px_rgba(250,204,21,0.2)]">
+                      <HelpCircle size={20} /> İPUCU AL (Süreyi Durdurur)
+                  </button>
+              )}
+
               {isMyTurn ? (
-                  <button onClick={finishPerformance} className="w-full mt-5 py-4 sm:py-5 bg-gradient-to-r from-yellow-500 to-orange-500 text-black rounded-2xl font-black text-lg sm:text-xl uppercase tracking-widest active:scale-95 shadow-[0_0_20px_rgba(250,204,21,0.5)]">{UI[lang].finishPerf}</button>
+                  <button onClick={finishPerformance} className="w-full mt-3 py-4 sm:py-5 bg-gradient-to-r from-yellow-500 to-orange-500 text-black rounded-2xl font-black text-lg sm:text-xl uppercase tracking-widest active:scale-95 shadow-[0_0_20px_rgba(250,204,21,0.5)]">{UI[lang].finishPerf}</button>
               ) : (
                   <div className="w-full mt-5 py-4 sm:py-5 bg-black text-gray-400 rounded-2xl font-bold uppercase tracking-widest text-center border border-gray-800">🎭 Final sahnesi oynanıyor...</div>
               )}
@@ -1725,17 +1937,61 @@ export default function DogaclaVisualsFinal() {
               </div>
           </div>
       )}
+
+      {/* KART REHBERİ MODALI */}
+      {showCardInfoMenu && (
+          <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/90 backdrop-blur-md" onClick={() => setShowCardInfoMenu(false)}>
+              <div className="bg-gray-900 border-t-4 border-blue-500 rounded-t-3xl w-full p-6 pb-safe shadow-[0_-10px_50px_rgba(59,130,246,0.3)] max-h-[85vh] flex flex-col" onClick={e=>e.stopPropagation()}>
+                  <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-xl sm:text-2xl font-black text-blue-400 tracking-widest flex items-center gap-2"><BookOpen size={24}/> KART REHBERİ</h2>
+                      <button onClick={() => setShowCardInfoMenu(false)} className="text-gray-400 p-2 bg-black/50 rounded-full"><X size={24}/></button>
+                  </div>
+                  <div className="overflow-y-auto no-scrollbar flex-1 pb-4 space-y-6">
+                      <div>
+                          <h3 className="text-lg font-black text-yellow-400 mb-3 border-b border-yellow-500/30 pb-2 flex items-center gap-2"><Sparkles size={20}/> BONUS KARTLARI</h3>
+                          <div className="space-y-3">
+                              {CARDS.BONUS.map(b => (
+                                  <div key={b.id} className="bg-blue-900/20 border border-blue-500/30 p-3 rounded-xl flex flex-col gap-1">
+                                      <div className="flex justify-between items-center">
+                                          <span className="font-black text-blue-300 text-sm sm:text-base">{b.name}</span>
+                                          <span className="text-[10px] sm:text-xs font-bold bg-blue-500/20 text-blue-200 px-2 py-1 rounded-md">{getLocalizedText(b.benefit, lang)}</span>
+                                      </div>
+                                      <p className="text-blue-200 text-xs sm:text-sm font-bold mt-1">{getLocalizedText(b.ruleDesc, lang)}</p>
+                                      <p className="text-gray-400 text-xs italic mt-1">"{getLocalizedText(b.quote, lang)}"</p>
+                                  </div>
+                              ))}
+                          </div>
+                      </div>
+                      <div>
+                          <h3 className="text-lg font-black text-red-400 mb-3 border-b border-red-500/30 pb-2 flex items-center gap-2"><Skull size={20}/> ENGEL KARTLARI</h3>
+                          <div className="space-y-3">
+                              {CARDS.OBSTACLE.map(o => (
+                                  <div key={o.id} className="bg-red-900/20 border border-red-500/30 p-3 rounded-xl flex flex-col gap-1">
+                                      <div className="flex items-start gap-2">
+                                          <ShieldAlert size={16} className="text-red-500 shrink-0 mt-0.5" />
+                                          <span className="font-black text-red-300 text-sm">{getLocalizedText(o.text, lang)}</span>
+                                      </div>
+                                      <p className="text-gray-300 text-xs sm:text-sm pl-6">{getLocalizedText(o.ruleDesc, lang)}</p>
+                                  </div>
+                              ))}
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 }
 
 // Mobile optimized Timer
-const Timer = ({ duration, onFinish, soundEnabled }) => {
+const Timer = ({ duration, onFinish, soundEnabled, isPaused }) => {
     const [timeLeft, setTimeLeft] = useState(duration);
     useEffect(() => { setTimeLeft(duration); }, [duration]);
     useEffect(() => {
         if (timeLeft <= 0) { if (duration > 0) { playSynthSound('alarm', soundEnabled); onFinish(); } return; }
+        if (isPaused) return; // Zamanı dondurma kodu
         const id = setInterval(() => setTimeLeft(t => t - 1), 1000); return () => clearInterval(id);
-    }, [timeLeft, onFinish, duration, soundEnabled]);
+    }, [timeLeft, onFinish, duration, soundEnabled, isPaused]);
     return <div className="text-4xl sm:text-5xl font-mono font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] tracking-wider">{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</div>;
 };
