@@ -108,7 +108,7 @@ const UI = {
             { title: "⏱️ Performans", text: "Karttaki senaryoyu süre bitmeden canlandır." },
             { title: "✨ Bonus (Fırsat) Kartları", text: "Mavi karelerden kazanılır ve saklanır. Kendi sahne sıran geldiğinde, süren işlerken alttaki menüden bonusuna tıklayıp gücünü (ekstra süre, kopya vs.) kullanabilirsin!" },
             { title: "😈 Engel (Sabotaj) Kartları", text: "Siyah karelerden kazanılıp envanterde saklanır. Başka bir rakip sahneye çıkarken, 10 saniyelik 'Sabotaj Süresi' içinde ona engel fırlatarak performansını zorlaştırabilirsin." },
-            { title: "⚖️ Jüri Oylaması", text: "Diğer oyuncular jüri olur. Role girmek ekstra puan kazandırır." },
+            { title: "⚖️ Jüri Oylaması", text: "Diğer oyuncular jüri olur. Herkes oyunu verdikten sonra ortalama puan hanene yazılır." },
             { title: "🌟 Altın Mikrofon", text: "Seyirciyi coştur! Bar dolduğunda alacağın puan ikiye katlanır." },
             { title: "🎬 Büyük Final", text: "35'e ulaşıldığında en iyi 2 takım finale çıkar. Kaybedenler finali yazar!" },
             { title: "🌐 Çok Oyunculu", text: "Kurduğun oda kodunu arkadaşlarına ver, aynı oyuna aynı anda telefonlarından bağlansınlar!" }
@@ -130,14 +130,15 @@ const AssetDisplay = ({ src, className = '', style = {}, alt = '' }) => {
     
     if (!src) return <div className={className} style={{...style, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent'}}>{alt}</div>;
     
-    const isVideo = typeof src === 'string' && (src.toLowerCase().endsWith('.mp4') || src.toLowerCase().endsWith('.webm'));
+    const isVideo = typeof src === 'string' && (src.toLowerCase().startsWith('blob:') || src.toLowerCase().endsWith('.mp4') || src.toLowerCase().endsWith('.webm'));
     
     if (isVideo) {
+        const hasBgClass = className && className.includes('bg-');
         return (
             <video 
                 key={src} 
                 src={src} 
-                className={`${className} transition-opacity duration-700 ease-in`} 
+                className={`${className} ${hasBgClass ? '' : 'bg-transparent'} transition-opacity duration-700 ease-in`} 
                 style={{...style, pointerEvents: 'none', opacity: isLoaded ? 1 : 0}} 
                 autoPlay loop muted playsInline webkit-playsinline="true" disablePictureInPicture preload="auto"
                 onCanPlayThrough={() => setIsLoaded(true)}
@@ -346,7 +347,7 @@ const Dice3D = ({ value, isRolling }) => {
     );
 };
 
-const TeamDice3D = ({ winnerId, isRolling, assets, teams }) => {
+const TeamDice3D = ({ winnerId, isRolling, activeAssets, teams }) => {
     const [currentClass, setCurrentClass] = useState('');
     useEffect(() => { 
         if (isRolling) setCurrentClass('kura-rolling'); 
@@ -355,8 +356,8 @@ const TeamDice3D = ({ winnerId, isRolling, assets, teams }) => {
 
     const renderFace = (teamIndex) => {
         const team = teams[teamIndex % teams.length];
-        const assetSrc = assets[`team${team.id}_idle`] || assets[`team${team.id}`];
-        return <div className="w-full h-full flex items-center justify-center bg-black border-2 border-[#D4AF37] rounded-lg overflow-hidden shadow-[inset_0_0_20px_rgba(212,175,55,0.5)]"><AssetDisplay src={assetSrc} className="w-full h-full object-cover object-top" alt={`Team ${team.id}`} /></div>;
+        const assetSrc = activeAssets[`team${team.id}_idle`] || activeAssets[`team${team.id}`];
+        return <div className="w-full h-full flex items-center justify-center bg-black border-2 border-[#D4AF37] rounded-lg overflow-hidden shadow-[inset_0_0_20px_rgba(212,175,55,0.5)] drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">{assetSrc ? <AssetDisplay src={assetSrc} className="w-full h-full object-cover object-top" alt={`Team ${team.id}`} /> : <span className="text-[#D4AF37] text-3xl">T{team.id+1}</span>}</div>;
     };
 
     return (
@@ -369,7 +370,7 @@ const TeamDice3D = ({ winnerId, isRolling, assets, teams }) => {
 };
 
 // --- CARD DESIGN ---
-const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamId, lang, isMyTurn = true }) => {
+const CardDisplay = ({ card, type, mode = 'draw', onAction, activeAssets, currentTeamId, lang, isMyTurn = true }) => {
     const cardRef = useRef(null);
     useEffect(() => {
         if (!window.anime) {
@@ -417,7 +418,7 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
         titleText = isHiddenFromOpponent ? "GİZLİ ENGEL" : UI[lang].obsCard; 
         missionText = isHiddenFromOpponent ? "Rakip bir Sabotaj Kartı çekti. Başkalarının performansı sırasında fırlatabilir!" : getLocalizedText(card.text, lang); 
         flavorText = isHiddenFromOpponent ? "GİZLİ KART" : "ENVANTERE EKLENDİ! Başkasının sırasında fırlat.";
-        icon = <Skull size={32} className="text-red-500 animate-bounce"/>; characterVideoSrc = assets[`${baseKey}_scared`]; bgStyle = "bg-gradient-to-b from-red-600 to-rose-900"; accentColor = "text-red-200"; glowColor = "rgba(225, 29, 72, 0.5)";
+        icon = <Skull size={32} className="text-red-500 animate-bounce"/>; characterVideoSrc = activeAssets[`${baseKey}_scared`]; bgStyle = "bg-gradient-to-b from-red-600 to-rose-900"; accentColor = "text-red-200"; glowColor = "rgba(225, 29, 72, 0.5)";
     } else {
         const fallbackTitle = UI[lang] ? UI[lang].improv : "DOĞAÇLAMA";
         titleText = isFinal ? (getLocalizedText(card.title, lang) || fallbackTitle) : fallbackTitle; 
@@ -425,26 +426,25 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
         const quoteStr = getRandomCardText(card, currentTeamId, lang);
         flavorText = quoteStr ? `"${quoteStr}"` : getLocalizedText(card.desc, lang);
         icon = getCardIcon(missionText + " " + titleText, <Drama size={32} className="text-[#D4AF37]"/>);
-        if(type === 'easy') { characterVideoSrc = assets[`${baseKey}_happy`]; bgStyle = "bg-gradient-to-b from-emerald-500 to-teal-800"; accentColor = "text-emerald-100"; titleText = UI[lang]?.easyLevel || "KOLAY SEVİYE"; } 
-        else if(type === 'medium') { characterVideoSrc = assets[`${baseKey}_thinking`]; bgStyle = "bg-gradient-to-b from-amber-500 to-orange-800"; accentColor = "text-amber-100"; titleText = UI[lang]?.medLevel || "ORTA SEVİYE"; } 
-        else if(type === 'hard') { bgStyle = "bg-gradient-to-b from-rose-500 to-red-800"; accentColor = "text-rose-100"; characterVideoSrc = assets[`${baseKey}_scared`]; titleText = UI[lang]?.hardLevel || "ZOR SEVİYE"; } 
-        else if(type === 'final') { bgStyle = "bg-gradient-to-b from-yellow-600 via-orange-600 to-red-900"; accentColor = "text-yellow-100"; characterVideoSrc = assets[`${baseKey}_scared`]; }
+        if(type === 'easy') { characterVideoSrc = activeAssets[`${baseKey}_happy`]; bgStyle = "bg-gradient-to-b from-emerald-500 to-teal-800"; accentColor = "text-emerald-100"; titleText = UI[lang]?.easyLevel || "KOLAY SEVİYE"; } 
+        else if(type === 'medium') { characterVideoSrc = activeAssets[`${baseKey}_thinking`]; bgStyle = "bg-gradient-to-b from-amber-500 to-orange-800"; accentColor = "text-amber-100"; titleText = UI[lang]?.medLevel || "ORTA SEVİYE"; } 
+        else if(type === 'hard') { bgStyle = "bg-gradient-to-b from-rose-500 to-red-800"; accentColor = "text-rose-100"; characterVideoSrc = activeAssets[`${baseKey}_scared`]; titleText = UI[lang]?.hardLevel || "ZOR SEVİYE"; } 
+        else if(type === 'final') { bgStyle = "bg-gradient-to-b from-yellow-600 via-orange-600 to-red-900"; accentColor = "text-yellow-100"; characterVideoSrc = activeAssets[`${baseKey}_scared`]; }
     }
 
     return (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/90 backdrop-blur-sm overflow-hidden px-4">
             {isPlaying && isBonus && <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,200,0,0.3)_0%,transparent_70%)] animate-pulse"></div>}
             
-            {/* Safari köşe yuvarlatma (border-radius) animasyon hatasını önlemek için transform ve isolation kullanıldı */}
-            <div ref={cardRef} className={`relative w-full max-w-[90vw] sm:max-w-sm h-[75vh] max-h-[600px] rounded-3xl overflow-hidden shadow-2xl flex flex-col opacity-100 border border-white/20`} style={{ boxShadow: `0 10px 40px -10px ${glowColor}`, WebkitMaskImage: '-webkit-radial-gradient(white, black)', transform: 'translateZ(0)' }}>
+            <div ref={cardRef} className={`relative w-full max-w-[90vw] sm:max-w-sm h-[75vh] max-h-[600px] rounded-3xl overflow-hidden shadow-2xl flex flex-col opacity-100 border border-white/20 [mask-image:radial-gradient(white,black)] [-webkit-mask-image:-webkit-radial-gradient(white,black)] transform-gpu`} style={{ boxShadow: `0 10px 40px -10px ${glowColor}`, isolation: 'isolate' }}>
                 <div className={`absolute inset-0 ${bgStyle} z-0`}></div>
                 
                 <div className="absolute inset-0 z-10 flex flex-col justify-start p-0">
-                    <div className={`relative w-full h-[52%] shrink-0 z-0 overflow-hidden flex items-center justify-center bg-black`}>
+                    <div className={`relative w-full h-[45%] shrink-0 z-0 overflow-hidden flex items-center justify-center bg-black`}>
                          
                          {/* ARKA PLAN BLUR SADECE BONUS İÇİN */}
-                         {isBonus && !isHiddenFromOpponent && assets[`bonus_${card.id}`] && (
-                             <AssetDisplay src={assets[`bonus_${card.id}`]} className="absolute inset-0 w-full h-full object-cover scale-[1.5] blur-2xl opacity-60 bg-transparent" alt="Blur Bg" />
+                         {isBonus && !isHiddenFromOpponent && activeAssets[`bonus_${card.id}`] && (
+                             <AssetDisplay src={activeAssets[`bonus_${card.id}`]} className="absolute inset-0 w-full h-full object-cover scale-[1.5] blur-2xl opacity-60 bg-transparent" alt="Blur Bg" />
                          )}
 
                          {/* ANA VİDEO VEYA GİZLİ İKON */}
@@ -452,13 +452,13 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
                              isHiddenFromOpponent ? (
                                  <Sparkles size={100} className="text-blue-500 animate-pulse relative z-10 drop-shadow-[0_0_20px_rgba(59,130,246,0.8)]" />
                              ) : (
-                                 assets[`bonus_${card.id}`] ? <AssetDisplay src={assets[`bonus_${card.id}`]} className={`relative z-10 w-full h-full object-contain object-center transition-transform duration-700 ${isPlaying ? 'scale-110 drop-shadow-[0_0_30px_rgba(255,200,0,0.8)]' : 'scale-100 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]'}`} alt="Bonus" /> : null
+                                 activeAssets[`bonus_${card.id}`] ? <AssetDisplay src={activeAssets[`bonus_${card.id}`]} className={`relative z-10 w-full h-full object-contain object-center transition-transform duration-700 ${isPlaying ? 'scale-110 drop-shadow-[0_0_30px_rgba(255,200,0,0.8)]' : 'scale-100 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]'}`} alt="Bonus" /> : null
                              )
                          ) : (
                              (isObstacle && isHiddenFromOpponent) ? (
                                  <Skull size={100} className="text-red-500 animate-bounce relative z-10 drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]" />
                              ) : (
-                                 /* ZOOM SORUNUNU KÖKÜNDEN ÇÖZEN VE TAM SIĞDIRAN KOD (object-contain) */
+                                 // ZOOM HATASI DÜZELTİLDİ: object-cover silinip object-contain yapıldı
                                  characterVideoSrc && <AssetDisplay src={characterVideoSrc} className="relative z-10 w-full h-full object-contain object-bottom transition-transform duration-700" alt="Character" />
                              )
                          )}
@@ -502,6 +502,7 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
 export default function DogaclaVisualsFinal() {
   const [lang, setLang] = useState('tr');
   const [assets] = useState(GAME_ASSETS);
+  const [blobAssets, setBlobAssets] = useState({}); // YENİ: Gerçekten Gömülen Blob Videolar
   
   // -- Local User State --
   const [user, setUser] = useState(null);
@@ -512,6 +513,7 @@ export default function DogaclaVisualsFinal() {
   const [toastMsg, setToastMsg] = useState(null); 
   const [isAppLoading, setIsAppLoading] = useState(true); 
   const [teamSelectMode, setTeamSelectMode] = useState(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   
   const [localDiceState, setLocalDiceState] = useState({ isRolling: false, teamIndex: null, showReveal: false });
   const [revealState, setRevealState] = useState({ isActive: false, mode: null, count: 0, selectedTeams: [], currentIndex: 0, isRolling: false });
@@ -544,9 +546,10 @@ export default function DogaclaVisualsFinal() {
   const [winner, setWinner] = useState(null);
   const [logs, setLogs] = useState(["DOĞAÇLA Çok Oyunculu Sürümüne Hoş Geldiniz!"]);
   
-  // İPUCU (HINT) SİSTEMİ EŞZAMANLI STATE'LERİ
+  // İPUCU VE OYLAMA SİSTEMİ STATE'LERİ
   const [isTimerPaused, setIsTimerPaused] = useState(false);
   const [showHintModal, setShowHintModal] = useState(false);
+  const [juryVotes, setJuryVotes] = useState({}); // YENİ SENKRONİZE OY SİSTEMİ
 
   // -- Strictly Local UI States --
   const [localJuryScore, setLocalJuryScore] = useState(0); 
@@ -563,9 +566,46 @@ export default function DogaclaVisualsFinal() {
   const [hintTimerLeft, setHintTimerLeft] = useState(10); 
   const [bonusAlert, setBonusAlert] = useState(null);
 
+  // Ortak Asset Değişkeni (Network yerine Blob URL'leri kullanır)
+  const activeAssets = { ...assets, ...blobAssets };
+
+  // YENİ: GERÇEKÇİ ASSET YÜKLEME VE GÖMME (PRELOADER)
   useEffect(() => {
-      const timer = setTimeout(() => setIsAppLoading(false), 2500);
-      return () => clearTimeout(timer);
+      let isMounted = true;
+      const loadRealAssets = async () => {
+          const keys = Object.keys(GAME_ASSETS).filter(k => GAME_ASSETS[k].endsWith('.mp4'));
+          const newBlobs = {};
+          let count = 0;
+          
+          // Videoları gerçekten indirip Blob URL'ye çeviriyoruz. 
+          // Bu sayede oyun içi yüklenmeler sıfıra iniyor (Gerçek Embedded).
+          for (const key of keys) {
+              if (!isMounted) return;
+              try {
+                  const res = await fetch(GAME_ASSETS[key]);
+                  const blob = await res.blob();
+                  newBlobs[key] = URL.createObjectURL(blob);
+              } catch (e) {
+                  console.warn("Preload failed for", key);
+                  newBlobs[key] = GAME_ASSETS[key]; // Hata olursa internetten devam et
+              }
+              count++;
+              setLoadingProgress(Math.floor((count / keys.length) * 100));
+          }
+          
+          if (isMounted) {
+              setBlobAssets(newBlobs);
+              setTimeout(() => setIsAppLoading(false), 500); // %100 olunca oyunu başlat
+          }
+      };
+      
+      // Çok yavaş internet ihtimaline karşı 12 saniye failsafe
+      const failsafe = setTimeout(() => {
+          if (isMounted && isAppLoading) setIsAppLoading(false);
+      }, 12000); 
+
+      loadRealAssets();
+      return () => { isMounted = false; clearTimeout(failsafe); };
   }, []);
 
   useEffect(() => {
@@ -604,7 +644,7 @@ export default function DogaclaVisualsFinal() {
       return () => clearTimeout(timeout);
   }, [revealState.isActive, revealState.isRolling, revealState.currentIndex, revealState.count, revealState.mode, revealState.selectedTeams, soundEnabled]);
 
-  // İpucu Geri Sayım Sayacı (Yerel)
+  // İpucu Geri Sayım Sayacı
   useEffect(() => {
       if (showHintModal) {
           setHintTimerLeft(10);
@@ -648,7 +688,6 @@ export default function DogaclaVisualsFinal() {
       return () => { unsub(); clearTimeout(connectionTimeout); };
   }, []);
 
-  // --- KİLİTLENMEYE KARŞI BİRLEŞTİRİLMİŞ (BUNDLED) SYNC SENDER ---
   const syncGame = async (updates) => {
       if ('gameState' in updates) setGameState(updates.gameState);
       if ('teams' in updates) setTeams(updates.teams);
@@ -677,6 +716,7 @@ export default function DogaclaVisualsFinal() {
       if ('logs' in updates) setLogs(updates.logs);
       if ('isTimerPaused' in updates) setIsTimerPaused(updates.isTimerPaused);
       if ('showHintModal' in updates) setShowHintModal(updates.showHintModal);
+      if ('juryVotes' in updates) setJuryVotes(updates.juryVotes);
 
       if (!isSinglePlayer && roomId && db) {
           try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId), updates); } 
@@ -684,7 +724,6 @@ export default function DogaclaVisualsFinal() {
       }
   };
 
-  // --- MULTIPLAYER LISTENER ---
   useEffect(() => {
       if (!user || !roomId || !db || isSinglePlayer) return;
       const unsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId), (snap) => {
@@ -717,6 +756,7 @@ export default function DogaclaVisualsFinal() {
               if (data.logs !== undefined) setLogs(data.logs);
               if (data.isTimerPaused !== undefined) setIsTimerPaused(data.isTimerPaused);
               if (data.showHintModal !== undefined) setShowHintModal(data.showHintModal);
+              if (data.juryVotes !== undefined) setJuryVotes(data.juryVotes);
               
               if (data.eventTrigger) {
                   if (data.eventTrigger.type === 'reaction') { setReactions(p => [...p, { id: Date.now()+Math.random(), emoji: data.eventTrigger.emoji, x: Math.random()*80+10 }]); playSynthSound('click', soundEnabled); }
@@ -751,9 +791,9 @@ export default function DogaclaVisualsFinal() {
   useEffect(() => {
       const audioEl = bgMusicRef.current;
       if (!soundEnabled) { audioEl.pause(); return; }
-      if (audioEl.src !== assets.music_bg) { audioEl.src = assets.music_bg; audioEl.loop = true; audioEl.volume = 0.15; }
+      if (audioEl.src !== activeAssets.music_bg) { audioEl.src = activeAssets.music_bg; audioEl.loop = true; audioEl.volume = 0.15; }
       if (audioEl.paused) audioEl.play().catch(e => console.log("Auto-play blocked", e));
-  }, [soundEnabled, assets.music_bg]);
+  }, [soundEnabled, activeAssets.music_bg]);
 
   const addLog = (msg) => { const newLogs = [`• ${msg}`, ...logs].slice(0, 15); syncGame({ logs: newLogs }); };
   
@@ -835,7 +875,7 @@ export default function DogaclaVisualsFinal() {
 
   const resetGame = () => { 
       playSynthSound('click', soundEnabled); setIsSinglePlayer(false);
-      syncGame({ gameState: 'LOBBY', teams: INITIAL_TEAMS, players: {}, readyPlayers: {}, targetTeamCount: 4, hostUid: null, currentTurn: 0, diceValue: null, activeCard: null, cardType: null, playingBonus: null, performanceTimer: 0, hypeMeter: 0, characterMood: 'idle', isRollingDice: false, showDiceModal: false, kuraRolling: false, finalists: [], directors: [], draftMission: null, customFinalCard: null, aiCards: [], finalTurnIndex: 0, winner: null, logs: ["Doğaçla Mobile Act I!"], isTimerPaused: false, showHintModal: false });
+      syncGame({ gameState: 'LOBBY', teams: INITIAL_TEAMS, players: {}, readyPlayers: {}, targetTeamCount: 4, hostUid: null, currentTurn: 0, diceValue: null, activeCard: null, cardType: null, playingBonus: null, performanceTimer: 0, hypeMeter: 0, characterMood: 'idle', isRollingDice: false, showDiceModal: false, kuraRolling: false, finalists: [], directors: [], draftMission: null, customFinalCard: null, aiCards: [], finalTurnIndex: 0, winner: null, logs: ["Doğaçla Mobile Act I!"], isTimerPaused: false, showHintModal: false, juryVotes: {} });
       setLocalJuryScore(0);
       setRoomId('');
       setShowCardInfoMenu(false);
@@ -868,16 +908,6 @@ export default function DogaclaVisualsFinal() {
   
   const askAICritic = async () => { if (!activeCard) return; setCriticLoading(true); setTimeout(() => { addLog(`🤖 ${UI[lang].aiComment}: "${getLocalizedText(TEAM_INFO[currentTeam.id].style, lang)}!"`); setCriticLoading(false); playSynthSound('click', soundEnabled); }, 1500); };
   
-  const checkFinals = (latestTeams) => { 
-      const finishers = latestTeams.filter(t => t.pos >= 35); 
-      if (finishers.length > 0) { 
-          const sorted = [...latestTeams].sort((a, b) => b.score - a.score); 
-          syncGame({ finalists: sorted.slice(0, 2), directors: sorted.slice(2, 4), finalTurnIndex: 0, currentTurn: latestTeams.findIndex(t => t.id === sorted[0].id), draftMission: null, gameState: 'FINALS_DIRECTOR_INPUT' }); playSynthSound('success', soundEnabled);
-      } else {
-          syncGame({ gameState: 'ROLL', diceValue: null, currentTurn: (currentTurn + 1) % latestTeams.length, characterMood: 'idle' });
-      }
-  };
-
   const throwObstacle = (index) => {
       if (!myTeam || isMyTurn) return;
       const obstacleToThrow = myTeam.heldObstacles[index];
@@ -894,11 +924,12 @@ export default function DogaclaVisualsFinal() {
       setTimeout(() => syncGame({ characterMood: 'idle' }), 3000);
   };
 
+  // --- YENİ: IŞIK HIZINDA YAPAY ZEKA GÖREV OLUŞTURUCUSU ---
   const generateDraftMission = async () => {
       if (!directorInput.trim()) return;
       playSynthSound('click', soundEnabled); syncGame({ gameState: 'FINALS_GENERATING' });
       const apiKey = ""; const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-      const promptText = `Bir tiyatro yönetmeni olarak, oyuncuların sana verdiği şu fikri al: "${directorInput}". Sahnede oynanacak kısa, detaylı, komik ve absürt bir tiyatro görevine dönüştür. İngilizce çevirisini de yap.`;
+      const promptText = `Bir tiyatro yönetmeni olarak, oyuncuların sana verdiği şu fikri al: "${directorInput}". Sahnede oynanacak KISA, KOMİK ve ABSÜRT bir tiyatro görevine dönüştür. İngilizce çevirisini de yap. Lütfen ÇOK KISA cümleler kullan. Maksimum 2 cümle olsun.`;
       const schema = { type: "OBJECT", properties: { tr: { type: "STRING" }, en: { type: "STRING" } } };
       try {
           let resultData = null; let delay = 1000;
@@ -917,8 +948,23 @@ export default function DogaclaVisualsFinal() {
   const approveAndGenerateOptions = async () => {
       playSynthSound('click', soundEnabled); syncGame({ gameState: 'FINALS_GENERATING' });
       const apiKey = ""; const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-      const promptText = `Şu tiyatro görevini temel al: "${getLocalizedText(draftMission, 'tr')}". Lütfen bu görevi 3 farklı sahne tarzına (DRAMATİK, ABSÜRT, SESSİZ) göre uyarla. Hem Türkçe (tr) hem İngilizce (en) üret. Replikler (quotes) kısmında 4 farklı karakter için 1. tekil şahıs ağzından kısa iç ses yaz: "0": İbiş, "1": Karagöz, "2": Shakespeare, "3": Aristofanes`;
-      const schema = { type: "ARRAY", items: { type: "OBJECT", properties: { title: { type: "OBJECT", properties: { tr: {type:"STRING"}, en: {type:"STRING"} } }, mission: { type: "OBJECT", properties: { tr: {type:"STRING"}, en: {type:"STRING"} } }, desc: { type: "OBJECT", properties: { tr: {type:"STRING"}, en: {type:"STRING"} } }, quotes: { type: "OBJECT", properties: { "0": { type: "OBJECT", properties: { tr: {type:"STRING"}, en: {type:"STRING"} } }, "1": { type: "OBJECT", properties: { tr: {type:"STRING"}, en: {type:"STRING"} } }, "2": { type: "OBJECT", properties: { tr: {type:"STRING"}, en: {type:"STRING"} } }, "3": { type: "OBJECT", properties: { tr: {type:"STRING"}, en: {type:"STRING"} } } } } } } };
+      
+      // Hızlandırmak için yapay zekadan karakter iç seslerini sildik, sadece ana görevi yazacak.
+      const promptText = `Şu tiyatro görevini temel al: "${getLocalizedText(draftMission, 'tr')}". Lütfen bu görevi 3 farklı sahne tarzına göre uyarla. Hem Türkçe (tr) hem İngilizce (en) üret. Lütfen SADECE başlık, görev (mission) ve açıklama (desc) üret. ÇOK KISA CÜMLELER KUR. Maksimum 2 cümle.`;
+      
+      const schema = { 
+          type: "ARRAY", 
+          items: { 
+              type: "OBJECT", 
+              properties: { 
+                  styleType: {type: "STRING", description: "DRAMATIC, ABSURD veya SILENT yaz."},
+                  title: { type: "OBJECT", properties: { tr: {type:"STRING"}, en: {type:"STRING"} } }, 
+                  mission: { type: "OBJECT", properties: { tr: {type:"STRING"}, en: {type:"STRING"} } }, 
+                  desc: { type: "OBJECT", properties: { tr: {type:"STRING"}, en: {type:"STRING"} } }
+              } 
+          } 
+      };
+      
       try {
           let resultData = null; let delay = 1000;
           for(let i=0; i<3; i++) {
@@ -926,8 +972,19 @@ export default function DogaclaVisualsFinal() {
                   const data = await response.json(); if(data.candidates) { resultData = JSON.parse(data.candidates[0].content.parts[0].text); break; }
               } catch(err) { if(i===2) throw err; await new Promise(r=>setTimeout(r,delay)); delay*=2; }
           }
-          if(resultData && resultData.length > 0) { playSynthSound('success', soundEnabled); syncGame({ aiCards: resultData, gameState: 'FINALS_SELECT_CARD' }); } else throw new Error("API error");
-      } catch(error) { playSynthSound('success', soundEnabled); syncGame({ aiCards: generateMockCardsDual(directorInput.trim(), draftMission), gameState: 'FINALS_SELECT_CARD' }); }
+          if(resultData && resultData.length > 0) { 
+              // Yapay Zekanın eksik bıraktığı replikleri yerel (lokal) olarak hızlıca ekliyoruz.
+              const fastCards = resultData.map(c => ({
+                  ...c,
+                  quotes: getDynamicQuotesDual(directorInput.trim(), c.styleType || 'ABSURD')
+              }));
+              playSynthSound('success', soundEnabled); 
+              syncGame({ aiCards: fastCards, gameState: 'FINALS_SELECT_CARD' }); 
+          } else throw new Error("API error");
+      } catch(error) { 
+          playSynthSound('success', soundEnabled); 
+          syncGame({ aiCards: generateMockCardsDual(directorInput.trim(), draftMission), gameState: 'FINALS_SELECT_CARD' }); 
+      }
   };
 
   const selectFinalCard = (selectedCard) => { playSynthSound('click', soundEnabled); syncGame({ customFinalCard: { ...selectedCard, type: 'final' }, gameState: 'FINALS_PREP' }); };
@@ -998,31 +1055,32 @@ export default function DogaclaVisualsFinal() {
       } 
   };
 
-  const updateLocalJuryScore = (delta) => { 
-      setLocalJuryScore(prev => Math.min(Math.max(prev + delta, -5), 15)); 
-      playSynthSound('click', soundEnabled); 
-  };
-
-  const submitManualVote = useCallback(() => { 
-      if (gameState !== 'VOTE' && gameState !== 'FINALS_VOTE') return;
-
-      playSynthSound('success', soundEnabled); 
-      let finalScore = localJuryScore; 
-      if(voteData.roleplay) finalScore += 2; if(voteData.obstacleOvercome) finalScore += 2; if(voteData.fail) finalScore = -2; finalScore += (voteData.bonusScore || 0); 
+  // --- YENİ: SENKRONİZE OYLAMA İŞLEMCİSİ (Beklemeli) ---
+  const processVotingResult = useCallback((scores) => {
+      let avgScore = 0;
+      if (scores.length > 0) {
+          avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+      }
       
       let newHype = hypeMeter;
-      if (isGoldenMic) { finalScore *= 2; addLog(UI[lang].goldenMic + "!"); newHype = 0; playSynthSound('hype', soundEnabled); triggerRemoteEvent({ type: 'confetti' }); } 
-      else { newHype = Math.min(100, hypeMeter + (finalScore > 5 ? 20 : 5)); } 
+      let finalScore = avgScore;
+
+      if (isGoldenMic) { 
+          finalScore *= 2; 
+          addLog(UI[lang].goldenMic + "!"); 
+          newHype = 0; 
+          playSynthSound('hype', soundEnabled); 
+          triggerRemoteEvent({ type: 'confetti' }); 
+      } else { 
+          newHype = Math.min(100, hypeMeter + (finalScore > 5 ? 20 : 5)); 
+      } 
       
       const newMood = finalScore > 3 ? 'happy' : (finalScore < 0 ? 'scared' : characterMood);
       const isFinal = gameState === 'FINALS_VOTE'; 
       const targetId = isFinal && finalists[finalTurnIndex] ? finalists[finalTurnIndex].id : currentTeam.id; 
       const newTeams = teams.map(t => t.id === targetId ? { ...t, score: t.score + finalScore, activeObstacles: [] } : t);
       
-      setVoteData({ roleplay: false, obstacleOvercome: false, fail: false, bonusScore: 0 }); 
-      setLocalJuryScore(0); 
-
-      const updates = { teams: newTeams, hypeMeter: newHype, characterMood: newMood, activeCard: null };
+      const updates = { teams: newTeams, hypeMeter: newHype, characterMood: newMood, activeCard: null, juryVotes: {} };
 
       if (isFinal) { 
           if (finalTurnIndex === 0) { 
@@ -1057,8 +1115,46 @@ export default function DogaclaVisualsFinal() {
               updates.characterMood = 'idle';
               syncGame(updates);
           }
-      } 
-  }, [gameState, localJuryScore, voteData, finalists, finalTurnIndex, currentTeam, soundEnabled, isGoldenMic, hypeMeter, lang, teams, characterMood, currentTurn]);
+      }
+  }, [gameState, finalists, finalTurnIndex, currentTeam.id, teams, isGoldenMic, hypeMeter, soundEnabled, lang, characterMood]);
+
+  // YENİ: Oyuncunun Oyunu Güvenli Şekilde Göndermesi
+  const submitManualVote = useCallback(() => { 
+      if (gameState !== 'VOTE' && gameState !== 'FINALS_VOTE') return;
+      if (juryVotes[user?.uid] !== undefined) return; // Zaten oy verdiyse engelle
+
+      playSynthSound('success', soundEnabled); 
+      let calcScore = localJuryScore; 
+      if(voteData.roleplay) calcScore += 2; 
+      if(voteData.obstacleOvercome) calcScore += 2; 
+      if(voteData.fail) calcScore = -2; 
+      calcScore += (voteData.bonusScore || 0); 
+      
+      setVoteData({ roleplay: false, obstacleOvercome: false, fail: false, bonusScore: 0 }); 
+      setLocalJuryScore(0); 
+
+      if (isSinglePlayer) {
+          processVotingResult([calcScore]);
+      } else {
+          // Direkt Firestore alanını güncelleyerek anlık çakışmaları engelliyoruz.
+          const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+          updateDoc(roomRef, { [`juryVotes.${user.uid}`]: calcScore }).catch(e => console.error("Vote error", e));
+      }
+  }, [gameState, localJuryScore, voteData, isSinglePlayer, processVotingResult, user, juryVotes, soundEnabled, roomId]);
+
+  // YENİ: Oylar Tamamlandığında Veya Host Zorladığında Sonucu Hesapla
+  useEffect(() => {
+      if (!isHost || isSinglePlayer) return;
+      if (gameState === 'VOTE' || gameState === 'FINALS_VOTE') {
+          const performingTeamId = gameState === 'FINALS_VOTE' ? finalists[finalTurnIndex]?.id : currentTeam.id;
+          const eligibleVoters = Object.keys(players).filter(uid => players[uid] !== performingTeamId);
+          
+          if (eligibleVoters.length > 0 && eligibleVoters.every(uid => juryVotes[uid] !== undefined)) {
+              // Herkes oyunu verdi, sonucu hesapla!
+              processVotingResult(Object.values(juryVotes));
+          }
+      }
+  }, [juryVotes, gameState, isHost, isSinglePlayer, players, currentTeam.id, finalists, finalTurnIndex, processVotingResult]);
   
   const finishPerformance = () => {
       if (gameState === 'PRE_PERFORM') {
@@ -1086,7 +1182,6 @@ export default function DogaclaVisualsFinal() {
       let color = "text-blue-400";
       let pointDelta = 0;
 
-      // Dinamik Rol-Play Bonus Duyuruları
       const getRoleplayMsg = (effect) => {
           const msgs = {
               'time': ["Zamanı büktü! Yönetmen araya girdi ve süreyi uzattı! (+30 Saniye)", "Tam sahne bitecekken ek süre kazandı! (+30 Saniye)"],
@@ -1169,7 +1264,7 @@ export default function DogaclaVisualsFinal() {
       syncGame({ isTimerPaused: false, showHintModal: false });
   };
 
-  const getCurrentCharacterAsset = () => { const baseKey = `team${currentTeam.id}`; return assets[`${baseKey}_${characterMood}`] || assets[`${baseKey}_idle`] || assets[baseKey]; };
+  const getCurrentCharacterAsset = () => { const baseKey = `team${currentTeam.id}`; return activeAssets[`${baseKey}_${characterMood}`] || activeAssets[`${baseKey}_idle`] || activeAssets[baseKey]; };
 
   // --- LOBBY & TEAM SELECT SCREEN RENDER ---
   if (gameState === 'LOBBY') {
@@ -1180,13 +1275,13 @@ export default function DogaclaVisualsFinal() {
 
           return (
               <div className="h-screen w-full flex flex-col items-center justify-center bg-neutral-950 text-white relative overflow-hidden">
-                  <div className="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000" style={{backgroundImage: assets.bg ? `url(${assets.bg})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
+                  <div className="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000" style={{backgroundImage: activeAssets.bg ? `url(${activeAssets.bg})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
                   <div className="absolute inset-0 z-0 bg-gradient-to-t from-black via-transparent to-black/80 pointer-events-none"></div>
 
                   <div className="absolute top-12 w-full flex justify-center gap-4 z-20 px-4">
                       {topBarTeams.map((t, idx) => (
                           <div key={t.id} className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-white/40 overflow-hidden bg-black shadow-[0_0_15px_rgba(255,255,255,0.2)] animate-fade-in-up">
-                               <AssetDisplay src={assets[`team${t.id}_idle`] || assets[`team${t.id}`]} className="w-full h-full object-cover object-top" />
+                               <AssetDisplay src={activeAssets[`team${t.id}_idle`] || activeAssets[`team${t.id}`]} className="w-full h-full object-cover object-top" />
                           </div>
                       ))}
                   </div>
@@ -1194,7 +1289,7 @@ export default function DogaclaVisualsFinal() {
                   <div className="relative z-10 flex flex-col items-center w-full px-4">
                       {revealState.isRolling ? (
                           <div className="text-center scale-110 sm:scale-125 mt-10">
-                              <TeamDice3D winnerId={null} isRolling={true} assets={assets} teams={INITIAL_TEAMS} />
+                              <TeamDice3D winnerId={null} isRolling={true} activeAssets={activeAssets} teams={INITIAL_TEAMS} />
                               <div className="mt-12 text-xl sm:text-2xl font-black text-neon-blue animate-pulse tracking-widest">
                                   {revealState.currentIndex + 1}. TAKIM SEÇİLİYOR...
                               </div>
@@ -1202,7 +1297,7 @@ export default function DogaclaVisualsFinal() {
                       ) : (
                           <div className="flex flex-col items-center mt-10 animate-fade-in-up w-full max-w-md bg-black/60 p-6 sm:p-8 rounded-3xl border-2 border-white/10 backdrop-blur-md shadow-2xl">
                               <div className={`w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 ${revealCurrentTeam.border} overflow-hidden bg-black shadow-[0_0_30px_rgba(250,204,21,0.5)] mb-6`}>
-                                  <AssetDisplay src={assets[`team${revealCurrentTeam.id}_happy`] || assets[`team${revealCurrentTeam.id}_idle`]} className="w-full h-full object-cover object-top" />
+                                  <AssetDisplay src={activeAssets[`team${revealCurrentTeam.id}_happy`] || activeAssets[`team${revealCurrentTeam.id}_idle`]} className="w-full h-full object-cover object-top" />
                               </div>
                               <h2 className={`text-4xl sm:text-5xl font-black mb-2 ${revealCurrentTeam.text} drop-shadow-lg tracking-widest uppercase`}>{TEAM_INFO[revealCurrentTeam.id].name}</h2>
                               <p className="text-lg sm:text-xl text-yellow-400 font-bold mb-4 tracking-widest uppercase text-center">{getLocalizedText(TEAM_INFO[revealCurrentTeam.id].desc, lang)}</p>
@@ -1219,7 +1314,7 @@ export default function DogaclaVisualsFinal() {
       if (teamSelectMode) {
           return (
               <div className="h-screen w-full flex flex-col items-center justify-center bg-neutral-950 text-white px-4 text-center relative overflow-hidden">
-                  <div className="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000" style={{backgroundImage: assets.bg ? `url(${assets.bg})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
+                  <div className="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000" style={{backgroundImage: activeAssets.bg ? `url(${activeAssets.bg})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
                   <div className="absolute inset-0 z-0 bg-gradient-to-t from-black via-transparent to-black/80 pointer-events-none"></div>
                   
                   <div className="relative z-10 flex flex-col items-center w-full mt-8 px-2">
@@ -1234,7 +1329,7 @@ export default function DogaclaVisualsFinal() {
                                   <div className="flex -space-x-3">
                                       {[...Array(count)].map((_, i) => (
                                           <div key={i} className="w-10 h-10 rounded-full border-2 border-white/20 flex items-center justify-center bg-black shadow-md overflow-hidden relative" style={{ zIndex: 10 - i }}>
-                                              <AssetDisplay src={assets[`team${i}_idle`] || assets[`team${i}`]} className="w-full h-full object-cover object-top" />
+                                              <AssetDisplay src={activeAssets[`team${i}_idle`] || activeAssets[`team${i}`]} className="w-full h-full object-cover object-top" />
                                           </div>
                                       ))}
                                   </div>
@@ -1251,23 +1346,23 @@ export default function DogaclaVisualsFinal() {
           <div className="h-screen w-full flex flex-col items-center justify-center bg-neutral-950 text-white px-4 text-center selection:bg-neon-pink relative overflow-hidden">
               {isAppLoading && (
                   <div className="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center transition-opacity duration-500 px-4">
-                      {assets.logo ? (
-                          <img src={assets.logo} alt="Loading Logo" className="w-48 sm:w-64 mb-6 animate-pulse drop-shadow-[0_0_20px_rgba(250,204,21,0.8)] object-contain bg-transparent" />
+                      {GAME_ASSETS.logo ? (
+                          <img src={GAME_ASSETS.logo} alt="Loading Logo" className="w-48 sm:w-64 mb-6 animate-pulse drop-shadow-[0_0_20px_rgba(250,204,21,0.8)] object-contain bg-transparent" />
                       ) : (
                           <Theater size={80} className="text-yellow-500 animate-pulse mb-6 drop-shadow-[0_0_20px_rgba(250,204,21,0.8)]" />
                       )}
-                      <h1 className="text-2xl sm:text-3xl font-black text-yellow-400 tracking-widest animate-bounce mt-4">YÜKLENİYOR...</h1>
+                      <h1 className="text-2xl sm:text-3xl font-black text-yellow-400 tracking-widest animate-bounce mt-4">YÜKLENİYOR... %{loadingProgress}</h1>
                       <div className="mt-8 w-48 sm:w-64 h-3 bg-gray-800 rounded-full overflow-hidden border border-white/20">
-                          <div className="h-full bg-gradient-to-r from-yellow-600 to-yellow-300 animate-loading-bar"></div>
+                          <div className="h-full bg-gradient-to-r from-yellow-600 to-yellow-300 transition-all duration-300" style={{ width: `${loadingProgress}%` }}></div>
                       </div>
                   </div>
               )}
-              <div className="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000" style={{backgroundImage: assets.bg ? `url(${assets.bg})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
+              <div className="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000" style={{backgroundImage: activeAssets.bg ? `url(${activeAssets.bg})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
               <div className="absolute inset-0 z-0 bg-gradient-to-t from-black via-transparent to-black/80 pointer-events-none"></div>
               
               <div className="relative z-10 flex flex-col items-center w-full mt-8 px-2">
-                  {assets.logo ? (
-                      <img src={assets.logo} alt="DOĞAÇLA" className="w-48 sm:w-64 md:w-80 max-w-[80vw] mb-6 drop-shadow-[0_0_20px_rgba(250,204,21,0.6)] object-contain bg-transparent" />
+                  {activeAssets.logo ? (
+                      <img src={activeAssets.logo} alt="DOĞAÇLA" className="w-48 sm:w-64 md:w-80 max-w-[80vw] mb-6 drop-shadow-[0_0_20px_rgba(250,204,21,0.6)] object-contain bg-transparent" />
                   ) : (
                       <>
                           <Theater size={80} className="text-yellow-500 mb-6 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" />
@@ -1319,7 +1414,7 @@ export default function DogaclaVisualsFinal() {
                   <div className="flex flex-col items-center animate-fade-in-up w-full max-w-md bg-black/60 p-6 sm:p-8 rounded-3xl border-2 border-[#D4AF37] shadow-[0_0_50px_rgba(212,175,55,0.4)]">
                       <h2 className="text-xl text-gray-400 font-bold tracking-widest mb-4 uppercase">SENİN TAKIMIN</h2>
                       <div className={`w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 ${assignedTeam.border} overflow-hidden bg-black shadow-[0_0_30px_rgba(250,204,21,0.5)] mb-6`}>
-                          <AssetDisplay src={assets[`team${assignedTeam.id}_happy`] || assets[`team${assignedTeam.id}_idle`]} className="w-full h-full object-cover object-top" />
+                          <AssetDisplay src={activeAssets[`team${assignedTeam.id}_happy`] || activeAssets[`team${assignedTeam.id}_idle`]} className="w-full h-full object-cover object-top" />
                       </div>
                       <h2 className={`text-4xl sm:text-5xl font-black mb-2 ${assignedTeam.text} drop-shadow-lg tracking-widest uppercase`}>{TEAM_INFO[assignedTeam.id].name}</h2>
                       <p className="text-center text-gray-300 text-sm sm:text-base italic bg-black/40 p-4 rounded-xl border border-gray-700 w-full mt-2">"{getLocalizedText(TEAM_INFO[assignedTeam.id].desc, lang)}"</p>
@@ -1331,7 +1426,7 @@ export default function DogaclaVisualsFinal() {
       return (
           <div className="fixed inset-0 bg-black/95 z-[110] flex items-center justify-center backdrop-blur-md">
               <div className="text-center scale-110">
-                  <TeamDice3D winnerId={localDiceState.isRolling ? null : localDiceState.teamIndex} isRolling={localDiceState.isRolling} assets={assets} teams={teams} />
+                  <TeamDice3D winnerId={localDiceState.isRolling ? null : localDiceState.teamIndex} isRolling={localDiceState.isRolling} activeAssets={activeAssets} teams={teams} />
                   <div className="mt-12 text-2xl font-black text-neon-blue tracking-widest">
                       {localDiceState.isRolling ? <span className="animate-pulse">TAKIMIN SEÇİLİYOR...</span> : "İŞTE TAKIMIN!"}
                   </div>
@@ -1434,14 +1529,14 @@ export default function DogaclaVisualsFinal() {
           </div>
       )}
 
-      <div className="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000" style={{backgroundImage: assets.bg ? `url(${assets.bg})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
+      <div className="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000" style={{backgroundImage: activeAssets.bg ? `url(${activeAssets.bg})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black via-transparent to-black/80 pointer-events-none"></div>
 
       {/* KİŞİSEL KİMLİK KARTI (HUD) - Sadece Lobi haricinde ve takımı belliyse görünür */}
       {myTeam && gameState !== 'LOBBY' && gameState !== 'INTRO' && (
          <div className="fixed top-16 right-2 sm:right-4 z-50 bg-black/80 border border-gray-600 rounded-xl p-2 flex items-center gap-2 shadow-lg backdrop-blur-md pointer-events-none">
             <div className={`w-8 h-8 rounded-full border-2 ${myTeam.border} overflow-hidden shadow-inner bg-black`}>
-               <AssetDisplay src={assets[`team${myTeam.id}_idle`]} className="w-full h-full object-cover object-top" />
+               <AssetDisplay src={activeAssets[`team${myTeam.id}_idle`]} className="w-full h-full object-cover object-top" />
             </div>
             <div className="flex flex-col pr-2 border-r border-gray-700">
                <span className={`text-[10px] font-black leading-none uppercase ${myTeam.text}`}>{TEAM_INFO[myTeam.id].name}</span>
@@ -1454,13 +1549,13 @@ export default function DogaclaVisualsFinal() {
          </div>
       )}
 
-      {showDiceModal && <div className="fixed inset-0 bg-black/90 z-[80] flex items-center justify-center backdrop-blur-md"><div className="text-center scale-110">{gameState === 'KURA' ? <TeamDice3D winnerId={kuraRolling ? null : currentTurn} isRolling={kuraRolling} assets={assets} teams={teams} /> : <Dice3D value={isRollingDice ? null : (diceValue > 6 ? 6 : diceValue)} isRolling={isRollingDice} />}<div className="mt-12 text-2xl font-black text-neon-blue animate-pulse tracking-widest">{kuraRolling ? UI[lang].drawingLots : UI[lang].rollingDice}</div></div></div>}
+      {showDiceModal && <div className="fixed inset-0 bg-black/90 z-[80] flex items-center justify-center backdrop-blur-md"><div className="text-center scale-110">{gameState === 'KURA' ? <TeamDice3D winnerId={kuraRolling ? null : currentTurn} isRolling={kuraRolling} activeAssets={activeAssets} teams={teams} /> : <Dice3D value={isRollingDice ? null : (diceValue > 6 ? 6 : diceValue)} isRolling={isRollingDice} />}<div className="mt-12 text-2xl font-black text-neon-blue animate-pulse tracking-widest">{kuraRolling ? UI[lang].drawingLots : UI[lang].rollingDice}</div></div></div>}
       
       {/* FLOATING HEADER (MOBILE) */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-black/50 border-b border-white/10 flex items-center justify-between px-2 sm:px-3 z-40 backdrop-blur-lg">
           <div className="flex items-center gap-1 sm:gap-2">
-              {assets.logo ? (
-                  <img src={assets.logo} alt="Logo" className="h-8 sm:h-10 w-auto object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] bg-transparent"/>
+              {activeAssets.logo ? (
+                  <img src={activeAssets.logo} alt="Logo" className="h-8 sm:h-10 w-auto object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] bg-transparent"/>
               ) : (
                   <>
                       <Theater size={24} className="text-yellow-500"/>
@@ -1513,8 +1608,8 @@ export default function DogaclaVisualsFinal() {
         
         {gameState === 'INTRO' && (
             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 rounded-2xl h-full backdrop-blur-sm px-4">
-                {assets.logo ? (
-                    <img src={assets.logo} alt="DOĞAÇLA" className="w-40 sm:w-56 md:w-64 max-w-[70vw] mb-4 animate-pulse drop-shadow-[0_0_30px_rgba(250,204,21,0.5)] object-contain bg-transparent" />
+                {activeAssets.logo ? (
+                    <img src={activeAssets.logo} alt="DOĞAÇLA" className="w-40 sm:w-56 md:w-64 max-w-[70vw] mb-4 animate-pulse drop-shadow-[0_0_30px_rgba(250,204,21,0.5)] object-contain bg-transparent" />
                 ) : (
                     <h1 className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-600 animate-pulse mb-2 text-center leading-none">DOĞAÇLA<br/><span className="text-xl sm:text-2xl text-white tracking-widest font-light">ACT I</span></h1>
                 )}
@@ -1554,7 +1649,7 @@ export default function DogaclaVisualsFinal() {
                             return (
                                 <div key={t.id} className={`flex-1 p-3 rounded-2xl border-2 ${t.border} bg-black/80 flex flex-col items-center shadow-[0_0_15px_rgba(0,0,0,0.5)] relative overflow-hidden`}>
                                     <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-white/20 mb-2 bg-black shadow-inner">
-                                        <AssetDisplay src={assets[`team${t.id}_idle`] || assets[`team${t.id}`]} className="w-full h-full object-cover object-top" />
+                                        <AssetDisplay src={activeAssets[`team${t.id}_idle`] || activeAssets[`team${t.id}`]} className="w-full h-full object-cover object-top" />
                                     </div>
                                     <div className={`text-[10px] sm:text-xs font-black tracking-widest uppercase ${t.text}`}>{TEAM_INFO[t.id].name}</div>
                                     <div className="text-white font-black text-xl sm:text-2xl mt-1 leading-none">{count} <span className="text-[10px] sm:text-xs font-normal text-gray-400">Kişi</span></div>
@@ -1632,7 +1727,7 @@ export default function DogaclaVisualsFinal() {
                                 <div className={`w-full h-full flex flex-wrap items-center justify-center gap-1`}>
                                     {playersHere.map((p) => (
                                         <div key={p.id} className={`relative w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white shadow-lg ${p.color} flex items-center justify-center overflow-hidden bg-black transition-all duration-300 ${currentTeam.id === p.id ? 'scale-125 ring-4 ring-white/50 animate-pulse z-30' : 'z-10'} max-w-full max-h-full`}>
-                                            {(assets[`team${p.id}`] || assets[`team${p.id}_idle`]) ? <AssetDisplay src={assets[`team${p.id}`] || assets[`team${p.id}_idle`]} className="w-full h-full object-cover object-top" alt={`P${p.id}`} /> : <span className="text-[14px] sm:text-[16px]">{p.icon}</span>}
+                                            {(activeAssets[`team${p.id}`] || activeAssets[`team${p.id}_idle`]) ? <AssetDisplay src={activeAssets[`team${p.id}`] || activeAssets[`team${p.id}_idle`]} className="w-full h-full object-cover object-top" alt={`P${p.id}`} /> : <span className="text-[14px] sm:text-[16px]">{p.icon}</span>}
                                         </div>
                                     ))}
                                 </div>
@@ -1683,7 +1778,6 @@ export default function DogaclaVisualsFinal() {
                   )}
                   {gameState === 'MOVING' && <div className="text-neon-blue font-black animate-pulse text-center text-xl sm:text-2xl tracking-[0.2em] py-5">{UI[lang].enteringStage}</div>}
                   
-                  {/* YENİ: SABOTAJ BEKLEME SÜRESİ (10 SANİYE) */}
                   {gameState === 'PRE_PERFORM' && (
                       <div className="w-full flex flex-col gap-4 text-center">
                           <h3 className="text-xl font-black text-red-500 animate-pulse uppercase tracking-widest">SABOTAJ SÜRESİ</h3>
@@ -1729,14 +1823,12 @@ export default function DogaclaVisualsFinal() {
                               </div>
                           )}
 
-                          {/* İPUCU BUTONU */}
                           {isMyTurn && (
                               <button onClick={requestHint} className="w-full py-3 bg-yellow-600/20 border-2 border-yellow-500/50 rounded-xl font-bold text-yellow-400 flex justify-center items-center gap-2 active:bg-yellow-500/40 transition mb-2 shadow-[0_0_15px_rgba(250,204,21,0.2)]">
                                   <HelpCircle size={20} /> İPUCU AL (Süreyi Durdurur)
                               </button>
                           )}
 
-                          {/* SABOTAJ / ENGEL FIRLATMA MENÜSÜ */}
                           {!isMyTurn && myTeam?.heldObstacles?.length > 0 && (
                               <div className="mt-2 border-t border-gray-700 pt-4">
                                   <div className="text-red-500 font-bold text-xs mb-2 text-center">😈 SABOTE ET (ENGEL FIRLAT)</div>
@@ -1764,30 +1856,70 @@ export default function DogaclaVisualsFinal() {
                                   <div className="flex gap-3 justify-center mb-4">
                                        {teams.filter(t => t.id !== currentTeam.id).map(t => (
                                            <div key={t.id} className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 ${t.border} overflow-hidden bg-black shadow-lg animate-pulse`}>
-                                               <AssetDisplay src={assets[`team${t.id}_thinking`] || assets[`team${t.id}_idle`]} className="w-full h-full object-cover object-top" />
+                                               <AssetDisplay src={activeAssets[`team${t.id}_thinking`] || activeAssets[`team${t.id}_idle`]} className="w-full h-full object-cover object-top" />
                                            </div>
                                        ))}
                                   </div>
                                   <h3 className="text-xl sm:text-2xl font-black text-yellow-400 mb-2 uppercase tracking-widest">JÜRİ KARAR VERİYOR</h3>
                                   <p className="text-gray-300 text-sm sm:text-base">Performansın değerlendiriliyor. Lütfen diğer takımların puan vermesini bekle...</p>
+                                  
+                                  {/* YENİ: BEKLENEN JÜRİLER LİSTESİ */}
+                                  <div className="mt-4 p-3 bg-black/40 rounded-xl border border-gray-700 w-full text-left">
+                                      <div className="text-neon-blue font-bold tracking-widest mb-2 text-center text-xs">JÜRİ DURUMU ({Object.keys(juryVotes).length}/{Object.keys(players).filter(uid => players[uid] !== currentTeam.id).length})</div>
+                                      {Object.keys(players).filter(uid => players[uid] !== currentTeam.id).map(uid => (
+                                          <div key={uid} className={`text-xs font-bold flex justify-between items-center py-1 border-b border-white/5 ${juryVotes[uid] !== undefined ? 'text-green-400' : 'text-yellow-400 animate-pulse'}`}>
+                                              <span>{TEAM_INFO[players[uid]].name}</span>
+                                              <span>{juryVotes[uid] !== undefined ? '✅ OY VERDİ' : '⏳ BEKLİYOR'}</span>
+                                          </div>
+                                      ))}
+                                  </div>
+                                  
+                                  {isHost && Object.keys(juryVotes).length > 0 && (
+                                      <button onClick={() => { playSynthSound('click', soundEnabled); processVotingResult(Object.values(juryVotes)); }} className="mt-4 px-4 py-3 bg-red-600/50 hover:bg-red-600 rounded-lg text-sm font-bold text-white border border-red-500 w-full transition">Tüm Oyları Beklemeden Bitir</button>
+                                  )}
                               </div>
                           ) : (
-                              <>
-                                  <div className="flex gap-2 text-center">
-                                      <button onClick={() => setVoteData(p => ({...p, roleplay: !p.roleplay}))} className={`flex-1 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-black border-2 transition ${voteData.roleplay ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_15px_blue]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].role}</button>
-                                      <button onClick={() => setVoteData(p => ({...p, obstacleOvercome: !p.obstacleOvercome}))} className={`flex-1 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-black border-2 transition ${voteData.obstacleOvercome ? 'bg-green-600 border-green-400 text-white shadow-[0_0_15px_green]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].obstacleBtn}</button>
-                                      <button onClick={() => setVoteData(p => ({...p, fail: !p.fail}))} className={`flex-1 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-black border-2 transition ${voteData.fail ? 'bg-red-600 border-red-400 text-white shadow-[0_0_15px_red]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].fail}</button>
+                              juryVotes[user?.uid] !== undefined ? (
+                                  <div className="bg-gray-800 border-2 border-green-500 p-6 rounded-2xl text-center shadow-inner animate-fade-in-up">
+                                       <div className="flex justify-center mb-4"><CheckCircleIcon size={48} className="text-green-400" /></div>
+                                       <h3 className="text-xl sm:text-2xl font-black text-green-400 mb-2 uppercase tracking-widest">OYUNUZ GÖNDERİLDİ!</h3>
+                                       <p className="text-gray-300 text-sm sm:text-base">Diğer jürilerin oylamayı tamamlaması bekleniyor...</p>
+                                       
+                                       {/* YENİ: BEKLENEN JÜRİLER LİSTESİ */}
+                                       {!isSinglePlayer && (
+                                           <div className="mt-4 p-3 bg-black/40 rounded-xl border border-gray-700 w-full text-left">
+                                               <div className="text-neon-blue font-bold tracking-widest mb-2 text-center text-xs">JÜRİ DURUMU ({Object.keys(juryVotes).length}/{Object.keys(players).filter(uid => players[uid] !== currentTeam.id).length})</div>
+                                               {Object.keys(players).filter(uid => players[uid] !== currentTeam.id).map(uid => (
+                                                   <div key={uid} className={`text-xs font-bold flex justify-between items-center py-1 border-b border-white/5 ${juryVotes[uid] !== undefined ? 'text-green-400' : 'text-yellow-400 animate-pulse'}`}>
+                                                       <span>{TEAM_INFO[players[uid]].name}</span>
+                                                       <span>{juryVotes[uid] !== undefined ? '✅ OY VERDİ' : '⏳ BEKLİYOR'}</span>
+                                                   </div>
+                                               ))}
+                                           </div>
+                                       )}
+                                       
+                                       {isHost && (
+                                           <button onClick={() => { playSynthSound('click', soundEnabled); processVotingResult(Object.values(juryVotes)); }} className="mt-4 px-4 py-3 bg-red-600/50 hover:bg-red-600 rounded-lg text-sm font-bold text-white border border-red-500 w-full transition">Tüm Oyları Beklemeden Bitir</button>
+                                       )}
                                   </div>
-                                  <div className="flex justify-between items-center px-4 py-2">
-                                      <button onClick={() => updateLocalJuryScore(-1)} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-red-500/50 text-red-500 flex items-center justify-center active:bg-red-500/20 shadow-lg"><Minus size={28}/></button>
-                                      <span className="text-6xl sm:text-7xl font-mono font-black text-white drop-shadow-xl">{localJuryScore}</span>
-                                      <button onClick={() => updateLocalJuryScore(1)} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-green-500/50 text-green-500 flex items-center justify-center active:bg-green-500/20 shadow-lg"><Plus size={28}/></button>
-                                  </div>
-                                  <div className="flex gap-3">
-                                      <button onClick={askAICritic} className="w-16 bg-purple-900/50 border-2 border-purple-500 text-purple-300 rounded-2xl flex items-center justify-center active:bg-purple-800 shadow-md" disabled={criticLoading}><Bot size={32}/></button>
-                                      <button onClick={() => submitManualVote()} className="flex-1 py-4 sm:py-5 bg-white text-black font-black text-lg sm:text-xl rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.5)] active:scale-95 transition uppercase tracking-widest">{UI[lang].confirmScore}</button>
-                                  </div>
-                              </>
+                              ) : (
+                                  <>
+                                      <div className="flex gap-2 text-center">
+                                          <button onClick={() => setVoteData(p => ({...p, roleplay: !p.roleplay}))} className={`flex-1 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-black border-2 transition ${voteData.roleplay ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_15px_blue]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].role}</button>
+                                          <button onClick={() => setVoteData(p => ({...p, obstacleOvercome: !p.obstacleOvercome}))} className={`flex-1 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-black border-2 transition ${voteData.obstacleOvercome ? 'bg-green-600 border-green-400 text-white shadow-[0_0_15px_green]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].obstacleBtn}</button>
+                                          <button onClick={() => setVoteData(p => ({...p, fail: !p.fail}))} className={`flex-1 py-3 sm:py-4 rounded-xl text-[10px] sm:text-xs font-black border-2 transition ${voteData.fail ? 'bg-red-600 border-red-400 text-white shadow-[0_0_15px_red]' : 'border-gray-700 text-gray-400'}`}>{UI[lang].fail}</button>
+                                      </div>
+                                      <div className="flex justify-between items-center px-4 py-2">
+                                          <button onClick={() => updateLocalJuryScore(-1)} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-red-500/50 text-red-500 flex items-center justify-center active:bg-red-500/20 shadow-lg"><Minus size={28}/></button>
+                                          <span className="text-6xl sm:text-7xl font-mono font-black text-white drop-shadow-xl">{localJuryScore}</span>
+                                          <button onClick={() => updateLocalJuryScore(1)} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-green-500/50 text-green-500 flex items-center justify-center active:bg-green-500/20 shadow-lg"><Plus size={28}/></button>
+                                      </div>
+                                      <div className="flex gap-3">
+                                          <button onClick={askAICritic} className="w-16 bg-purple-900/50 border-2 border-purple-500 text-purple-300 rounded-2xl flex items-center justify-center active:bg-purple-800 shadow-md" disabled={criticLoading}><Bot size={32}/></button>
+                                          <button onClick={() => submitManualVote()} className="flex-1 py-4 sm:py-5 bg-white text-black font-black text-lg sm:text-xl rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.5)] active:scale-95 transition uppercase tracking-widest">{UI[lang].confirmScore}</button>
+                                      </div>
+                                  </>
+                              )
                           )}
                       </div>
                   )}
@@ -1799,7 +1931,7 @@ export default function DogaclaVisualsFinal() {
       {gameState === 'FINALS_PLAY' && (
           <footer className="fixed bottom-0 left-0 w-full bg-black/95 backdrop-blur-xl border-t-4 border-yellow-500 rounded-t-3xl z-40 p-4 pb-8 flex flex-col shadow-[0_-10px_40px_rgba(250,204,21,0.4)]">
               <div className="flex items-center gap-4 mb-4">
-                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-yellow-400 overflow-hidden bg-black shrink-0 relative shadow-[0_0_20px_rgba(250,204,21,0.6)]`}><AssetDisplay src={assets[`team${currentTeam.id}_scared`]} className="w-full h-full object-cover object-top" /></div>
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-yellow-400 overflow-hidden bg-black shrink-0 relative shadow-[0_0_20px_rgba(250,204,21,0.6)]`}><AssetDisplay src={activeAssets[`team${currentTeam.id}_scared`]} className="w-full h-full object-cover object-top" /></div>
                   <div className="flex flex-col flex-1"><span className="text-[10px] sm:text-xs text-yellow-400 uppercase font-black tracking-widest">FİNAL PERFORMANSI</span><span className={`font-black text-2xl sm:text-3xl leading-none text-white mt-1`}>{TEAM_INFO[currentTeam.id].name}</span></div>
               </div>
               <div className="flex justify-between items-center bg-gray-900/50 p-4 sm:p-5 rounded-2xl border-2 border-yellow-500/30 shadow-inner">
@@ -1879,7 +2011,7 @@ export default function DogaclaVisualsFinal() {
       {gameState === 'FINALS_TRANSITION' && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md px-4 text-center">
                <h2 className="text-4xl sm:text-5xl font-black text-white mb-10 tracking-widest">{UI[lang].transitionWait}</h2>
-               <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-full border-4 border-yellow-400 mb-12 overflow-hidden bg-black shadow-[0_0_40px_rgba(250,204,21,0.6)]"><AssetDisplay src={assets[`team${finalists[1].id}_idle`]} className="w-full h-full object-cover object-top" /></div>
+               <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-full border-4 border-yellow-400 mb-12 overflow-hidden bg-black shadow-[0_0_40px_rgba(250,204,21,0.6)]"><AssetDisplay src={activeAssets[`team${finalists[1].id}_idle`]} className="w-full h-full object-cover object-top" /></div>
                {isHost || isSinglePlayer ? (
                    <button onClick={startNextFinalist} className="w-full max-w-[90vw] sm:max-w-sm py-5 sm:py-6 bg-white text-black font-black text-xl sm:text-2xl rounded-full active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.5)]">{UI[lang].startNext} ({TEAM_INFO[finalists[1].id].name})</button>
                ) : (
@@ -1895,12 +2027,12 @@ export default function DogaclaVisualsFinal() {
                <p className="text-base sm:text-lg text-gray-300 mb-10">{UI[lang].whoGetsRole}</p>
                <div className="flex flex-col gap-6 w-full max-w-[90vw] sm:max-w-sm">
                     <button onClick={() => amIDirector && castWinner(finalists[0])} className={`w-full p-4 sm:p-5 rounded-3xl border-2 border-gray-600 bg-gray-900 flex items-center gap-4 transition-all shadow-lg ${amIDirector ? 'active:border-yellow-400' : 'opacity-70'}`}>
-                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shrink-0 bg-black border-2 border-white/20"><AssetDisplay src={assets[`team${finalists[0].id}_happy`]} className="w-full h-full object-cover object-top" /></div>
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shrink-0 bg-black border-2 border-white/20"><AssetDisplay src={activeAssets[`team${finalists[0].id}_happy`]} className="w-full h-full object-cover object-top" /></div>
                         <div className="flex-1 text-left"><h3 className="text-2xl sm:text-3xl font-black text-white">{TEAM_INFO[finalists[0].id].name}</h3><span className="text-sm sm:text-base text-yellow-500 font-bold tracking-widest">{UI[lang].castWinner}</span></div>
                     </button>
                     <div className="text-3xl sm:text-4xl font-black text-red-500 italic text-center drop-shadow-md">VS</div>
                     <button onClick={() => amIDirector && castWinner(finalists[1])} className={`w-full p-4 sm:p-5 rounded-3xl border-2 border-gray-600 bg-gray-900 flex items-center gap-4 transition-all shadow-lg ${amIDirector ? 'active:border-yellow-400' : 'opacity-70'}`}>
-                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shrink-0 bg-black border-2 border-white/20"><AssetDisplay src={assets[`team${finalists[1].id}_happy`]} className="w-full h-full object-cover object-top" /></div>
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shrink-0 bg-black border-2 border-white/20"><AssetDisplay src={activeAssets[`team${finalists[1].id}_happy`]} className="w-full h-full object-cover object-top" /></div>
                         <div className="flex-1 text-left"><h3 className="text-2xl sm:text-3xl font-black text-white">{TEAM_INFO[finalists[1].id].name}</h3><span className="text-sm sm:text-base text-yellow-500 font-bold tracking-widest">{UI[lang].castWinner}</span></div>
                     </button>
                </div>
@@ -1914,7 +2046,7 @@ export default function DogaclaVisualsFinal() {
                <Trophy size={100} sm:size={120} className="text-yellow-400 mb-8 drop-shadow-[0_0_30px_rgba(250,204,21,1)] animate-bounce" />
                <h1 className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 mb-8 tracking-tighter text-center leading-none">{UI[lang].champion}</h1>
                <div className="relative mb-10">
-                   <div className="w-56 h-56 sm:w-64 sm:h-64 rounded-full border-4 border-yellow-400 shadow-[0_0_40px_yellow] overflow-hidden bg-black"><AssetDisplay src={assets[`team${winner.id}_happy`]} className="w-full h-full object-cover object-top" /></div>
+                   <div className="w-56 h-56 sm:w-64 sm:h-64 rounded-full border-4 border-yellow-400 shadow-[0_0_40px_yellow] overflow-hidden bg-black"><AssetDisplay src={activeAssets[`team${winner.id}_happy`]} className="w-full h-full object-cover object-top" /></div>
                    <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black px-8 sm:px-10 py-2 sm:py-3 rounded-full font-black text-2xl sm:text-3xl whitespace-nowrap shadow-xl">{TEAM_INFO[winner.id].name}</div>
                </div>
                <p className="text-2xl sm:text-3xl text-yellow-200 mb-14 font-bold">{UI[lang].finalScore} <span className="text-white text-4xl sm:text-5xl ml-2">{winner.score}</span></p>
@@ -1925,9 +2057,9 @@ export default function DogaclaVisualsFinal() {
       )}
 
       {/* KART & BONUS MODALS */}
-      {gameState === 'CARD' && activeCard && <CardDisplay card={activeCard} type={cardType} mode="draw" onAction={handleCardAction} assets={assets} currentTeamId={currentTeam.id} lang={lang} isMyTurn={isMyTurn} />}
-      {gameState === 'FINALS_PREP' && customFinalCard && <CardDisplay card={customFinalCard} type="final" mode="draw" onAction={() => { playSynthSound('click', soundEnabled); syncGame({ performanceTimer: 120, gameState: 'FINALS_PLAY' }); setTimerKey(k=>k+1); }} assets={assets} currentTeamId={currentTeam.id} lang={lang} isMyTurn={isMyTurn} />}
-      {playingBonus && <CardDisplay card={playingBonus} type="bonus" mode="play" onAction={executeBonusPower} assets={assets} currentTeamId={currentTeam.id} lang={lang} isMyTurn={isMyTurn} />}
+      {gameState === 'CARD' && activeCard && <CardDisplay card={activeCard} type={cardType} mode="draw" onAction={handleCardAction} activeAssets={activeAssets} currentTeamId={currentTeam.id} lang={lang} isMyTurn={isMyTurn} />}
+      {gameState === 'FINALS_PREP' && customFinalCard && <CardDisplay card={customFinalCard} type="final" mode="draw" onAction={() => { playSynthSound('click', soundEnabled); syncGame({ performanceTimer: 120, gameState: 'FINALS_PLAY' }); setTimerKey(k=>k+1); }} activeAssets={activeAssets} currentTeamId={currentTeam.id} lang={lang} isMyTurn={isMyTurn} />}
+      {playingBonus && <CardDisplay card={playingBonus} type="bonus" mode="play" onAction={executeBonusPower} activeAssets={activeAssets} currentTeamId={currentTeam.id} lang={lang} isMyTurn={isMyTurn} />}
       
       {/* KURALLAR MODALI */}
       {showRules && (
@@ -1998,3 +2130,8 @@ const Timer = ({ duration, onFinish, soundEnabled, isPaused }) => {
     }, [timeLeft, onFinish, duration, soundEnabled, isPaused]);
     return <div className="text-4xl sm:text-5xl font-mono font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] tracking-wider">{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</div>;
 };
+const CheckCircleIcon = ({ size, className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinelinejoin="round" className={className}>
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
+  </svg>
+);
