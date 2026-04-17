@@ -171,8 +171,9 @@ jobs:
         mkdir -p assets
         # Logoyu GitHub'dan indiriyoruz
         curl -L "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/dogacla_logsu.png" -o assets/logo.png
-        # Arka plan simsiyah olacak şekilde Android icon ve splash dosyalarını üretiyoruz
-        npx @capacitor/assets generate --android --splashBackgroundColor '#000000' --iconBackgroundColor '#000000'
+        
+        # UYGULAMA İKONUNUN ARKA PLANI ŞEFFAF (TRANSPARENT) YAPILDI! (Açılış ekranı siyah kalacak)
+        npx @capacitor/assets generate --android --splashBackgroundColor '#000000' --iconBackgroundColor transparent
         
         cd android
         chmod +x gradlew
