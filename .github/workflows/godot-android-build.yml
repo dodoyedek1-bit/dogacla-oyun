@@ -7,7 +7,6 @@ on:
 
 env:
   GODOT_VERSION: "4.2.1"
-  PROJECT_NAME: "Dogacla"
 
 jobs:
   build-android:
@@ -65,10 +64,12 @@ jobs:
       - name: 8. APK'yı Paketle
         run: |
           mkdir -p build/android
-          godot --headless --export-debug "Android" build/android/${PROJECT_NAME}.apk
+          godot --headless --export-debug "Android" build/android/Dogacla.apk
+          echo "==== APK KLASÖRÜ KONTROLÜ ===="
+          ls -la build/android/
 
       - name: 9. APK'yı İndirmeye Hazır Hale Getir
         uses: actions/upload-artifact@v4
         with:
           name: Dogacla-Godot-Test-APK
-          path: build/android/${PROJECT_NAME}.apk
+          path: build/android/Dogacla.apk
