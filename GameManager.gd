@@ -1,44 +1,58 @@
-extends Node
+extends Control
 
-# --- DOĞAÇLA OYUN YÖNETİCİSİ (GODOT 4) ---
+@onready var bg = $Background
+@onready var video = $VideoPlayer
+@onready var label = $UI/StatusLabel
+@onready var btn = $UI/ActionBtn
 
-signal game_state_changed(new_state)
-signal hype_meter_changed(new_value)
-signal dice_rolled(value)
-
-enum GameState { LOBBY, INTRO, ROLL, CARD, PRE_PERFORM, PERFORM, VOTE, END }
-
-var current_state: GameState = GameState.LOBBY
-var current_turn: int = 0
-var hype_meter: int = 0
-
-var teams = [
-	{ "id": 0, "name": "İBİŞ", "score": 0, "pos": 0, "bonuses": [], "obstacles": [] },
-	{ "id": 1, "name": "KARAGÖZ", "score": 0, "pos": 0, "bonuses": [], "obstacles": [] },
-	{ "id": 2, "name": "SHAKESPEARE", "score": 0, "pos": 0, "bonuses": [], "obstacles": [] },
-	{ "id": 3, "name": "ARİSTOFANES", "score": 0, "pos": 0, "bonuses": [], "obstacles": [] }
-]
+var is_playing = false
 
 func _ready():
-	print("Doğaçla Godot Engine Başlatıldı!")
+	# 1. Arka planı güvenli yükle
+	if FileAccess.file_exists("res://assets/arkplan.png"):
+		var bg_img = Image.load_from_file("res://assets/arkplan.png")
+		bg.texture = ImageTexture.create_from_image(bg_img)
 	
-func change_state(new_state: GameState):
-	current_state = new_state
-	game_state_changed.emit(current_state)
+	# 2. Butonu React'teki gibi Kusursuz Sarart (StyleBox)
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.84, 0.0) # Altın Sarısı
+	style.corner_radius_top_left = 50
+	style.corner_radius_top_right = 50
+	style.corner_radius_bottom_left = 50
+	style.corner_radius_bottom_right = 50
+	style.shadow_color = Color(0, 0, 0, 0.5)
+	style.shadow_size = 10
+	
+	btn.add_theme_stylebox_override("normal", style)
+	btn.add_theme_stylebox_override("hover", style)
+	btn.add_theme_stylebox_override("pressed", style)
+	
+	# 3. Tıklama dinleyicisini başlat
+	btn.pressed.connect(_on_ActionBtn_pressed)
 
-func roll_dice():
-	if current_state != GameState.ROLL:
-		return
-	
-	var roll = randi_range(1, 6)
-	var bonus_move = int(teams[current_turn]["score"] / 5.0)
-	var total_move = roll + bonus_move
-	
-	dice_rolled.emit(roll)
-	
-	teams[current_turn]["pos"] += total_move
-	if teams[current_turn]["pos"] >= 35:
-		teams[current_turn]["pos"] = 35
-		change_state(GameState.END)
+func _on_ActionBtn_pressed():
+	if is_playing:
+		# Kapat
+		video.stop()
+		label.text = "SIRA DİĞER TAKIMDA"
+		btn.text = "ZAR AT"
+		is_playing = false
 	else:
-		change_state(GameState.CARD)
+		# Şimşek Hızında Videoyu Aç
+		label.text = "SAHNEDE: İBİŞ!"
+		btn.text = "PERFORMANSI BİTİR"
+		
+		# Önceden indirdiğimiz MP4'ü motorun ekran kartına (GPU) veriyoruz
+		if FileAccess.file_exists("res://assets/ibis_kolay.mp4"):
+			video.stream = preload("res://assets/ibis_kolay.mp4")
+			video.play()
+			is_playing = true
+		else:
+			label.text = "VİDEO YÜKLENEMEDİ!"
+
+func _process(delta):
+	# Eğer video kendi kendine biterse
+	if is_playing and not video.is_playing():
+		label.text = "PERFORMANS BİTTİ"
+		btn.text = "DEVAM ET"
+		is_playing = false
