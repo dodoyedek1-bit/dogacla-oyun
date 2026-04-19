@@ -29,43 +29,44 @@ jobs:
           cat << 'EOF' > download_assets.py
           import urllib.request
           import os
+          import sys
 
-          # OYUNUN TÜM VİDEOLARI VE RESİMLERİ (FULL SÜRÜM)
+          # OYUNUN TÜM VİDEOLARI VE RESİMLERİ (dogacla-oyun olarak düzeltildi)
           GAME_ASSETS = {
-              "arkplan.png": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/arkplan.png",
-              "dogacla_logsu.png": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/dogacla_logsu.png",
-              "The_Clockwork_Caper.mp3": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/The_Clockwork_Caper.mp3",
+              "arkplan.png": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/arkplan.png",
+              "dogacla_logsu.png": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/dogacla_logsu.png",
+              "The_Clockwork_Caper.mp3": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/The_Clockwork_Caper.mp3",
               
               # İBİŞ VİDEOLARI
-              "ibis_kolay.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/ibis_kolay.mp4",
-              "ibis_orta.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/ibis_orta.mp4",
-              "ibis_zor.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/ibis_zor.mp4",
+              "ibis_kolay.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/ibis_kolay.mp4",
+              "ibis_orta.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/ibis_orta.mp4",
+              "ibis_zor.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/ibis_zor.mp4",
               
               # KARAGÖZ VİDEOLARI
-              "karagoz_kolay.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/karagoz_kolay.mp4",
-              "karagoz_orta.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/karagoz_orta.mp4",
-              "karagoz_zor.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/karagoz_zor.mp4",
+              "karagoz_kolay.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/karagoz_kolay.mp4",
+              "karagoz_orta.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/karagoz_orta.mp4",
+              "karagoz_zor.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/karagoz_zor.mp4",
               
               # SHAKESPEARE VİDEOLARI
-              "shakespeare_kolay.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/shakespeare_kolay.mp4",
-              "shakespeare_orta.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/shakespeare_orta.mp4",
-              "shakespeare_zor.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/shakespeare_zor.mp4",
+              "shakespeare_kolay.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/shakespeare_kolay.mp4",
+              "shakespeare_orta.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/shakespeare_orta.mp4",
+              "shakespeare_zor.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/shakespeare_zor.mp4",
               
               # ARİSTOFANES VİDEOLARI
-              "aristo_kolay.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/aristo_kolay.mp4",
-              "artisto_bekleme.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/artisto_bekleme.mp4",
-              "artisto_zor.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/artisto_zor.mp4",
+              "aristo_kolay.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/aristo_kolay.mp4",
+              "artisto_bekleme.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/artisto_bekleme.mp4",
+              "artisto_zor.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/artisto_zor.mp4",
               
               # FIRSAT/BONUS KARTI VİDEOLARI
-              "madox_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/madox_karti.mp4",
-              "dputiyat_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/dputiyat_karti.mp4",
-              "Gulec_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/Gulec_karti.mp4",
-              "kubi_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/kubi_karti.mp4",
-              "kubo_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/kubo_karti.mp4",
-              "Mali_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/Mali_karti.mp4",
-              "sadic_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/sadic_karti.mp4",
-              "tubi_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/tubi_karti.mp4",
-              "cicu_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/cicu_karti.mp4"
+              "madox_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/madox_karti.mp4",
+              "dputiyat_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/dputiyat_karti.mp4",
+              "Gulec_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/Gulec_karti.mp4",
+              "kubi_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/kubi_karti.mp4",
+              "kubo_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/kubo_karti.mp4",
+              "Mali_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/Mali_karti.mp4",
+              "sadic_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/sadic_karti.mp4",
+              "tubi_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/tubi_karti.mp4",
+              "cicu_karti.mp4": "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/cicu_karti.mp4"
           }
 
           for filename, url in GAME_ASSETS.items():
@@ -73,7 +74,8 @@ jobs:
                   print(f"İndiriliyor: {filename}...")
                   urllib.request.urlretrieve(url, f"assets/{filename}")
               except Exception as e:
-                  print(f"HATA: {filename} indirilemedi! ({e})")
+                  print(f"KRİTİK HATA: {filename} indirilemedi! Lütfen dosya adının ve linkin doğru olduğundan emin ol. Hata detayı: {e}")
+                  sys.exit(1) # Hata olursa işlemi durdur, sahte başarılı mesajı verme!
           
           print("Tüm medyalar 'assets' klasörüne başarıyla indirildi!")
           EOF
@@ -97,11 +99,9 @@ jobs:
 
       - name: 6. Debug Keystore Oluştur ve Godot'ya Tanıt
         run: |
-          # İmza dosyasını oluştur
           mkdir -p ~/.android
           keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
           
-          # Godot'ya Android SDK ve İmza yollarını zorla öğret (BU KISIM EKSİKTİ)
           mkdir -p ~/.config/godot
           cat << EOF > ~/.config/godot/editor_settings-4.tres
           [gd_resource type="EditorSettings" format=3]
@@ -122,7 +122,6 @@ jobs:
         run: |
           mkdir -p build/android
           echo "Android APK dışa aktarılıyor..."
-          # Değişkeni kaldırıp direkt adını yazdık, ayrıca hataları görebilmek için -v ekledik
           godot --headless -v --export-debug "Android" build/android/Dogacla.apk
           
           echo "==== APK KLASÖRÜ KONTROLÜ ===="
@@ -132,4 +131,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Dogacla-Godot-APK
-          path: build/android/Dogacla.apk # Burada da değişkeni sildik
+          path: build/android/Dogacla.apk
