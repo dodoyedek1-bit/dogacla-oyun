@@ -95,23 +95,41 @@ jobs:
           mv ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
           rm -rf ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/templates
 
-      - name: 6. Debug Keystore Oluştur
+      - name: 6. Debug Keystore Oluştur ve Godot'ya Tanıt
         run: |
-          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
+          # İmza dosyasını oluştur
+          mkdir -p ~/.android
+          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
+          
+          # Godot'ya Android SDK ve İmza yollarını zorla öğret (BU KISIM EKSİKTİ)
+          mkdir -p ~/.config/godot
+          cat << EOF > ~/.config/godot/editor_settings-4.tres
+          [gd_resource type="EditorSettings" format=3]
+          [resource]
+          export/android/android_sdk_path = "/usr/local/lib/android/sdk"
+          export/android/debug_keystore = "/home/runner/.android/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          export/android/force_system_user = false
+          EOF
 
       - name: 7. Godot Headless Import (İndirilen Medyaları Algılama)
         run: |
           echo "Godot, assets klasöründeki yeni indirilen videoları ve görselleri algılayıp .import dosyalarını oluşturuyor..."
-          godot --headless --editor --quit || true
+          godot --headless -v --editor --quit || true
 
       - name: 8. APK'yı Export Et (Paketle)
         run: |
           mkdir -p build/android
           echo "Android APK dışa aktarılıyor..."
-          godot --headless --export-debug "Android" build/android/${PROJECT_NAME}.apk
+          # Değişkeni kaldırıp direkt adını yazdık, ayrıca hataları görebilmek için -v ekledik
+          godot --headless -v --export-debug "Android" build/android/Dogacla.apk
+          
+          echo "==== APK KLASÖRÜ KONTROLÜ ===="
+          ls -la build/android/
 
       - name: 9. APK'yı İndirmeye Hazır Hale Getir (Artifact)
         uses: actions/upload-artifact@v4
         with:
           name: Dogacla-Godot-APK
-          path: build/android/${PROJECT_NAME}.apk
+          path: build/android/Dogacla.apk # Burada da değişkeni sildik
