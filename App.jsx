@@ -130,7 +130,7 @@ const AssetDisplay = ({ src, className = '', style = {}, alt = '' }) => {
     
     if (!src) return <div className={className} style={{...style, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent'}}>{alt}</div>;
     
-    const isVideo = typeof src === 'string' && (src.toLowerCase().startsWith('blob:') || src.toLowerCase().endsWith('.mp4') || src.toLowerCase().endsWith('.webm'));
+    const isVideo = typeof src === 'string' && (src.toLowerCase().endsWith('.mp4') || src.toLowerCase().endsWith('.webm'));
     
     if (isVideo) {
         const hasBgClass = className && className.includes('bg-');
@@ -500,7 +500,6 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, activeAssets, curren
 export default function DogaclaVisualsFinal() {
   const [lang, setLang] = useState('tr');
   const [assets] = useState(GAME_ASSETS);
-  const [blobAssets, setBlobAssets] = useState({}); // YENİ: Gerçekten Gömülen Blob Videolar
   
   // -- Local User State --
   const [user, setUser] = useState(null);
@@ -511,7 +510,6 @@ export default function DogaclaVisualsFinal() {
   const [toastMsg, setToastMsg] = useState(null); 
   const [isAppLoading, setIsAppLoading] = useState(true); 
   const [teamSelectMode, setTeamSelectMode] = useState(null);
-  const [loadingProgress, setLoadingProgress] = useState(0);
   
   const [localDiceState, setLocalDiceState] = useState({ isRolling: false, teamIndex: null, showReveal: false });
   const [revealState, setRevealState] = useState({ isActive: false, mode: null, count: 0, selectedTeams: [], currentIndex: 0, isRolling: false });
@@ -547,7 +545,7 @@ export default function DogaclaVisualsFinal() {
   // İPUCU VE OYLAMA SİSTEMİ STATE'LERİ
   const [isTimerPaused, setIsTimerPaused] = useState(false);
   const [showHintModal, setShowHintModal] = useState(false);
-  const [juryVotes, setJuryVotes] = useState({}); // YENİ SENKRONİZE OY SİSTEMİ
+  const [juryVotes, setJuryVotes] = useState({}); 
 
   // -- Strictly Local UI States --
   const [localJuryScore, setLocalJuryScore] = useState(0); 
@@ -564,51 +562,16 @@ export default function DogaclaVisualsFinal() {
   const [hintTimerLeft, setHintTimerLeft] = useState(10); 
   const [bonusAlert, setBonusAlert] = useState(null);
 
-  // Ortak Asset Değişkeni (Network yerine Blob URL'leri kullanır)
-  const activeAssets = { ...assets, ...blobAssets };
+  // KASMA VE ÇÖKME SORUNU ÇÖZÜLDÜ: Blob URL mantığı TAMAMEN SİLİNDİ.
+  // Assetler GitHub build aşamasında (.yml) doğrudan "assets" klasörüne indirilecek 
+  // ve kodun içindeki linkler "/assets/video.mp4" şeklinde değiştirilecek.
+  // Bu sayede RAM kullanımı SIFIR olacak.
+  const activeAssets = assets;
 
-  // YENİ: GERÇEKÇİ ASSET YÜKLEME VE GÖMME (PRELOADER)
+  // YALANCI YÜKLEME EKRANI (Şık açılış için sadece 1.5 saniye bekletiyoruz)
   useEffect(() => {
-      let isMounted = true;
-      const loadRealAssets = async () => {
-          const keys = Object.keys(GAME_ASSETS).filter(k => GAME_ASSETS[k].endsWith('.mp4'));
-          const newBlobs = {};
-          let count = 0;
-          
-          for (const key of keys) {
-              if (!isMounted) return;
-              try {
-                  const res = await fetch(GAME_ASSETS[key]);
-                  const blob = await res.blob();
-                  const blobUrl = URL.createObjectURL(blob);
-                  newBlobs[key] = blobUrl;
-                  
-                  // Görsel motor darboğazını engellemek için gizli donanım önbelleklemesi
-                  const vid = document.createElement('video');
-                  vid.src = blobUrl;
-                  vid.preload = 'auto';
-                  vid.muted = true;
-                  vid.load();
-              } catch (e) {
-                  console.warn("Preload failed for", key);
-                  newBlobs[key] = GAME_ASSETS[key];
-              }
-              count++;
-              setLoadingProgress(Math.floor((count / keys.length) * 100));
-          }
-          
-          if (isMounted) {
-              setBlobAssets(newBlobs);
-              setTimeout(() => setIsAppLoading(false), 500); 
-          }
-      };
-      
-      const failsafe = setTimeout(() => {
-          if (isMounted && isAppLoading) setIsAppLoading(false);
-      }, 12000); 
-
-      loadRealAssets();
-      return () => { isMounted = false; clearTimeout(failsafe); };
+      const timer = setTimeout(() => setIsAppLoading(false), 1500);
+      return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -1346,10 +1309,7 @@ export default function DogaclaVisualsFinal() {
                       ) : (
                           <Theater size={80} className="text-yellow-500 animate-pulse mb-6 drop-shadow-[0_0_20px_rgba(250,204,21,0.8)]" />
                       )}
-                      <h1 className="text-2xl sm:text-3xl font-black text-yellow-400 tracking-widest animate-bounce mt-4">YÜKLENİYOR... %{loadingProgress}</h1>
-                      <div className="mt-8 w-48 sm:w-64 h-3 bg-gray-800 rounded-full overflow-hidden border border-white/20">
-                          <div className="h-full bg-gradient-to-r from-yellow-600 to-yellow-300 transition-all duration-300" style={{ width: `${loadingProgress}%` }}></div>
-                      </div>
+                      <h1 className="text-2xl sm:text-3xl font-black text-yellow-400 tracking-widest animate-bounce mt-4">YÜKLENİYOR...</h1>
                   </div>
               )}
               <div className="absolute inset-0 z-0 opacity-40 transition-opacity duration-1000" style={{backgroundImage: activeAssets.bg ? `url(${activeAssets.bg})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
@@ -2043,92 +2003,4 @@ export default function DogaclaVisualsFinal() {
                <Trophy size={100} sm:size={120} className="text-yellow-400 mb-8 drop-shadow-[0_0_30px_rgba(250,204,21,1)] animate-bounce" />
                <h1 className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 mb-8 tracking-tighter text-center leading-none">{UI[lang].champion}</h1>
                <div className="relative mb-10">
-                   <div className="w-56 h-56 sm:w-64 sm:h-64 rounded-full border-4 border-yellow-400 shadow-[0_0_40px_yellow] overflow-hidden bg-black"><AssetDisplay src={activeAssets[`team${winner.id}_happy`]} className="w-full h-full object-cover object-top" /></div>
-                   <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black px-8 sm:px-10 py-2 sm:py-3 rounded-full font-black text-2xl sm:text-3xl whitespace-nowrap shadow-xl">{TEAM_INFO[winner.id].name}</div>
-               </div>
-               <p className="text-2xl sm:text-3xl text-yellow-200 mb-14 font-bold">{UI[lang].finalScore} <span className="text-white text-4xl sm:text-5xl ml-2">{winner.score}</span></p>
-               {(isHost || isSinglePlayer) && (
-                   <button onClick={resetGame} className="px-8 sm:px-10 py-5 sm:py-6 w-full max-w-[90vw] sm:max-w-sm bg-white text-black font-black text-lg sm:text-xl uppercase tracking-widest rounded-3xl active:scale-95 transition flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(255,255,255,0.5)]"><RefreshCw size={24} /> {UI[lang].playAgain}</button>
-               )}
-          </div>
-      )}
-
-      {/* KART & BONUS MODALS */}
-      {gameState === 'CARD' && activeCard && <CardDisplay card={activeCard} type={cardType} mode="draw" onAction={handleCardAction} activeAssets={activeAssets} currentTeamId={currentTeam.id} lang={lang} isMyTurn={isMyTurn} />}
-      {gameState === 'FINALS_PREP' && customFinalCard && <CardDisplay card={customFinalCard} type="final" mode="draw" onAction={() => { playSynthSound('click', soundEnabled); syncGame({ performanceTimer: 120, gameState: 'FINALS_PLAY' }); setTimerKey(k=>k+1); }} activeAssets={activeAssets} currentTeamId={currentTeam.id} lang={lang} isMyTurn={isMyTurn} />}
-      {playingBonus && <CardDisplay card={playingBonus} type="bonus" mode="play" onAction={executeBonusPower} activeAssets={activeAssets} currentTeamId={currentTeam.id} lang={lang} isMyTurn={isMyTurn} />}
-      
-      {/* KURALLAR MODALI */}
-      {showRules && (
-          <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/90 backdrop-blur-md" onClick={() => setShowRules(false)}>
-              <div className="bg-gray-900 border-t-4 border-[#D4AF37] rounded-t-3xl w-full p-6 pb-safe shadow-[0_-10px_50px_rgba(212,175,55,0.3)] max-h-[85vh] flex flex-col" onClick={e=>e.stopPropagation()}>
-                  <div className="flex justify-between items-center mb-6"><h2 className="text-2xl sm:text-3xl font-black text-[#D4AF37] font-serif tracking-widest">{UI[lang].rulesTitle}</h2><button onClick={() => setShowRules(false)} className="text-gray-400 p-2 bg-black/50 rounded-full"><X size={24}/></button></div>
-                  <div className="space-y-4 overflow-y-auto no-scrollbar flex-1 pb-4">
-                      {UI[lang].rulesContent.map((rule, idx) => ( <div key={idx} className="bg-black/50 border border-white/10 p-4 sm:p-5 rounded-2xl"><h3 className="text-base sm:text-lg font-bold text-white mb-2">{rule.title}</h3><p className="text-gray-300 text-xs sm:text-sm leading-relaxed">{rule.text}</p></div> ))}
-                  </div>
-              </div>
-          </div>
-      )}
-
-      {/* KART REHBERİ MODALI */}
-      {showCardInfoMenu && (
-          <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/90 backdrop-blur-md" onClick={() => setShowCardInfoMenu(false)}>
-              <div className="bg-gray-900 border-t-4 border-blue-500 rounded-t-3xl w-full p-6 pb-safe shadow-[0_-10px_50px_rgba(59,130,246,0.3)] max-h-[85vh] flex flex-col" onClick={e=>e.stopPropagation()}>
-                  <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-xl sm:text-2xl font-black text-blue-400 tracking-widest flex items-center gap-2"><BookOpen size={24}/> KART REHBERİ</h2>
-                      <button onClick={() => setShowCardInfoMenu(false)} className="text-gray-400 p-2 bg-black/50 rounded-full"><X size={24}/></button>
-                  </div>
-                  <div className="overflow-y-auto no-scrollbar flex-1 pb-4 space-y-6">
-                      <div>
-                          <h3 className="text-lg font-black text-yellow-400 mb-3 border-b border-yellow-500/30 pb-2 flex items-center gap-2"><Sparkles size={20}/> BONUS KARTLARI</h3>
-                          <div className="space-y-3">
-                              {CARDS.BONUS.map(b => (
-                                  <div key={b.id} className="bg-blue-900/20 border border-blue-500/30 p-3 rounded-xl flex flex-col gap-1">
-                                      <div className="flex justify-between items-center">
-                                          <span className="font-black text-blue-300 text-sm sm:text-base">{b.name}</span>
-                                          <span className="text-[10px] sm:text-xs font-bold bg-blue-500/20 text-blue-200 px-2 py-1 rounded-md">{getLocalizedText(b.benefit, lang)}</span>
-                                      </div>
-                                      <p className="text-blue-200 text-xs sm:text-sm font-bold mt-1">{getLocalizedText(b.ruleDesc, lang)}</p>
-                                      <p className="text-gray-400 text-xs italic mt-1">"{getLocalizedText(b.quote, lang)}"</p>
-                                  </div>
-                              ))}
-                          </div>
-                      </div>
-                      <div>
-                          <h3 className="text-lg font-black text-red-400 mb-3 border-b border-red-500/30 pb-2 flex items-center gap-2"><Skull size={20}/> ENGEL KARTLARI</h3>
-                          <div className="space-y-3">
-                              {CARDS.OBSTACLE.map(o => (
-                                  <div key={o.id} className="bg-red-900/20 border border-red-500/30 p-3 rounded-xl flex flex-col gap-1">
-                                      <div className="flex items-start gap-2">
-                                          <ShieldAlert size={16} className="text-red-500 shrink-0 mt-0.5" />
-                                          <span className="font-black text-red-300 text-sm">{getLocalizedText(o.text, lang)}</span>
-                                      </div>
-                                      <p className="text-gray-300 text-xs sm:text-sm pl-6">{getLocalizedText(o.ruleDesc, lang)}</p>
-                                  </div>
-                              ))}
-                          </div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      )}
-    </div>
-  );
-}
-
-// Mobile optimized Timer
-const Timer = ({ duration, onFinish, soundEnabled, isPaused }) => {
-    const [timeLeft, setTimeLeft] = useState(duration);
-    useEffect(() => { setTimeLeft(duration); }, [duration]);
-    useEffect(() => {
-        if (timeLeft <= 0) { if (duration > 0) { playSynthSound('alarm', soundEnabled); onFinish(); } return; }
-        if (isPaused) return; // Zamanı dondurma kodu
-        const id = setInterval(() => setTimeLeft(t => t - 1), 1000); return () => clearInterval(id);
-    }, [timeLeft, onFinish, duration, soundEnabled, isPaused]);
-    return <div className="text-4xl sm:text-5xl font-mono font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] tracking-wider">{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</div>;
-};
-const CheckCircleIcon = ({ size, className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinelinejoin="round" className={className}>
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
-  </svg>
-);
+                   <div className="w-56 h-56 sm:w-64 sm:h-64 rounded-
