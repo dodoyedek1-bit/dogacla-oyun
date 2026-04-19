@@ -33,17 +33,88 @@ grow_vertical = 2
 mouse_filter = 2
 expand = true
 
+[node name="TopPanel" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 150.0
+grow_horizontal = 2
+color = Color(0, 0, 0, 0.8)
+
+[node name="TeamScores" type="HBoxContainer" parent="TopPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="CardModal" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -450.0
+offset_top = -500.0
+offset_right = 450.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.1, 0.95)
+
+[node name="CardType" type="Label" parent="CardModal"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 30.0
+offset_bottom = 100.0
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+theme_override_font_sizes/font_size = 40
+text = "ZOR SEVİYE GÖREVİ"
+horizontal_alignment = 1
+
+[node name="CardTitle" type="Label" parent="CardModal"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 100.0
+offset_bottom = 200.0
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+theme_override_font_sizes/font_size = 60
+text = "GÖREV BAŞLIĞI"
+horizontal_alignment = 1
+
+[node name="CardMission" type="Label" parent="CardModal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = 220.0
+offset_right = -40.0
+offset_bottom = -50.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 45
+text = "Görev açıklaması burada yazacak..."
+horizontal_alignment = 1
+autowrap_mode = 3
+
 [node name="BottomGradient" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -600.0
+offset_top = -500.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
-color = Color(0, 0, 0, 0.85)
+color = Color(0, 0, 0, 0.9)
 
 [node name="UI" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -51,22 +122,19 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -500.0
-offset_bottom = -100.0
+offset_top = -450.0
+offset_bottom = -80.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
-theme_override_constants/separation = 40
+theme_override_constants/separation = 30
 alignment = 1
 
 [node name="StatusLabel" type="Label" parent="UI"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.84, 0, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
-theme_override_constants/shadow_offset_x = 5
-theme_override_constants/shadow_offset_y = 5
-theme_override_font_sizes/font_size = 65
-text = "DOĞAÇLA MOTORU"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 50
+text = "SIRA KİMDE: İBİŞ"
 horizontal_alignment = 1
 
 [node name="ActionBtn" type="Button" parent="UI"]
@@ -75,7 +143,5 @@ layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 0
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_pressed_color = Color(0.2, 0.2, 0.2, 1)
-theme_override_colors/font_hover_color = Color(0.1, 0.1, 0.1, 1)
 theme_override_font_sizes/font_size = 60
-text = "ZAR AT VE VİDEOYU AÇ"
+text = "BAŞLA"
