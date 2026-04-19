@@ -171,38 +171,38 @@ const getCardIcon = (text, defaultIcon) => {
 
 // --- GAME ASSETS ---
 const GAME_ASSETS = {
-    bg: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/arkplan.png",
-    logo: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/dogacla_logsu.png",
-    music_bg: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/The_Clockwork_Caper.mp3", 
-    team0: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/ibi%C5%9F.png", 
-    team1: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/karagoz.png",
-    team2: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/sheashper.png",
-    team3: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/aristopahnes.png",
-    team0_idle: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/ibis_orta.mp4", 
-    team0_happy: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/ibis_kolay.mp4",
-    team0_thinking: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/ibis_orta.mp4",
-    team0_scared: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/ibis_zor.mp4",
-    team1_idle: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/karagoz_orta.mp4",
-    team1_happy: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/karagoz_kolay.mp4",
-    team1_thinking: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/karagoz_orta.mp4",
-    team1_scared: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/karagoz_zor.mp4",
-    team2_idle: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/shakespeare_orta.mp4",
-    team2_happy: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/shakespeare_kolay.mp4",
-    team2_thinking: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/shakespeare_orta.mp4",
-    team2_scared: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/shakespeare_zor.mp4",
-    team3_idle: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/artisto_bekleme.mp4",
-    team3_happy: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/aristo_kolay.mp4",
-    team3_thinking: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/artisto_bekleme.mp4",
-    team3_scared: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/artisto_zor.mp4",
-    bonus_madox: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/madox_karti.mp4",
-    bonus_dputiyat: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/dputiyat_karti.mp4",
-    bonus_gulec: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/Gulec_karti.mp4",
-    bonus_kubi: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/kubi_karti.mp4",
-    bonus_kubo: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/kubo_karti.mp4",
-    bonus_mali: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/Mali_karti.mp4",
-    bonus_sadic: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/sadic_karti.mp4",
-    bonus_tubi: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/tubi_karti.mp4",
-    bonus_cihad: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/cicu_karti.mp4", 
+    bg: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/arkplan.png",
+    logo: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/dogacla_logsu.png",
+    music_bg: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/The_Clockwork_Caper.mp3", 
+    team0: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/ibi%C5%9F.png", 
+    team1: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/karagoz.png",
+    team2: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/sheashper.png",
+    team3: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/aristopahnes.png",
+    team0_idle: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/ibis_orta.mp4", 
+    team0_happy: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/ibis_kolay.mp4",
+    team0_thinking: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/ibis_orta.mp4",
+    team0_scared: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/ibis_zor.mp4",
+    team1_idle: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/karagoz_orta.mp4",
+    team1_happy: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/karagoz_kolay.mp4",
+    team1_thinking: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/karagoz_orta.mp4",
+    team1_scared: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/karagoz_zor.mp4",
+    team2_idle: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/shakespeare_orta.mp4",
+    team2_happy: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/shakespeare_kolay.mp4",
+    team2_thinking: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/shakespeare_orta.mp4",
+    team2_scared: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/shakespeare_zor.mp4",
+    team3_idle: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/artisto_bekleme.mp4",
+    team3_happy: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/aristo_kolay.mp4",
+    team3_thinking: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/artisto_bekleme.mp4",
+    team3_scared: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/artisto_zor.mp4",
+    bonus_madox: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/madox_karti.mp4",
+    bonus_dputiyat: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/dputiyat_karti.mp4",
+    bonus_gulec: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/Gulec_karti.mp4",
+    bonus_kubi: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/kubi_karti.mp4",
+    bonus_kubo: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/kubo_karti.mp4",
+    bonus_mali: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/Mali_karti.mp4",
+    bonus_sadic: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/sadic_karti.mp4",
+    bonus_tubi: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/tubi_karti.mp4",
+    bonus_cihad: "https://raw.githubusercontent.com/dodoyedek1-bit/dogacla-oyun/main/cicu_karti.mp4", 
 };
 
 const INITIAL_TEAMS = [
@@ -218,7 +218,7 @@ const CARDS = {
     { title: { tr: "BOZUK ASANSÖR" }, mission: { tr: "Dar bir alanda sıkıştın. Bedeninle paniği göster." }, hint: { tr: "Nefes alışını hızlandır, görünmez dar duvarlara ellerinle vurarak klostrofobiyi hissettir." }, quotes: { 0: {tr: "Aman efendim, asansör bozuldu! İmdat!"}, 1: {tr: "Ulan kapı açıl! Sıkıştım kaldım burada!"}, 2: {tr: "Ah bu demir kafes, ruhumun daraldığı zindan..."}, 3: {tr: "Modern hayatın harikası asansör, bizi fare gibi kapana kıstırdı!"} } }, 
     { title: { tr: "KUTUP SOĞUĞU" }, mission: { tr: "Donuyorsun. Dişlerin birbirine çarpıyor. Isınmaya çalış." }, hint: { tr: "Kollarına sarıl, ayaklarını yere vurarak kan dolaşımını hızlandırmaya çalış, nefesini ellerine üfle." }, quotes: { 0: {tr: "Aman efendim, donuyorum! Burnum buza döndü!"}, 1: {tr: "Donduk! Yakın sobayı!"}, 2: {tr: "Ah, bu soğuk rüzgar kemiklerimi delip geçiyor."}, 3: {tr: "Bu soğuk, ruhun ateşini bile söndürüyor."} } },
     { title: { tr: "ARAMAK" }, mission: { tr: "Gözlüğünü/telefonunu kaybettin, her yeri arıyorsun." }, hint: { tr: "Ceplerini panikle karıştır, hayali koltuk minderlerinin arasına bak, abartılı tepkiler ver." }, quotes: { 0: {tr: "Efendim cüzdan yok! Cüzdanı yemişler!"}, 1: {tr: "Nerede ulan bu meret? Buraya koymuştum!"}, 2: {tr: "Kayıp bir eşya mı, yoksa kayıp bir hafıza mı aradığım?"}, 3: {tr: "Kendi koyduğu şeyi bulamayan aciz insanlık..."} } },
-    { title: { tr: "ACI BİBER" }, mission: { tr: "Yanlışlıkla dünyanın en acı biberini yedin. Tepki ver." }, hint: { tr: "Dilin yanıyormuş gibi ağzını açıp elinle yelle, hayali su bardaklarını kafana dik." }, quotes: { 0: {tr: "Yandım anam yandım! Ağzımda ateş var!"}, 1: {tr: "Su verin! İtfaiye çağırın!"}, 2: {tr: "Bu ne cehennem ateşi! Dilim kavruluyor!"}, 3: {tr: "Acı yemek ne büyük bir ahmaklıktır."} } },
+    { title: { tr: "ACI BİBER" }, mission: { tr: "Yanlışlıkla dünyanın en acı biberini yedin. Tepki ver." }, hint: { tr: "Dilin yanıyormuş gibi ağzını açıp elinle yelle, hayali su bardaklarını kafana dik." }, quotes: { 0: {tr: "Yandım anam yandım! Ağzımda ateş var!"}, 1: {tr: "Su verin! İtfaiye çağırın!"}, 2: {tr: "Bu ne cehennem ateş! Dilim kavruluyor!"}, 3: {tr: "Acı yemek ne büyük bir ahmaklıktır."} } },
     { title: { tr: "KÖPEK GEZDİRME" }, mission: { tr: "Görünmez ve çok yaramaz bir köpeği gezdirmeye çalış." }, hint: { tr: "Tasmayı sıkıca tut, köpek seni çekiyormuş gibi öne doğru savrul, yere eğilip sevmeye çalış." }, quotes: { 0: {tr: "Aman efendim, dur gitme! Koparacaksın kolumu!"}, 1: {tr: "Oğlum dursana! Ulan ne laf anlamaz hayvansın!"}, 2: {tr: "Ah vahşi doğa, bu tasmayla seni ehlileştiremem."}, 3: {tr: "Hayvanı gezdirdiğini sanan insan, aslında kendi gezdiriliyordur."} } },
     { title: { tr: "SİNEK SALDIRISI" }, mission: { tr: "Kulağının dibinde uçan bir sineği yakalamaya çalış." }, hint: { tr: "Havada görünmez bir noktayı takip et, aniden ellerini çırp ve kendi yüzüne tokat at." }, quotes: { 0: {tr: "Efendim gitmiyor bu meret, yapıştı yüzüme!"}, 1: {tr: "Gel buraya! Şap! Ah yüzüm!"}, 2: {tr: "Küçük bir haşere, koskoca aklımı nasıl da çeliyor... "}, 3: {tr: "Doğanın en sinir bozucu icadı: Sinek."} } },
     { title: { tr: "AĞIR KUTU" }, mission: { tr: "İçi taş dolu görünmez bir kutuyu yerden kaldırmaya çalış." }, hint: { tr: "Bacaklarını kırarak eğil, yüzünü buruştur, kutuyu zorla kaldırıp kaslarının titrediğini göster." }, quotes: { 0: {tr: "Aman efendim, fıtık oldum! Bu ne ağırlık!"}, 1: {tr: "Hoooop! Belim koptu! Taş mı var bunun içinde?"}, 2: {tr: "Bu yük, omuzlarımdaki dünyanın ağırlığı sanki."}, 3: {tr: "İnsan kendi yarattığı yüklerin altında böyle ezilir."} } },
@@ -545,7 +545,7 @@ export default function DogaclaVisualsFinal() {
   // İPUCU VE OYLAMA SİSTEMİ STATE'LERİ
   const [isTimerPaused, setIsTimerPaused] = useState(false);
   const [showHintModal, setShowHintModal] = useState(false);
-  const [juryVotes, setJuryVotes] = useState({}); 
+  const [juryVotes, setJuryVotes] = useState({}); // YENİ SENKRONİZE OY SİSTEMİ
 
   // -- Strictly Local UI States --
   const [localJuryScore, setLocalJuryScore] = useState(0); 
@@ -562,13 +562,9 @@ export default function DogaclaVisualsFinal() {
   const [hintTimerLeft, setHintTimerLeft] = useState(10); 
   const [bonusAlert, setBonusAlert] = useState(null);
 
-  // KASMA VE ÇÖKME SORUNU ÇÖZÜLDÜ: Blob URL mantığı TAMAMEN SİLİNDİ.
-  // Assetler GitHub build aşamasında (.yml) doğrudan "assets" klasörüne indirilecek 
-  // ve kodun içindeki linkler "/assets/video.mp4" şeklinde değiştirilecek.
-  // Bu sayede RAM kullanımı SIFIR olacak.
   const activeAssets = assets;
 
-  // YALANCI YÜKLEME EKRANI (Şık açılış için sadece 1.5 saniye bekletiyoruz)
+  // YALANCI YÜKLEME EKRANI (Hızlı ve şık görünüm için)
   useEffect(() => {
       const timer = setTimeout(() => setIsAppLoading(false), 1500);
       return () => clearTimeout(timer);
@@ -1989,18 +1985,4 @@ export default function DogaclaVisualsFinal() {
                     </button>
                     <div className="text-3xl sm:text-4xl font-black text-red-500 italic text-center drop-shadow-md">VS</div>
                     <button onClick={() => amIDirector && castWinner(finalists[1])} className={`w-full p-4 sm:p-5 rounded-3xl border-2 border-gray-600 bg-gray-900 flex items-center gap-4 transition-all shadow-lg ${amIDirector ? 'active:border-yellow-400' : 'opacity-70'}`}>
-                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shrink-0 bg-black border-2 border-white/20"><AssetDisplay src={activeAssets[`team${finalists[1].id}_happy`]} className="w-full h-full object-cover object-top" /></div>
-                        <div className="flex-1 text-left"><h3 className="text-2xl sm:text-3xl font-black text-white">{TEAM_INFO[finalists[1].id].name}</h3><span className="text-sm sm:text-base text-yellow-500 font-bold tracking-widest">{UI[lang].castWinner}</span></div>
-                    </button>
-               </div>
-               {!amIDirector && <div className="mt-8 text-yellow-400 font-bold animate-pulse text-lg">⏳ Yönetmenler Karar Veriyor...</div>}
-          </div>
-      )}
-
-      {gameState === 'END' && winner && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b from-yellow-900 to-black px-4">
-               <ConfettiExplosion />
-               <Trophy size={100} sm:size={120} className="text-yellow-400 mb-8 drop-shadow-[0_0_30px_rgba(250,204,21,1)] animate-bounce" />
-               <h1 className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 mb-8 tracking-tighter text-center leading-none">{UI[lang].champion}</h1>
-               <div className="relative mb-10">
-                   <div className="w-56 h-56 sm:w-64 sm:h-64 rounded-
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shrink-0 bg-black border-2 border-white/20"><AssetDisplay src={activeAssets
