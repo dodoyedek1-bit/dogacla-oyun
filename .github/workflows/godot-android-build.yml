@@ -53,18 +53,35 @@ jobs:
           unzip -q Godot_v${GODOT_VERSION}-stable_export_templates.tpz -d ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
           mv ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
 
-      - name: 6. Debug Keystore Oluştur
+      - name: 6. Debug Keystore Oluştur ve Godot'ya Tanıt
         run: |
-          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
+          # İmza dosyasını standart bir yere oluştur
+          mkdir -p ~/.android
+          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
+          
+          # YENİ: Godot'ya Android ayarlarını zorla öğret
+          mkdir -p ~/.config/godot
+          cat << EOF > ~/.config/godot/editor_settings-4.tres
+          [gd_resource type="EditorSettings" format=3]
+          [resource]
+          export/android/android_sdk_path = "/usr/local/lib/android/sdk"
+          export/android/debug_keystore = "/home/runner/.android/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          export/android/force_system_user = false
+          EOF
 
       - name: 7. Godot Medyaları Algılasın (.import oluşturma)
         run: |
-          godot --headless --editor --quit || true
+          godot --headless -v --editor --quit || true
 
       - name: 8. APK'yı Paketle
         run: |
           mkdir -p build/android
-          godot --headless --export-debug "Android" build/android/Dogacla.apk
+          echo "==== APK ÇIKTISI ALINIYOR ===="
+          # Değişken yerine direkt Dogacla.apk yazdık
+          godot --headless -v --export-debug "Android" build/android/Dogacla.apk
+          
           echo "==== APK KLASÖRÜ KONTROLÜ ===="
           ls -la build/android/
 
@@ -72,4 +89,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Dogacla-Godot-Test-APK
-          path: build/android/Dogacla.apk
+          path: build/android/Dogacla.apk # Burada da değişkeni sildik
