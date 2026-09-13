@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Dices, Trophy, User, Clock, Star, ShieldAlert, Sparkles, Skull, Theater, 
   AlertTriangle, CheckCircle, XCircle, ScrollText, Plus, Minus, Gavel, 
@@ -8,8 +8,7 @@ import {
   Flame, Crown, PartyPopper, Tv, Target, Hand, Drama, Megaphone, Clapperboard, Video, Frown, Laugh, Ticket, Move, Ghost, Smartphone, Bird, Thermometer, Apple, HelpCircle, Play, Music4, Settings, Sliders
 } from 'lucide-react';
 
-// --- 1. SABİT VERİLER ---
-
+// --- ASSET VE MEDYA BAĞLANTILARI ---
 const GAME_ASSETS = {
     bg: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/arkplan.png",
     logo: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/dogacla_logsu.png",
@@ -46,18 +45,14 @@ const GAME_ASSETS = {
     cicu: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/%C3%A7i-%C3%A7u.png",
 };
 
-const DEFAULT_ASSETS = {
-    boardBg: GAME_ASSETS.bg, logo: GAME_ASSETS.logo,
-    music_bg: GAME_ASSETS.music_bg,
-    team0: GAME_ASSETS.ibis, team1: GAME_ASSETS.karagoz, team2: GAME_ASSETS.shakespeare, team3: GAME_ASSETS.aristophanes,
-    moderator: GAME_ASSETS.moderator,
-    bonus_tubi: GAME_ASSETS.tubi, bonus_kubi: GAME_ASSETS.kubi, bonus_mali: GAME_ASSETS.mali,
-    bonus_kubo: GAME_ASSETS.kubo, bonus_madox: GAME_ASSETS.madox, bonus_dputiyat: GAME_ASSETS.diputiyat,
-    bonus_gulec: GAME_ASSETS.gulec, bonus_sadic: GAME_ASSETS.sadic, bonus_cihad: GAME_ASSETS.cicu,
-    team0_idle: GAME_ASSETS.team0_idle, team0_happy: GAME_ASSETS.team0_happy, team0_thinking: GAME_ASSETS.team0_thinking, team0_scared: GAME_ASSETS.team0_scared,
-    team1_idle: GAME_ASSETS.team1_idle, team1_happy: GAME_ASSETS.team1_happy, team1_thinking: GAME_ASSETS.team1_thinking, team1_scared: GAME_ASSETS.team1_scared,
-    team2_idle: GAME_ASSETS.team2_idle, team2_happy: GAME_ASSETS.team2_happy, team2_thinking: GAME_ASSETS.team2_thinking, team2_scared: GAME_ASSETS.team2_scared,
-    team3_idle: GAME_ASSETS.team3_idle, team3_happy: GAME_ASSETS.team3_happy, team3_thinking: GAME_ASSETS.team3_thinking, team3_scared: GAME_ASSETS.team3_scared,
+const DEFAULT_UI_CONFIG = {
+    cardWidth: 420,
+    cardHeight: 82,
+    videoHeightPercent: 44,
+    cardPadding: 24,
+    titleSize: 30,
+    missionTextSize: 18,
+    buttonPaddingY: 16
 };
 
 const INITIAL_TEAMS = [
@@ -67,548 +62,402 @@ const INITIAL_TEAMS = [
   { id: 3, color: 'bg-blue-600', border: 'border-blue-600', text: 'text-blue-600', icon: '🏛️', score: 0, pos: 0, bonuses: [], activeObstacles: [] },
 ];
 
-const DEFAULT_UI_CONFIG = {
-    cardWidth: 420,
-    cardHeight: 82,
-    videoHeightPercent: 44,
-    cardPadding: 24,
-    titleSize: 32,
-    missionTextSize: 18,
-    buttonPaddingY: 16
-};
-
-const UI = {
-    en: {
-        start: "START", rollDice: "ROLL DICE", drawingLots: "DRAWING LOTS...", rollingDice: "ROLLING DICE...",
-        onStageNow: "ON STAGE NOW", silence: "Silence", goldenMic: "GOLDEN MICROPHONE", x2Points: "X2 POINTS ACTIVE!",
-        enteringStage: "ENTERING STAGE...", whoSabotage: "Who will you sabotage?", time: "Time", finishPerf: "Finish Performance",
-        juryScoring: "JURY SCORING", role: "+2 ROLE", obstacleBtn: "+2 OBSTACLE", fail: "-2 FAIL", aiComment: "AI COMMENT",
-        confirmScore: "CONFIRM SCORE", backstage: "BACKSTAGE", final: "FINAL", bonus: "BONUS", obstacle: "OBSTACLE",
-        easy: "EASY", medium: "MEDIUM", hard: "HARD", oppCard: "OPPORTUNITY CARD", obsCard: "OBSTACLE", improv: "IMPROV",
-        easyLevel: "EASY LEVEL", medLevel: "MEDIUM LEVEL", hardLevel: "HARD LEVEL", finalScene: "FINAL SCENE",
-        chooseTarget: "CHOOSE TARGET", accept: "ACCEPT", stageYours: "THE STAGE IS YOURS", applySelf: "Apply to Self",
-        giveRival: "Give to Rival", perfReq: "Requires Stage Performance.", activeObstacle: "ACTIVE OBSTACLE",
-        useBonusBtn: "USE BONUS", unleashPower: "💥 UNLEASH POWER 💥",
-        grandFinale: "GRAND FINALE!", onlyTwoRemain: "Only two remain on stage.", champion: "CHAMPION!",
-        finalScore: "Final Score:", playAgain: "PLAY AGAIN", vs: "VS", close: "CLOSE",
-        directorPromptTitle: "DIRECTOR'S CHAIR", directorPromptDesc: "Losing teams are now Directors! Enter the final scene theme:",
-        generateDraft: "GENERATE DRAFT MISSION", regenerate: "REGENERATE", createAsIs: "CREATE OPTIONS AS IS", aiDrafted: "AI DRAFTED THE MISSION",
-        generatingDraft: "AI Writing Mission...", generatingOptions: "AI Generating Cards...", castWinner: "CAST THE WINNER",
-        auditionComplete: "Auditions Complete!", whoGetsRole: "Who gets the lead role?", transitionWait: "Next Finalist's Turn",
-        startNext: "START NEXT AUDITION", selectAICard: "CHOOSE A GENERATED SCENE",
-        rulesTitle: "RULES OF THE STAGE",
-        rulesContent: [
-            { title: "🎭 Take the Stage", text: "Roll the dice and move. Draw a card based on your tile (Easy, Medium, Hard, or Obstacle)." },
-            { title: "⏱️ Perform", text: "Act out the scenario on the card within the time limit. Stay in character!" },
-            { title: "⚖️ Jury Scoring", text: "The other players judge you. Good roleplay and overcoming obstacles grant extra points." },
-            { title: "🌟 Golden Mic", text: "Keep the audience hyped! When the bar fills, your next score is doubled." },
-            { title: "🎬 Grand Finale", text: "When a player reaches tile 35, the top 2 teams face off. The losing teams become Directors and write the final scene!" }
-        ]
-    },
-    tr: {
-        start: "BAŞLA", rollDice: "ZAR AT", drawingLots: "KURA ÇEKİLİYOR...", rollingDice: "ZAR ATILIYOR...",
-        onStageNow: "ŞU AN SAHNEDE", silence: "Sessizlik", goldenMic: "ALTIN MİKROFON", x2Points: "X2 PUAN AKTİF!",
-        enteringStage: "SAHNEYE ÇIKIYOR...", whoSabotage: "Kimi sabote edeceksin?", time: "Süre", finishPerf: "Performansı Bitir",
-        juryScoring: "JÜRİ OYLAMASI", role: "+2 ROL", obstacleBtn: "+2 ENGEL", fail: "-2 BAŞARISIZ", aiComment: "YAPAY ZEKA",
-        confirmScore: "PUANI ONAYLA", backstage: "KULİS", final: "FİNAL", bonus: "BONUS", obstacle: "ENGEL",
-        easy: "KOLAY", medium: "ORTA", hard: "ZOR", oppCard: "FIRSAT KARTI", obsCard: "ENGEL", improv: "DOĞAÇLAMA",
-        easyLevel: "KOLAY SEVİYE", medLevel: "ORTA SEVİYE", hardLevel: "ZOR SEVİYE", finalScene: "FİNAL SAHNESİ",
-        chooseTarget: "HEDEF SEÇ", accept: "KABUL ET", stageYours: "SAHNE SENİN", applySelf: "Kendine Uygula",
-        giveRival: "Rakibe Ver", perfReq: "Sahne Performansı Gerektirir.", activeObstacle: "AKTİF ENGEL",
-        useBonusBtn: "BONUS KULLAN", unleashPower: "💥 GÜCÜ KULLAN 💥",
-        grandFinale: "BÜYÜK FİNAL!", onlyTwoRemain: "Sahnede sadece iki kişi kaldı.", champion: "ŞAMPİYON!",
-        finalScore: "Final Puanı:", playAgain: "YENİDEN OYNA", vs: "VS", close: "KAPAT",
-        directorPromptTitle: "YÖNETMEN KOLTUĞU", directorPromptDesc: "Kaybedenler yönetmen oldu! Final sahnesinin temasını girin:",
-        generateDraft: "GÖREV TASLAĞI ÜRET", regenerate: "YENİDEN ÜRET", createAsIs: "SEÇENEKLERİ OLUŞTUR", aiDrafted: "YAPAY ZEKA GÖREVİ YAZDI",
-        generatingDraft: "Yapay Zeka Görevi Yazıyor...", generatingOptions: "Yapay Zeka Kartları Üretiyor...", castWinner: "ROLÜ VER (KAZANANI SEÇ)",
-        auditionComplete: "Seçmeler Tamamlandı!", whoGetsRole: "Başrolü kim kapıyor?", transitionWait: "Sıra Diğer Finalistte",
-        startNext: "SIRADAKİ SEÇMEYİ BAŞLAT", selectAICard: "ÜRETİLEN SAHNELERDEN BİRİNİ SEÇ",
-        rulesTitle: "SAHNE KURALLARI",
-        rulesContent: [
-            { title: "🎭 Sahneye Çık", text: "Zar at ve ilerle. Durduğun kareye göre (Kolay, Orta, Zor veya Engel) kart çek." },
-            { title: "⏱️ Performans", text: "Karttaki senaryoyu süre bitmeden canlandır. Karakterinden çıkma!" },
-            { title: "⚖️ Jüri Oylaması", text: "Diğer oyuncular jüri olur. Role girmek ve engelleri aşmak ekstra puan kazandırır." },
-            { title: "🌟 Altın Mikrofon", text: "Seyirciyi coştur! Bar dolduğunda alacağın puan ikiye katlanır." },
-            { title: "🎬 Büyük Final", text: "Biri 35. kareye ulaştığında en iyi 2 takım finale çıkar. Kaybedenler yönetmen koltuğuna oturur ve finali yazar!" }
-        ]
-    }
-};
-
 const TEAM_INFO = {
-    0: { name: 'İBİŞ', desc: { en: 'Cunning & Witty', tr: 'Kurnaz & Esprili' }, longDesc: { en: 'A traditional jester. A word wizard.', tr: 'Geleneksel bir şakacı. Kelime sihirbazı.' }, style: { en: 'Humorous', tr: 'Mizahi' } },
-    1: { name: 'KARAGÖZ', desc: { en: 'Physical & Blunt', tr: 'Fiziksel & Dobra' }, longDesc: { en: "Doesn't mince words, says it straight.", tr: 'Lafını esirgemez, dobra dobra konuşur.' }, style: { en: 'Physical', tr: 'Fiziksel' } },
-    2: { name: 'SHAKESPEARE', desc: { en: 'Dramatic & Poetic', tr: 'Dramatik & Şiirsel' }, longDesc: { en: 'The most serious actor on stage.', tr: 'Sahnedeki en ciddi ve trajik aktör.' }, style: { en: 'Tragic', tr: 'Trajik' } },
-    3: { name: 'ARİSTOFANES', desc: { en: 'Satirical & Clever', tr: 'Hicivli & Zeki' }, longDesc: { en: 'Always looks down on events.', tr: 'Olaylara her zaman yukarıdan bakar ve alay eder.' }, style: { en: 'Ironic', tr: 'İronik' } }
+    0: { name: 'İBİŞ', style: 'Mizahi' },
+    1: { name: 'KARAGÖZ', style: 'Fiziksel' },
+    2: { name: 'SHAKESPEARE', style: 'Trajik' },
+    3: { name: 'ARİSTOFANES', style: 'İronik' }
 };
 
 const CARDS_DATA = {
   EASY: [ 
-    { title: { en: "BROKEN ELEVATOR", tr: "BOZUK ASANSÖR" }, mission: { en: "You are stuck in a tight space. Show suffocation and panic with your body.", tr: "Dar bir alanda sıkıştın. Bedeninle boğulma ve paniği göster." }, quotes: { 0: {en: "Sir, we are toasted in this tin can!", tr: "Efendim, bu teneke kutuda piştik!"}, 1: {en: "We are stuck! My ribs are crushed!", tr: "Sıkıştık! Kaburgalarım ezildi!"}, 2: {en: "Oh iron cage! Trapping two souls...", tr: "Ah demir kafes! İki ruhu hapseden..."}, 3: {en: "This mechanical box is the tragedy of modern man.", tr: "Bu mekanik kutu modern insanın trajedisidir."} } }, 
-    { title: { en: "POLAR COLD", tr: "KUTUP SOĞUĞU" }, mission: { en: "You are freezing. Teeth chattering. Try to warm up.", tr: "Donuyorsun. Dişlerin birbirine çarpıyor. Isınmaya çalış." }, quotes: { 0: {en: "Oh sir, I'm freezing! My nose turned to ice!", tr: "Aman efendim, donuyorum! Burnum buza döndü!"}, 1: {en: "Frozen! Light the stove!", tr: "Donduk! Yakın sobayı!"}, 2: {en: "Ah, this cold wind pierces my bones.", tr: "Ah, bu soğuk rüzgar kemiklerimi delip geçiyor."}, 3: {en: "This cold extinguishes the fire of the soul.", tr: "Bu soğuk, ruhun ateşini bile söndürüyor."} } }, 
-    { title: { en: "CHICKEN ACT", tr: "TAVUK TAKLİDİ" }, mission: { en: "Act like a chicken. Cluck, scratch for food.", tr: "Bir tavuk gibi davran. Gıdakla, yem eşele." }, quotes: { 0: {en: "Cluck cluck sir!", tr: "Gıt gıdak efendim!"}, 1: {en: "Cluck! Are we stuck in a coop?", tr: "Gıdak! Kümese mi tıkıldık?"}, 2: {en: "Like a bird, but flightless... Oh feathered fate!", tr: "Bir kuş gibi ama uçamayan... Ah tüylü kader!"}, 3: {en: "Why must I behave like a chicken? Absurd!", tr: "Neden bir tavuk gibi davranmalıyım? Ne absürt!"} } }, 
-    { title: { en: "NO SIGNAL", tr: "SİNYAL YOK" }, mission: { en: "Making a very important call but the line cuts off.", tr: "Çok önemli bir arama yapıyorsun ama hat kesiliyor." }, quotes: { 0: {en: "Hellooo! Can't hear you!", tr: "Alooo! Duyamıyorum seni!"}, 1: {en: "What do you say! Don't shout!", tr: "Ne diyorsun! Bağırma!"}, 2: {en: "Ah, faint voice from afar! Why can't I reach you?", tr: "Ah, uzaklardan gelen cılız ses! Sana neden ulaşamıyorum?"}, 3: {en: "Miscommunication in the age of communication...", tr: "İletişim çağında iletişimsizlik..."} } } 
+    { title: "BOZUK ASANSÖR", mission: "Dar bir alanda sıkıştın. Bedeninle boğulma ve paniği göster.", quote: "Efendim bu teneke kutuda piştik!" }, 
+    { title: "KUTUP SOĞUĞU", mission: "Donuyorsun. Dişlerin birbirine çarpıyor. Isınmaya çalış.", quote: "Aman efendim burnum buza döndü!" }, 
+    { title: "TAVUK TAKLİDİ", mission: "Bir tavuk gibi davran. Gıdakla, yem eşele.", quote: "Gıt gıdak efendim!" }
   ],
   MEDIUM: [ 
-    { title: { en: "FORGETFULNESS", tr: "UNUTKANLIK" }, mission: { en: "You forgot what to say right at that moment.", tr: "Tam o an ne söyleyeceğini unuttun." }, quotes: { 0: {en: "Umm... Sir, it was on the tip of my tongue!", tr: "Eee... Efendim, dilimin ucundaydı!"}, 1: {en: "You stole the words from my mind!", tr: "Kelimeleri aklımdan çaldınız!"}, 2: {en: "Ah, my memory betrays me! Words are lost.", tr: "Ah, hafızam bana ihanet ediyor! Kelimeler kayıp."}, 3: {en: "Silence... The greatest line is the unspoken one.", tr: "Sessizlik... En büyük replik söylenmeyendir."} } }, 
-    { title: { en: "INVISIBLE APPLE", tr: "GÖRÜNMEZ ELMA" }, mission: { en: "Eat as if you have an apple in hand.", tr: "Elinde bir elma varmış gibi ye." }, quotes: { 0: {en: "Oh sir, this isn't an apple, it's a diamond! Crunch!", tr: "Aman efendim, bu elma değil elmas! Kırt!"}, 1: {en: "I have nothing but I'm eating!", tr: "Elimde hiçbir şey yok ama yiyorum!"}, 2: {en: "I feel the taste of a non-existent fruit.", tr: "Var olmayan bir meyvenin tadını hissediyorum."}, 3: {en: "Creating an invisible object... That is art.", tr: "Görünmez bir obje yaratmak... İşte sanat budur."} } } 
+    { title: "UNUTKANLIK", mission: "Tam o an ne söyleyeceğini unuttun.", quote: "Eee... Efendim dilimin ucundaydı!" }, 
+    { title: "GÖRÜNMEZ ELMA", mission: "Elinde bir elma varmış gibi ye ve tadını anlat.", quote: "Bu elma değil elmas! Kırt!" }
   ],
   HARD: [ 
-    { title: { en: "FAKE KING", tr: "SAHTE KRAL" }, mission: { en: "A panicked leader lying that everything is under control.", tr: "Her şeyin kontrol altında olduğu yalanını söyleyen paniklemiş bir lider." }, quotes: { 0: {en: "I am the king! (Trembles)", tr: "Kral benim! (Titrer)"}, 1: {en: "What I say goes! I am the King! I'm not scared...", tr: "Benim dediğim olur! Ben Kralım! Korkmuyorum..."}, 2: {en: "Oh my people! This crown is heavy...", tr: "Ah halkım! Bu taç çok ağır..."}, 3: {en: "This illusion I offer is for your peace.", tr: "Sunduğum bu illüzyon sizin huzurunuz içindir."} } }, 
-    { title: { en: "LAUGHING CRYING", tr: "AĞLARKEN GÜLMEK" }, mission: { en: "Laugh while telling something very sad.", tr: "Çok üzücü bir şey anlatırken kahkaha at." }, quotes: { 0: {en: "Hahaha! Oh, it's so sad!", tr: "Hahaha! Ah, ne kadar üzücü!"}, 1: {en: "Hahaha! Oh my poor head!", tr: "Hahaha! Vah zavallı başım!"}, 2: {en: "My smile is a mask hiding my tears.", tr: "Gülümsemem, gözyaşlarımı saklayan bir maskedir."}, 3: {en: "Tragedy and comedy... Two faces of life.", tr: "Trajedi ve komedi... Hayatın iki yüzü."} } } 
-  ],
-  FINAL: [ 
-    { title: { en: "FAREWELL SPEECH", tr: "VEDA KONUŞMASI" }, mission: { en: "The play is ending. Give a dramatic farewell.", tr: "Oyun bitiyor. Dramatik bir veda konuşması yap." }, quotes: { 0: {en: "Forgive us if we slipped up!", tr: "Sürçülisan ettiysek affola!"}, 1: {en: "I'm out of here!", tr: "Ben kaçar!"}, 2: {en: "As the curtain falls, our shadows remain.", tr: "Perde kapanırken, geriye gölgelerimiz kalır."}, 3: {en: "The play ends, real life begins.", tr: "Oyun biter, gerçek hayat başlar."} } } 
+    { title: "SAHTE KRAL", mission: "Her şeyin kontrol altında olduğu yalanını söyleyen paniklemiş lider.", quote: "Kral benim! Titremiyorum!" }, 
+    { title: "AĞLARKEN GÜLMEK", mission: "Çok üzücü bir hikaye anlatırken kahkaha krizine gir.", quote: "Hahaha! Vah zavallı başım!" }
   ],
   OBSTACLE: [ 
-    { id: 'o1', text: { en: "Speak only in single words.", tr: "Sadece tek kelimelerle konuş." }, type: 'marked' }, 
-    { id: 'o2', text: { en: "Sing your explanation.", tr: "Açıklamanı şarkı söyleyerek yap." }, type: 'unmarked' }, 
-    { id: 'o3', text: { en: "No eye contact.", tr: "Göz teması kurma." }, type: 'marked' }, 
-    { id: 'o4', text: { en: "Hands in pockets.", tr: "Eller ceplerde." }, type: 'marked' }, 
-    { id: 'o5', text: { en: "Play with your back turned.", tr: "Arkanı dönerek oyna." }, type: 'marked' }, 
-    { id: 'o6', text: { en: "Jump constantly.", tr: "Sürekli zıpla." }, type: 'marked' }, 
-    { id: 'o7', text: { en: "Whisper.", tr: "Fısılda." }, type: 'marked' }, 
-    { id: 'o8', text: { en: "Move very slowly.", tr: "Çok yavaş hareket et." }, type: 'marked' }, 
-    { id: 'o9', text: { en: "Start every sentence with 'Actually'.", tr: "Her cümleye 'Aslında' diye başla." }, type: 'marked' }, 
-    { id: 'o10', text: { en: "Speak while laughing.", tr: "Gülerek konuş." }, type: 'marked' } 
+    { id: 'o1', text: "Sadece tek kelimelerle konuş.", type: 'marked' }, 
+    { id: 'o2', text: "Her cümleni şarkı söyleyerek bitir.", type: 'unmarked' }, 
+    { id: 'o3', text: "Kimseyle göz teması kurma.", type: 'marked' }
   ],
   BONUS: [ 
-    { id: 'tubi', name: 'Tubi', desc: { en: 'Advice!', tr: 'Annen gibi düşün... Tavsiye vereceğim!' }, benefit: { en: 'GET IDEA', tr: 'FİKİR AL' }, effect: 'idea' }, 
-    { id: 'kubi', name: 'Kubi', desc: { en: 'Pen in hand! I am writing one more person into this scene. Let it be crowded!', tr: 'Kalem elimde! Bu sahneye bir kişi daha yazıyorum. Kalabalık olsun!' }, benefit: { en: 'EXTRA CHARACTER', tr: 'EKSTRA KARAKTER' }, effect: 'char' }, 
-    { id: 'mali', name: 'Mali', desc: { en: 'Profit!', tr: 'Hesapladım, kârlı çıkarız.' }, benefit: { en: '+2 POINTS', tr: '+2 PUAN' }, effect: 'score' }, 
-    { id: 'kubo', name: 'Kubo', desc: { en: "Cut! Didn't work, taking it from the top but extending time.", tr: 'Kestik! Olmadı, baştan alıyoruz ama süreyi uzatıyorum.' }, benefit: { en: '+30 SECONDS', tr: '+30 SANİYE' }, effect: 'time' }, 
-    { id: 'madox', name: 'Madox', desc: { en: "Changed!", tr: 'Bu sahnenin türü beni sıktı. Değiştirildi!' }, benefit: { en: 'CHANGE GENRE', tr: 'TÜRÜ DEĞİŞTİR' }, effect: 'genre' }, 
-    { id: 'dputiyat', name: 'Dpütiyat', desc: { en: 'No being alone! Grab someone, throw them on stage.', tr: 'Yalnız olmak yok! Birini kap, sahneye fırlat.' }, benefit: { en: 'INVITE PLAYER', tr: 'OYUNCU DAVET ET' }, effect: 'add_player' }, 
-    { id: 'gulec', name: 'Güleç', desc: { en: 'Applause!', tr: 'Harika! Bir alkış tufanı yaratıyorum!' }, benefit: { en: 'APPLAUSE', tr: 'ALKIŞ' }, effect: 'applause' }, 
-    { id: 'sadic', name: 'Sadıç', desc: { en: 'Life is a gamble brother!', tr: 'Hayat bir kumardır kardeşim!' }, benefit: { en: 'LUCKY DICE', tr: 'ŞANS ZARI' }, effect: 'gamble' }, 
-    { id: 'cihad', name: 'Cihad', desc: { en: 'I have a surprise in my pocket... Use it!', tr: 'Cebimde bir sürpriz var... Kullan onu!' }, benefit: { en: 'SURPRISE OBJECT', tr: 'SÜRPRİZ OBJE' }, effect: 'double' } 
+    { id: 'tubi', name: 'Tubi', desc: 'Annen gibi düşün... Tavsiye vereceğim!', benefit: 'FİKİR AL' }, 
+    { id: 'kubi', name: 'Kubi', desc: 'Kalem elimde! Bu sahneye bir kişi daha yazıyorum.', benefit: 'EKSTRA KARAKTER' }, 
+    { id: 'mali', name: 'Mali', desc: 'Hesapladım, kârlı çıkarız.', benefit: '+2 PUAN' }, 
+    { id: 'kubo', name: 'Kubo', desc: 'Kestik! Baştan alıyoruz ama süreyi uzatıyorum.', benefit: '+30 SANİYE' },
+    { id: 'madox', name: 'Madox', desc: 'Bu sahnenin türü beni sıktı. Değiştirildi!', benefit: 'TÜRÜ DEĞİŞTİR' }
   ],
   MODERATOR: [
     { 
-      id: 'mod_start', 
-      name: 'MODERATÖR', 
-      title: { en: 'STAGE DIRECTOR', tr: 'REJİSÖR DÜDÜĞÜ' }, 
-      desc: { 
-        en: 'Attention on stage! Keep the tempo high or you get the whistle!', 
-        tr: 'Gözüm üzerinizde! Sahneye çıkan süreyi başlatmayı unutursa klaketi patlatırım!' 
-      }, 
-      benefit: { en: 'STAGE CONTROL', tr: 'SAHNE KONTROLÜ' }, 
+      id: 'mod_1', 
+      name: 'MODERATÖR REJİSİ', 
+      title: 'DÜDÜK VE KLAKET', 
+      desc: 'Süreyi başlatmayan takıma "-2 Kural İhlali" puanı kesilir veya 15 saniye çalınır!', 
+      benefit: 'DİSİPLİN VE KONTROL', 
       customVideo: GAME_ASSETS.moderator 
     }
   ]
 };
 
-const getLocalizedText = (item, lang) => {
-    if (!item) return "";
-    if (typeof item === 'string') return item;
-    if (item[lang]) return String(item[lang]);
-    if (item['tr']) return String(item['tr']);
-    if (item['en']) return String(item['en']);
-    return String(item);
-};
+const BOARD_MAP = Array(36).fill(null).map((_, i) => {
+    if (i === 0) return { type: 'start', label: 'BAŞLANGIÇ' };
+    if (i === 35) return { type: 'final', label: 'FİNAL' };
+    if (i % 5 === 0) return { type: 'bonus', label: 'BONUS' };
+    if (i % 6 === 0) return { type: 'obstacle', label: 'ENGEL' };
+    if (i < 10) return { type: 'easy', label: 'KOLAY' };
+    if (i < 22) return { type: 'medium', label: 'ORTA' };
+    return { type: 'hard', label: 'ZOR' };
+});
 
-const getRandomCardText = (card, teamId, lang) => {
-    if (!card || !card.quotes || !card.quotes[teamId]) return "";
-    return getLocalizedText(card.quotes[teamId], lang);
-};
-
-const generateBoardMap = () => {
-    return Array(36).fill(null).map((_, i) => {
-        if (i === 0) return { type: 'start' };
-        if (i === 35) return { type: 'final' };
-        if (i % 5 === 0) return { type: 'bonus' }; 
-        if (i % 6 === 0) return { type: 'obstacle' };
-        if (i < 10) return { type: 'easy' };
-        if (i < 20) return { type: 'medium' };
-        return { type: 'hard' };
-    });
-};
-const BOARD_MAP = generateBoardMap();
-
-const playSynthSound = (type, enabled) => {
-  if (!enabled) return;
-  try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      const now = ctx.currentTime;
-      
-      if (type === 'roll') {
-          osc.type = 'triangle'; osc.frequency.setValueAtTime(100, now); osc.frequency.linearRampToValueAtTime(800, now + 0.4);
-          gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.4);
-          osc.start(now); osc.stop(now + 0.4);
-      } else if (type === 'success') {
-          const playNote = (f, t, dur) => { 
-              const o = ctx.createOscillator(); const g = ctx.createGain(); 
-              o.type = 'square'; o.connect(g); g.connect(ctx.destination); 
-              o.frequency.value = f; g.gain.setValueAtTime(0.05, now + t); 
-              g.gain.exponentialRampToValueAtTime(0.001, now + t + dur); 
-              o.start(now + t); o.stop(now + t + dur); 
-          };
-          playNote(523.25, 0, 0.2); playNote(659.25, 0.1, 0.2); playNote(783.99, 0.2, 0.4);
-      } else if (type === 'click') {
-          osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); gain.gain.setValueAtTime(0.05, now); osc.start(now); osc.stop(now + 0.05);
-      }
-  } catch (e) { console.error(e); }
-};
-
-const AssetDisplay = ({ src, className, style, alt }) => {
-    if (!src) {
-        return <div className={className} style={{...style, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent'}}>{alt}</div>;
-    }
-    const isVideo = src.toLowerCase().endsWith('.mp4') || src.toLowerCase().endsWith('.webm');
-    if (isVideo) {
-        return <video key={src} src={src} className={className} style={style} autoPlay loop muted playsInline />;
-    }
-    return <img src={src} className={className} style={style} alt={String(alt)} />;
-};
-
-const getCardIcon = (text, defaultIcon) => {
-    if (!text) return defaultIcon;
-    const lowerText = String(text).toLowerCase();
-    if (lowerText.includes("king") || lowerText.includes("kral") || lowerText.includes("crown")) return <Crown size={40} className="text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]" />;
-    if (lowerText.includes("phone") || lowerText.includes("sinyal") || lowerText.includes("call")) return <Smartphone size={40} className="text-blue-400 drop-shadow-[0_0_15px_rgba(96,165,250,0.8)]" />;
-    if (lowerText.includes("chicken") || lowerText.includes("tavuk")) return <Bird size={40} className="text-orange-400 drop-shadow-[0_0_15px_rgba(251,146,60,0.8)]" />;
-    if (lowerText.includes("scared") || lowerText.includes("kork") || lowerText.includes("ghost")) return <Ghost size={40} className="text-gray-300 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]" />;
-    return defaultIcon;
-};
-
-// --- CANLI ARAYÜZ (UI) EDİTÖR PANELİ ---
-const UIEditorModal = ({ config, onChange, onReset, onClose }) => {
-    return (
-        <div className="fixed inset-y-0 right-0 w-80 bg-black/95 border-l border-white/20 z-[200] p-6 text-xs flex flex-col shadow-2xl backdrop-blur-xl animate-fadeIn">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
-                <span className="font-black text-sm uppercase text-purple-400 flex items-center gap-2">
-                    <Sliders size={18} /> Canlı UI Editörü
-                </span>
-                <button onClick={onClose} className="p-1 hover:text-white text-gray-400"><X size={20} /></button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-                <div>
-                    <div className="flex justify-between mb-1 text-gray-300"><span>Kart Genişliği (px)</span><b>{config.cardWidth}px</b></div>
-                    <input type="range" min="300" max="500" value={config.cardWidth} onChange={e => onChange('cardWidth', Number(e.target.value))} className="w-full accent-purple-500" />
-                </div>
-                <div>
-                    <div className="flex justify-between mb-1 text-gray-300"><span>Kart Yüksekliği (%)</span><b>{config.cardHeight}vh</b></div>
-                    <input type="range" min="65" max="95" value={config.cardHeight} onChange={e => onChange('cardHeight', Number(e.target.value))} className="w-full accent-purple-500" />
-                </div>
-                <div>
-                    <div className="flex justify-between mb-1 text-gray-300"><span>Video Alanı (%)</span><b>{config.videoHeightPercent}%</b></div>
-                    <input type="range" min="30" max="60" value={config.videoHeightPercent} onChange={e => onChange('videoHeightPercent', Number(e.target.value))} className="w-full accent-purple-500" />
-                </div>
-                <div>
-                    <div className="flex justify-between mb-1 text-gray-300"><span>Başlık Boyutu (px)</span><b>{config.titleSize}px</b></div>
-                    <input type="range" min="20" max="48" value={config.titleSize} onChange={e => onChange('titleSize', Number(e.target.value))} className="w-full accent-purple-500" />
-                </div>
-                <div>
-                    <div className="flex justify-between mb-1 text-gray-300"><span>Görev Metni Boyutu (px)</span><b>{config.missionTextSize}px</b></div>
-                    <input type="range" min="14" max="28" value={config.missionTextSize} onChange={e => onChange('missionTextSize', Number(e.target.value))} className="w-full accent-purple-500" />
-                </div>
-                <div>
-                    <div className="flex justify-between mb-1 text-gray-300"><span>Alt/Üst Padding</span><b>{config.cardPadding}px</b></div>
-                    <input type="range" min="10" max="40" value={config.cardPadding} onChange={e => onChange('cardPadding', Number(e.target.value))} className="w-full accent-purple-500" />
-                </div>
-                <div>
-                    <div className="flex justify-between mb-1 text-gray-300"><span>Buton Kalınlığı (py)</span><b>{config.buttonPaddingY}px</b></div>
-                    <input type="range" min="8" max="26" value={config.buttonPaddingY} onChange={e => onChange('buttonPaddingY', Number(e.target.value))} className="w-full accent-purple-500" />
-                </div>
-            </div>
-
-            <div className="border-t border-white/10 pt-4 space-y-2 mt-auto">
-                <button onClick={() => navigator.clipboard.writeText(JSON.stringify(config, null, 2))} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition">
-                    Ayarları Kopyala (JSON)
-                </button>
-                <button onClick={onReset} className="w-full py-2 bg-white/10 hover:bg-white/20 text-gray-300 rounded-lg transition">
-                    Varsayılana Sıfırla
-                </button>
-            </div>
-        </div>
-    );
-};
-
-// --- DİNAMİK KART BİLEŞENİ ---
-const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamId, lang, uiConfig }) => {
-    const cardRef = useRef(null);
-    const [mouseState, setMouseState] = useState({ x: 0, y: 0 });
-    const [targetState, setTargetState] = useState({ x: 0, y: 0 });
-
-    const isBonus = type === 'bonus';
-    const isObstacle = type === 'obstacle';
-    const isModerator = type === 'moderator';
-    const isFinal = type === 'final';
-    const isPlaying = mode === 'play';
-    
-    const baseKey = `team${currentTeamId}`;
-    let characterVideoSrc = assets[`${baseKey}_idle`];
-    if (type === 'easy') characterVideoSrc = assets[`${baseKey}_happy`];
-    else if (type === 'medium') characterVideoSrc = assets[`${baseKey}_thinking`];
-    else if (type === 'hard' || type === 'obstacle' || type === 'final') characterVideoSrc = assets[`${baseKey}_scared`];
-
-    let videoToRender = null;
-    if (isModerator) {
-        videoToRender = card.customVideo || assets.moderator;
-    } else if (isBonus && assets[`bonus_${card.id}`]) {
-        videoToRender = assets[`bonus_${card.id}`];
-    } else {
-        videoToRender = characterVideoSrc;
-    }
-
-    let titleText = (isBonus || isModerator) ? (getLocalizedText(card.name, lang) || "BONUS") : (getLocalizedText(card.title, lang) || "GÖREV");
-    let missionText = (isBonus || isModerator) ? getLocalizedText(card.desc, lang) : getLocalizedText(card.mission, lang);
-    let oppCardLabel = isModerator ? "MODERATÖR REJİSİ" : (getLocalizedText(UI[lang]?.oppCard, lang) || "FIRSAT KARTI");
-    let flavorText = (isBonus || isModerator)
-        ? `${oppCardLabel} ✦ ${getLocalizedText(card.benefit, lang)}` 
-        : (getLocalizedText(getRandomCardText(card, currentTeamId, lang), lang) || getLocalizedText(card.desc, lang));
-
-    let icon = isModerator ? <Clapperboard size={32} className="text-yellow-400 animate-pulse"/> : (isBonus ? <Sparkles size={32} className="text-[#D4AF37]"/> : getCardIcon(missionText + " " + titleText, <Drama size={32} className="text-[#D4AF37]"/>));
-    let bgStyle = isModerator ? "bg-gradient-to-b from-emerald-900 to-black" : (isBonus ? (isPlaying ? "bg-gradient-to-b from-yellow-600 to-red-900" : "bg-gradient-to-b from-indigo-600 to-blue-900") : "bg-neutral-900");
-    let accentColor = isModerator ? "text-emerald-200" : (isBonus ? (isPlaying ? "text-yellow-200" : "text-indigo-200") : "text-white");
-    let glowColor = isModerator ? "rgba(16, 185, 129, 0.6)" : (isBonus ? (isPlaying ? "rgba(255, 200, 0, 0.8)" : "rgba(99, 102, 241, 0.5)") : "rgba(255,255,255,0.1)");
-
-    if (isObstacle) {
-        bgStyle = "bg-gradient-to-b from-red-600 to-rose-900";
-        accentColor = "text-red-200";
-        glowColor = "rgba(225, 29, 72, 0.5)";
-        flavorText = card.type === 'marked' ? getLocalizedText(UI[lang].applySelf, lang) : getLocalizedText(UI[lang].giveRival, lang);
-        icon = <Skull size={32} className="text-red-500 animate-bounce"/>;
-    } else if (!isBonus && !isModerator) {
-        if(type === 'easy') { bgStyle = "bg-gradient-to-b from-emerald-500 to-teal-800"; accentColor = "text-emerald-100"; titleText = getLocalizedText(UI[lang].easyLevel, lang); }
-        else if(type === 'medium') { bgStyle = "bg-gradient-to-b from-amber-500 to-orange-800"; accentColor = "text-amber-100"; titleText = getLocalizedText(UI[lang].medLevel, lang); }
-        else if(type === 'hard') { bgStyle = "bg-gradient-to-b from-rose-500 to-red-800"; accentColor = "text-rose-100"; titleText = getLocalizedText(UI[lang].hardLevel, lang); }
-        else if(type === 'final') { bgStyle = "bg-gradient-to-b from-yellow-600 via-orange-600 to-red-900"; accentColor = "text-yellow-100"; }
-    }
-
-    const rotateX = mouseState.y * -4;
-    const rotateY = mouseState.x * 4;
-
-    return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
-            <div 
-                ref={cardRef}
-                onMouseMove={(e) => {
-                    const rect = cardRef.current.getBoundingClientRect();
-                    setTargetState({ x: ((e.clientX - rect.left) / rect.width) * 2 - 1, y: ((e.clientY - rect.top) / rect.height) * 2 - 1 });
-                }}
-                onMouseLeave={() => setTargetState({ x: 0, y: 0 })}
-                className="relative rounded-[2.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col transition-transform duration-[300ms] ease-out"
-                style={{ 
-                    width: `${uiConfig.cardWidth}px`,
-                    maxWidth: '92vw',
-                    height: `${uiConfig.cardHeight}vh`,
-                    transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`, 
-                    boxShadow: `0 20px 50px -10px ${glowColor}` 
-                }}
-            >
-                <div className={`absolute inset-0 ${bgStyle} z-0`}></div>
-                <div className="absolute inset-0 pointer-events-none z-20" style={{ background: `radial-gradient(circle 300px at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.95) 100%)`, mixBlendMode: 'multiply' }}></div>
-
-                <div className="absolute inset-0 z-10 flex flex-col justify-start p-0">
-                    
-                    {/* VIDEO CONTAINER */}
-                    <div 
-                        className={`relative w-full shrink-0 z-0 overflow-hidden flex items-center justify-center bg-black`}
-                        style={{ height: `${uiConfig.videoHeightPercent}%` }}
-                    >
-                         {videoToRender && (
-                            <AssetDisplay 
-                                src={videoToRender} 
-                                className={`w-full h-full object-cover object-top ${(isBonus || isModerator) ? 'mix-blend-screen' : ''}`} 
-                                alt="Character" 
-                            />
-                        )}
-                        <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
-                    </div>
-
-                    {/* METİN & BUTON ALANI */}
-                    <div 
-                        className="relative z-30 flex-1 flex flex-col items-center justify-between text-center overflow-y-auto no-scrollbar -mt-6"
-                        style={{ padding: `${uiConfig.cardPadding}px` }}
-                    >
-                         <div className="flex flex-col items-center w-full">
-                             <div className="p-3 rounded-full bg-black/80 border border-[#D4AF37]/50 mb-2 shadow-xl backdrop-blur-md inline-flex justify-center">
-                                 {icon}
-                             </div>
-                             
-                             <h1 
-                                className="text-[#D4AF37] font-black italic mb-2 leading-none uppercase drop-shadow-md"
-                                style={{ fontSize: `${uiConfig.titleSize}px` }}
-                             >
-                                 {String(titleText)}
-                             </h1>
-                             
-                             <div className="w-full mb-3 bg-black/60 border border-[#D4AF37]/30 p-4 rounded-xl shadow-inner min-h-[4.5rem] flex items-center justify-center">
-                                <p 
-                                    className={`font-bold leading-tight ${accentColor}`}
-                                    style={{ fontSize: `${uiConfig.missionTextSize}px` }}
-                                >
-                                    "{String(missionText)}"
-                                </p>
-                             </div>
-                             
-                             <p className={`italic mb-3 px-2 leading-snug text-xs md:text-sm ${isBonus ? 'text-yellow-500 font-bold uppercase tracking-widest' : 'text-gray-300'}`}>
-                                {String(flavorText)}
-                             </p>
-                         </div>
-                         
-                         <button 
-                            onClick={onAction} 
-                            className="w-full rounded-2xl font-black text-lg tracking-[0.1em] uppercase shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-all transform hover:scale-[1.02] shrink-0 bg-white text-black hover:bg-gray-200"
-                            style={{ padding: `${uiConfig.buttonPaddingY}px 0` }}
-                         >
-                            {isPlaying ? (getLocalizedText(UI[lang]?.unleashPower, lang) || "GÜCÜ KULLAN") : (isBonus ? (getLocalizedText(UI[lang]?.accept, lang) || "KABUL ET") : (getLocalizedText(UI[lang]?.stageYours, lang) || "SAHNE SENİN"))}
-                         </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// --- ANA UYGULAMA ---
-export default function DogaclaVisualsFinal() {
-  const [lang, setLang] = useState('tr');
-  const [teams, setTeams] = useState(() => JSON.parse(localStorage.getItem('dogacla_teams_v90')) || INITIAL_TEAMS);
-  const [assets] = useState(DEFAULT_ASSETS);
-  const [currentTurn, setCurrentTurn] = useState(() => parseInt(localStorage.getItem('dogacla_turn_v90')) || 0);
-  const [gameState, setGameState] = useState('INTRO');
+export default function DogaclaCompleteGame() {
+  const [teams, setTeams] = useState(INITIAL_TEAMS);
+  const [currentTurn, setCurrentTurn] = useState(0);
+  const [gameState, setGameState] = useState('ROLL'); // ROLL, MOVING, CARD, PERFORM, JURY
   const [diceValue, setDiceValue] = useState(1);
+  const [isRolling, setIsRolling] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
   const [cardType, setCardType] = useState(null);
-  const [playingBonus, setPlayingBonus] = useState(null);
-  const [performanceTimer, setPerformanceTimer] = useState(0);
-  const [juryScore, setJuryScore] = useState(0);
-  const [voteData, setVoteData] = useState({ roleplay: false, obstacleOvercome: false, fail: false, bonusScore: 0 });
-  const [hypeMeter, setHypeMeter] = useState(0); 
-  const [characterMood, setCharacterMood] = useState('idle');
-  const [isRollingDice, setIsRollingDice] = useState(false);
-  const [showDiceModal, setShowDiceModal] = useState(false);
-  const [kuraRolling, setKuraRolling] = useState(false); 
-  const [logs, setLogs] = useState(["Doğaçla 9.8 Canlı Sahne!"]);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  
-  // Canlı UI Editör State
+  const [timer, setTimer] = useState(45);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [juryVote, setJuryVote] = useState({ role: false, obstacle: false, fail: false });
+  const [logs, setLogs] = useState(["Doğaçla Sahnesi Açıldı!"]);
+
+  // Canlı UI Editörü
   const [showEditor, setShowEditor] = useState(false);
   const [uiConfig, setUiConfig] = useState(() => {
-      const saved = localStorage.getItem('dogacla_ui_config');
-      return saved ? JSON.parse(saved) : DEFAULT_UI_CONFIG;
+    const saved = localStorage.getItem('dogacla_ui_config');
+    return saved ? JSON.parse(saved) : DEFAULT_UI_CONFIG;
   });
 
-  const handleConfigChange = (key, value) => {
-      const updated = { ...uiConfig, [key]: value };
-      setUiConfig(updated);
-      localStorage.setItem('dogacla_ui_config', JSON.stringify(updated));
-  };
-
-  const handleResetConfig = () => {
-      setUiConfig(DEFAULT_UI_CONFIG);
-      localStorage.setItem('dogacla_ui_config', JSON.stringify(DEFAULT_UI_CONFIG));
-  };
-
+  const timerRef = useRef(null);
   const currentTeam = teams[currentTurn];
-  const isGoldenMic = hypeMeter >= 100; 
 
-  const testModeratorCard = () => {
-      setCardType('moderator');
-      setActiveCard(CARDS_DATA.MODERATOR[0]);
-      setGameState('CARD');
+  const handleConfigChange = (key, value) => {
+    const updated = { ...uiConfig, [key]: value };
+    setUiConfig(updated);
+    localStorage.setItem('dogacla_ui_config', JSON.stringify(updated));
   };
 
-  const nextTurn = () => { 
-      setGameState('ROLL'); 
-      setDiceValue(1); 
-      setCurrentTurn(prev => (prev + 1) % 4); 
-      setCharacterMood('idle'); 
+  // SÜRE YÖNETİMİ
+  useEffect(() => {
+    if (isTimerRunning && timer > 0) {
+      timerRef.current = setInterval(() => setTimer(t => t - 1), 1000);
+    } else if (timer === 0 && isTimerRunning) {
+      setIsTimerRunning(false);
+      clearInterval(timerRef.current);
+      setGameState('JURY');
+    }
+    return () => clearInterval(timerRef.current);
+  }, [isTimerRunning, timer]);
+
+  // ZAR ATMA & HAREKET
+  const rollDice = () => {
+    if (isRolling) return;
+    setIsRolling(true);
+    let rolls = 0;
+    const interval = setInterval(() => {
+      setDiceValue(Math.floor(Math.random() * 6) + 1);
+      rolls++;
+      if (rolls > 8) {
+        clearInterval(interval);
+        const finalDice = Math.floor(Math.random() * 6) + 1;
+        setDiceValue(finalDice);
+        setIsRolling(false);
+        movePlayer(finalDice);
+      }
+    }, 80);
   };
 
-  const handleCardAction = () => {
-      playSynthSound('click', soundEnabled);
-      setActiveCard(null);
-      nextTurn();
+  const movePlayer = (steps) => {
+    setGameState('MOVING');
+    setTimeout(() => {
+      setTeams(prevTeams => {
+        const nextTeams = [...prevTeams];
+        const team = nextTeams[currentTurn];
+        const nextPos = Math.min(35, team.pos + steps);
+        team.pos = nextPos;
+        return nextTeams;
+      });
+
+      // Durulan kareye göre kart çek
+      const currentPos = Math.min(35, teams[currentTurn].pos + steps);
+      const tile = BOARD_MAP[currentPos];
+      openCard(tile.type);
+    }, 600);
+  };
+
+  const openCard = (type) => {
+    setCardType(type);
+    let card = null;
+    if (type === 'bonus') card = CARDS_DATA.BONUS[Math.floor(Math.random() * CARDS_DATA.BONUS.length)];
+    else if (type === 'obstacle') card = CARDS_DATA.OBSTACLE[Math.floor(Math.random() * CARDS_DATA.OBSTACLE.length)];
+    else if (type === 'easy') card = CARDS_DATA.EASY[Math.floor(Math.random() * CARDS_DATA.EASY.length)];
+    else if (type === 'medium') card = CARDS_DATA.MEDIUM[Math.floor(Math.random() * CARDS_DATA.MEDIUM.length)];
+    else card = CARDS_DATA.HARD[Math.floor(Math.random() * CARDS_DATA.HARD.length)];
+
+    setActiveCard(card);
+    setGameState('CARD');
+  };
+
+  const startPerformance = () => {
+    setGameState('PERFORM');
+    setTimer(45);
+    setIsTimerRunning(true);
+  };
+
+  const submitJuryScore = () => {
+    let earned = 0;
+    if (juryVote.role) earned += 2;
+    if (juryVote.obstacle) earned += 2;
+    if (juryVote.fail) earned -= 2;
+
+    setTeams(prev => {
+      const next = [...prev];
+      next[currentTurn].score += earned;
+      return next;
+    });
+
+    setLogs(l => [`${TEAM_INFO[currentTurn].name}: ${earned >= 0 ? '+' + earned : earned} Puan Aldı.`, ...l.slice(0, 4)]);
+    setJuryVote({ role: false, obstacle: false, fail: false });
+    
+    // Sıradaki tura geç
+    setCurrentTurn((currentTurn + 1) % 4);
+    setGameState('ROLL');
+  };
+
+  const triggerModeratorTest = () => {
+    setCardType('moderator');
+    setActiveCard(CARDS_DATA.MODERATOR[0]);
+    setGameState('CARD');
   };
 
   return (
-    <div className="h-screen font-sans flex flex-col overflow-hidden text-gray-100 bg-[#0a0a0a] relative">
-      <style>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
+    <div className="h-screen w-screen bg-[#0d0d0d] text-white flex flex-col overflow-hidden font-sans select-none relative">
       
-      {/* ÜST HEADER */}
-      <header className="h-20 bg-black/60 border-b border-white/10 flex items-center justify-between px-6 z-40 backdrop-blur-md relative">
-          <div className="flex items-center gap-4">
-              <img src={assets.logo} alt="Logo" className="h-10 w-auto object-contain"/>
-              <h1 className="font-black text-2xl tracking-[0.2em] hidden md:block">DOĞAÇLA 9.8</h1>
-          </div>
-          
-          <div className="flex items-center gap-3">
-              {/* MODERATÖR TEST BUTONU */}
-              <button 
-                  onClick={testModeratorCard} 
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition"
-              >
-                  <Clapperboard size={14} /> Moderatör Kartı Test
-              </button>
+      {/* ÜST REJİ BAR */}
+      <header className="h-16 bg-black/80 border-b border-white/10 px-4 flex items-center justify-between z-30 backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          <Drama className="text-[#D4AF37]" size={28} />
+          <span className="font-black tracking-widest text-lg bg-gradient-to-r from-[#D4AF37] to-amber-200 bg-clip-text text-transparent">DOĞAÇLA</span>
+        </div>
 
-              {/* CANLI UI EDİTÖRÜ AÇMA BUTONU */}
-              <button 
-                  onClick={() => setShowEditor(!showEditor)} 
-                  className="p-2 bg-purple-600/30 border border-purple-500 hover:bg-purple-600 text-purple-200 rounded-lg transition"
-                  title="Arayüz Editörü"
-              >
-                  <Palette size={20} />
-              </button>
-
-              <button onClick={() => setSoundEnabled(!soundEnabled)} className="p-2 bg-white/10 rounded-lg">
-                  {soundEnabled ? <Volume2 size={20}/> : <VolumeX size={20}/>}
-              </button>
-              <button onClick={() => setLang(l => l === 'tr' ? 'en' : 'tr')} className="p-2 bg-white/10 rounded-lg font-bold">
-                  {lang.toUpperCase()}
-              </button>
-          </div>
+        <div className="flex items-center gap-2">
+          <button onClick={triggerModeratorTest} className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-bold flex items-center gap-1">
+            <Clapperboard size={14} /> Moderatör Kartı
+          </button>
+          <button onClick={() => setShowEditor(!showEditor)} className="p-2 bg-purple-600/30 border border-purple-500 rounded-lg text-purple-200">
+            <Palette size={18} />
+          </button>
+        </div>
       </header>
-      
-      {/* ORTA OYUN ALANI */}
-      <div className="flex-1 flex items-center justify-center relative p-6">
-          <div className="text-center space-y-4">
-              <h2 className="text-4xl font-black text-white">DOĞAÇLA SAHNESİ</h2>
-              <p className="text-gray-400 text-sm">Moderatör videosu ve Canlı UI Editörü hazır.</p>
-              <div className="flex justify-center gap-4">
-                  <button onClick={testModeratorCard} className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-black rounded-xl hover:scale-105 transition shadow-lg">
-                      Moderatör Kartını Göster
-                  </button>
-                  <button onClick={() => { setCardType('bonus'); setActiveCard(CARDS_DATA.BONUS[1]); setGameState('CARD'); }} className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:scale-105 transition">
-                      Bonus (Kubi) Test
-                  </button>
+
+      {/* SKOR VE OYUNCU BAR */}
+      <div className="grid grid-cols-4 gap-1 p-2 bg-black/40 border-b border-white/5">
+        {teams.map((t, idx) => (
+          <div key={t.id} className={`p-2 rounded-xl flex items-center justify-between transition-all ${idx === currentTurn ? 'bg-white/15 border-2 border-[#D4AF37] scale-102' : 'bg-white/5 opacity-70'}`}>
+            <div className="flex items-center gap-2">
+              <span className="text-xl">{t.icon}</span>
+              <div>
+                <p className="text-[10px] font-bold text-gray-400">{TEAM_INFO[t.id].name}</p>
+                <p className="text-xs font-black text-white">{t.score} P</p>
               </div>
+            </div>
+            <span className="text-[10px] bg-black/60 px-1.5 py-0.5 rounded font-mono text-[#D4AF37]">K:{t.pos}</span>
           </div>
+        ))}
       </div>
 
-      {/* MODAL KART GÖRÜNÜMÜ */}
-      {gameState === 'CARD' && activeCard && (
-          <CardDisplay 
-              card={activeCard} 
-              type={cardType} 
-              mode="draw" 
-              onAction={handleCardAction} 
-              assets={assets} 
-              currentTeamId={currentTeam.id} 
-              lang={lang}
-              uiConfig={uiConfig}
-          />
+      {/* OYUN ALANI / HARİTA */}
+      <div className="flex-1 flex flex-col justify-between p-4 relative overflow-hidden">
+        {/* Tahta İlerleme Hattı */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="grid grid-cols-6 gap-2 max-w-sm w-full">
+            {BOARD_MAP.slice(0, 24).map((tile, i) => {
+              const occupants = teams.filter(t => t.pos === i);
+              return (
+                <div key={i} className={`h-12 rounded-lg border border-white/10 flex flex-col items-center justify-center relative text-[9px] font-bold ${tile.type === 'bonus' ? 'bg-amber-900/40 text-amber-300' : tile.type === 'obstacle' ? 'bg-red-900/40 text-red-300' : 'bg-white/5 text-gray-400'}`}>
+                  <span>{i}</span>
+                  <div className="flex gap-0.5 absolute -bottom-1">
+                    {occupants.map(occ => <span key={occ.id} className="text-xs">{occ.icon}</span>)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ALT KONTROL PANELİ */}
+        <div className="bg-black/70 border border-white/10 p-4 rounded-3xl backdrop-blur-xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-3xl font-black text-[#D4AF37]">
+              {diceValue}
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">Sıradaki Takım</p>
+              <p className="text-sm font-black text-white">{TEAM_INFO[currentTurn].name}</p>
+            </div>
+          </div>
+
+          {gameState === 'ROLL' && (
+            <button onClick={rollDice} disabled={isRolling} className="px-8 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-black rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition">
+              {isRolling ? "ZAR DÖNÜYOR..." : "ZAR AT"}
+            </button>
+          )}
+
+          {gameState === 'PERFORM' && (
+            <div className="flex items-center gap-4">
+              <div className={`text-2xl font-mono font-black ${timer < 10 ? 'text-red-500 animate-ping' : 'text-white'}`}>
+                {timer}s
+              </div>
+              <button onClick={() => { setIsTimerRunning(false); setGameState('JURY'); }} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs">
+                Performansı Bitir
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* JÜRİ OYLAMA PANELİ */}
+      {gameState === 'JURY' && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-white/10 rounded-3xl p-6 w-full max-w-sm text-center space-y-4">
+            <Gavel size={36} className="mx-auto text-[#D4AF37]" />
+            <h3 className="text-xl font-black text-white">JÜRİ OYLAMASI</h3>
+            <p className="text-xs text-gray-400">Takımın performansını değerlendirin</p>
+
+            <div className="space-y-2">
+              <button onClick={() => setJuryVote(v => ({ ...v, role: !v.role }))} className={`w-full py-3 rounded-xl font-bold text-xs flex justify-between px-4 items-center border ${juryVote.role ? 'bg-emerald-600 border-emerald-400' : 'bg-white/5 border-white/10'}`}>
+                <span>Role Sadık Kaldı mı?</span>
+                <span>+2 Puan</span>
+              </button>
+              <button onClick={() => setJuryVote(v => ({ ...v, obstacle: !v.obstacle }))} className={`w-full py-3 rounded-xl font-bold text-xs flex justify-between px-4 items-center border ${juryVote.obstacle ? 'bg-blue-600 border-blue-400' : 'bg-white/5 border-white/10'}`}>
+                <span>Engeli Başarıyla Aştı mı?</span>
+                <span>+2 Puan</span>
+              </button>
+              <button onClick={() => setJuryVote(v => ({ ...v, fail: !v.fail }))} className={`w-full py-3 rounded-xl font-bold text-xs flex justify-between px-4 items-center border ${juryVote.fail ? 'bg-red-600 border-red-400' : 'bg-white/5 border-white/10'}`}>
+                <span>Kural İhlali / Tıkanma</span>
+                <span>-2 Puan</span>
+              </button>
+            </div>
+
+            <button onClick={submitJuryScore} className="w-full py-3.5 bg-white text-black font-black rounded-xl hover:bg-gray-200 transition">
+              PUANI ONAYLA
+            </button>
+          </div>
+        </div>
       )}
 
-      {/* CANLI UI EDİTÖR PANELİ */}
-      {showEditor && (
-          <UIEditorModal 
-              config={uiConfig} 
-              onChange={handleConfigChange} 
-              onReset={handleResetConfig} 
-              onClose={() => setShowEditor(false)} 
-          />
+      {/* KART MODAL EKRANI */}
+      {gameState === 'CARD' && activeCard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+          <div 
+            className="relative rounded-[2.5rem] overflow-hidden bg-neutral-900 border border-white/10 flex flex-col shadow-2xl"
+            style={{ 
+              width: `${uiConfig.cardWidth}px`, 
+              maxWidth: '92vw', 
+              height: `${uiConfig.cardHeight}vh` 
+            }}
+          >
+            {/* VİDEO ALANI */}
+            <div className="relative w-full bg-black flex items-center justify-center overflow-hidden" style={{ height: `${uiConfig.videoHeightPercent}%` }}>
+              <video 
+                src={cardType === 'moderator' ? activeCard.customVideo : (cardType === 'bonus' ? GAME_ASSETS[activeCard.id] || GAME_ASSETS.team0_idle : GAME_ASSETS[`team${currentTurn}_happy`])} 
+                className="w-full h-full object-cover object-top" 
+                autoPlay loop muted playsInline 
+              />
+              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-neutral-900 to-transparent"></div>
+            </div>
+
+            {/* METİN ALANI */}
+            <div className="flex-1 flex flex-col justify-between text-center" style={{ padding: `${uiConfig.cardPadding}px` }}>
+              <div>
+                <h2 className="text-[#D4AF37] font-black uppercase tracking-wider mb-2" style={{ fontSize: `${uiConfig.titleSize}px` }}>
+                  {activeCard.title || activeCard.name}
+                </h2>
+                <div className="bg-black/40 border border-white/10 p-3 rounded-2xl mb-2">
+                  <p className="text-gray-200 font-bold" style={{ fontSize: `${uiConfig.missionTextSize}px` }}>
+                    "{activeCard.mission || activeCard.desc || activeCard.text}"
+                  </p>
+                </div>
+                {activeCard.benefit && (
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-950/60 px-2 py-1 rounded-full border border-emerald-500/30">
+                    ✦ {activeCard.benefit}
+                  </span>
+                )}
+              </div>
+
+              <button 
+                onClick={() => {
+                  if (cardType === 'moderator' || cardType === 'bonus') {
+                    setActiveCard(null);
+                    setGameState('ROLL');
+                  } else {
+                    startPerformance();
+                  }
+                }} 
+                className="w-full bg-white text-black font-black uppercase rounded-2xl hover:bg-gray-200 transition tracking-wider"
+                style={{ padding: `${uiConfig.buttonPaddingY}px 0` }}
+              >
+                {cardType === 'moderator' ? "ANLADIM / GERİ DÖN" : "SAHNEYE ÇIK"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
+
+      {/* CANLI UI EDİTÖR ÇEKMECESİ */}
+      {showEditor && (
+        <div className="fixed inset-y-0 right-0 w-80 bg-black/95 border-l border-white/20 z-[100] p-6 text-xs flex flex-col shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+            <span className="font-black text-sm text-purple-400 flex items-center gap-2">
+              <Sliders size={18} /> Canlı UI Editörü
+            </span>
+            <button onClick={() => setShowEditor(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-4">
+            <div>
+              <div className="flex justify-between mb-1 text-gray-300"><span>Kart Genişliği</span><b>{uiConfig.cardWidth}px</b></div>
+              <input type="range" min="300" max="500" value={uiConfig.cardWidth} onChange={e => handleConfigChange('cardWidth', Number(e.target.value))} className="w-full accent-purple-500" />
+            </div>
+            <div>
+              <div className="flex justify-between mb-1 text-gray-300"><span>Kart Boyu (%)</span><b>{uiConfig.cardHeight}vh</b></div>
+              <input type="range" min="65" max="95" value={uiConfig.cardHeight} onChange={e => handleConfigChange('cardHeight', Number(e.target.value))} className="w-full accent-purple-500" />
+            </div>
+            <div>
+              <div className="flex justify-between mb-1 text-gray-300"><span>Video Alanı (%)</span><b>{uiConfig.videoHeightPercent}%</b></div>
+              <input type="range" min="30" max="60" value={uiConfig.videoHeightPercent} onChange={e => handleConfigChange('videoHeightPercent', Number(e.target.value))} className="w-full accent-purple-500" />
+            </div>
+            <div>
+              <div className="flex justify-between mb-1 text-gray-300"><span>Başlık Puntosu</span><b>{uiConfig.titleSize}px</b></div>
+              <input type="range" min="20" max="44" value={uiConfig.titleSize} onChange={e => handleConfigChange('titleSize', Number(e.target.value))} className="w-full accent-purple-500" />
+            </div>
+            <div>
+              <div className="flex justify-between mb-1 text-gray-300"><span>Metin Puntosu</span><b>{uiConfig.missionTextSize}px</b></div>
+              <input type="range" min="14" max="26" value={uiConfig.missionTextSize} onChange={e => handleConfigChange('missionTextSize', Number(e.target.value))} className="w-full accent-purple-500" />
+            </div>
+            <div>
+              <div className="flex justify-between mb-1 text-gray-300"><span>İç Kenar Boşluğu</span><b>{uiConfig.cardPadding}px</b></div>
+              <input type="range" min="10" max="36" value={uiConfig.cardPadding} onChange={e => handleConfigChange('cardPadding', Number(e.target.value))} className="w-full accent-purple-500" />
+            </div>
+          </div>
+
+          <div className="border-t border-white/10 pt-4 mt-auto">
+            <button onClick={() => navigator.clipboard.writeText(JSON.stringify(uiConfig, null, 2))} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition">
+              Ayarları Kopyala (JSON)
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
