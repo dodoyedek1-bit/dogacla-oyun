@@ -160,12 +160,26 @@ jobs:
         node downloadAssets.mjs
         rm downloadAssets.mjs
 
-    - name: 3. Android Çıktısını Hazırla (APK)
+    - name: 3. Android Çıktısını Hazırla ve APK İkonunu Göm
       run: |
         cd dogacla-mobil
         npx cap init "Dogacla" "com.oyun.dogacla" --web-dir dist
         npm run build
         npx cap add android
+        
+        # --- UYGULAMA İKONU GÖMME İŞLEMİ ---
+        echo "APK İkonu indiriliyor ve Android sistemine basılıyor..."
+        wget -O dogacla_icon.png "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/dogacla_logsu.png"
+        
+        # Capacitor'un tüm çözünürlüklerdeki varsayılan ikonlarının üzerine kendi logonuzu yazıyoruz
+        for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+          cp dogacla_icon.png android/app/src/main/res/mipmap-$density/ic_launcher.png
+          cp dogacla_icon.png android/app/src/main/res/mipmap-$density/ic_launcher_round.png
+          cp dogacla_icon.png android/app/src/main/res/mipmap-$density/ic_launcher_foreground.png 2>/dev/null || true
+        done
+        echo "İkon başarıyla gömüldü."
+        # -----------------------------------
+        
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug --stacktrace
