@@ -18,6 +18,8 @@ const GAME_ASSETS = {
     shakespeare: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/sheashper.png",
     aristophanes: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/aristopahnes.png",
     moderator: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/Moderator.mp4",
+    
+    // Takım Duygu Videoları
     team0_idle: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/ibis_orta.mp4", 
     team0_happy: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/ibis_kolay.mp4",
     team0_thinking: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/ibis_orta.mp4",
@@ -34,15 +36,25 @@ const GAME_ASSETS = {
     team3_happy: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/aristo_kolay.mp4",
     team3_thinking: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/artisto_bekleme.mp4",
     team3_scared: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/artisto_zor.mp4",
+
+    // Standart Bonus Videoları
     madox: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/madox_karti.mp4",
     diputiyat: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/dputiyat_karti.mp4",
     gulec: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/Gulec_karti.mp4",
     kubi: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/kubi_karti.mp4",
-    kubo: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/kubo_karti.mp4",
     mali: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/Mali_karti.mp4",
     sadic: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/sadic_karti.mp4",
     tubi: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/tubi_karti.mp4",
     cicu: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/%C3%A7i-%C3%A7u.png",
+
+    // Kubo 5'li Senaryo Havuzu
+    kubo_scenarios: [
+      "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/Kubo_panik.mp4",
+      "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/Kubo_sinsi.mp4",
+      "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/Kubo_b%C4%B1kk%C4%B1n.mp4",
+      "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/Kubo_sinirli.mp4",
+      "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/Kubo_Tiyatroda%20zaman%20%C3%B6nemli.mp4"
+    ]
 };
 
 const DEFAULT_UI_CONFIG = {
@@ -56,20 +68,11 @@ const DEFAULT_UI_CONFIG = {
 };
 
 const INITIAL_TEAMS = [
-  { id: 0, color: 'bg-orange-500', border: 'border-orange-500', text: 'text-orange-500', icon: '🤡', score: 0, pos: 0, bonuses: [], activeObstacles: [] },
-  { id: 1, color: 'bg-red-600', border: 'border-red-600', text: 'text-red-600', icon: '👺', score: 0, pos: 0, bonuses: [], activeObstacles: [] },
-  { id: 2, color: 'bg-purple-600', border: 'border-purple-600', text: 'text-purple-600', icon: '✒️', score: 0, pos: 0, bonuses: [], activeObstacles: [] },
-  { id: 3, color: 'bg-blue-600', border: 'border-blue-600', text: 'text-blue-600', icon: '🏛️', score: 0, pos: 0, bonuses: [], activeObstacles: [] },
+  { id: 0, color: 'bg-orange-500', border: 'border-orange-500', text: 'text-orange-500', icon: '🤡', score: 0, pos: 0, bonuses: ['kubo'], activeObstacles: [] },
+  { id: 1, color: 'bg-red-600', border: 'border-red-600', text: 'text-red-600', icon: '👺', score: 0, pos: 0, bonuses: ['kubo'], activeObstacles: [] },
+  { id: 2, color: 'bg-purple-600', border: 'border-purple-600', text: 'text-purple-600', icon: '✒️', score: 0, pos: 0, bonuses: ['gulec'], activeObstacles: [] },
+  { id: 3, color: 'bg-blue-600', border: 'border-blue-600', text: 'text-blue-600', icon: '🏛️', score: 0, pos: 0, bonuses: ['tubi'], activeObstacles: [] },
 ];
-
-const UI = {
-    tr: {
-        start: "BAŞLA", rollDice: "ZAR AT", rollingDice: "ZAR ATILIYOR...",
-        onStageNow: "ŞU AN SAHNEDE", time: "Süre", finishPerf: "Performansı Bitir",
-        juryScoring: "JÜRİ OYLAMASI", role: "+2 ROL", obstacleBtn: "+2 ENGEL", fail: "-2 KURAL İHLALİ",
-        confirmScore: "PUANI ONAYLA", stageYours: "SAHNE SENİN", accept: "KABUL ET", unleashPower: "GÜCÜ KULLAN"
-    }
-};
 
 const TEAM_INFO = {
     0: { name: 'İBİŞ', desc: 'Kurnaz & Esprili', style: 'Mizahi' },
@@ -99,10 +102,11 @@ const CARDS_DATA = {
     { id: 'o3', text: "Kimseyle göz teması kurma.", type: 'marked' }
   ],
   BONUS: [ 
+    { id: 'kubo', name: 'Kubo', desc: 'Kestik! Baştan alıyoruz ama süreyi uzatıyorum.', benefit: '+30 SANİYE' },
+    { id: 'gulec', name: 'Güleç', desc: 'Bilim ve zeka devrede! Sahneyi aydınlatıyoruz.', benefit: 'MORAL & ALKIŞ' },
     { id: 'tubi', name: 'Tubi', desc: 'Annen gibi düşün... Tavsiye vereceğim!', benefit: 'FİKİR AL' }, 
     { id: 'kubi', name: 'Kubi', desc: 'Kalem elimde! Bu sahneye bir kişi daha yazıyorum.', benefit: 'EKSTRA KARAKTER' }, 
     { id: 'mali', name: 'Mali', desc: 'Hesapladım, kârlı çıkarız.', benefit: '+2 PUAN' }, 
-    { id: 'kubo', name: 'Kubo', desc: 'Kestik! Baştan alıyoruz ama süreyi uzatıyorum.', benefit: '+30 SANİYE' },
     { id: 'madox', name: 'Madox', desc: 'Bu sahnenin türü beni sıktı. Değiştirildi!', benefit: 'TÜRÜ DEĞİŞTİR' }
   ],
   MODERATOR: [
@@ -117,22 +121,31 @@ const CARDS_DATA = {
   ]
 };
 
-// --- ORİJİNAL KART BİLEŞENİ (AYARLANABİLİR BOYUTLARLA) ---
+// --- DİNAMİK VİDEO VE SENARYO DESTEKLİ KART BİLEŞENİ ---
 const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamId, uiConfig }) => {
     const isBonus = type === 'bonus';
-    const isObstacle = type === 'obstacle';
     const isModerator = type === 'moderator';
-    const isPlaying = mode === 'play';
     
+    // Karakter video seçimi
     const baseKey = `team${currentTeamId}`;
     let characterVideoSrc = assets[`${baseKey}_idle`];
     if (type === 'easy') characterVideoSrc = assets[`${baseKey}_happy`];
     else if (type === 'medium') characterVideoSrc = assets[`${baseKey}_thinking`];
     else if (type === 'hard' || type === 'obstacle') characterVideoSrc = assets[`${baseKey}_scared`];
 
-    let videoToRender = isModerator 
-        ? (card.customVideo || assets.moderator)
-        : (isBonus && assets[`bonus_${card.id}`] ? assets[`bonus_${card.id}`] : characterVideoSrc);
+    // Video belirleme (Kubo için 5'li havuzdan rastgele seçilmiş URL veya standart asset)
+    let videoToRender = characterVideoSrc;
+    if (isModerator) {
+      videoToRender = card.customVideo || assets.moderator;
+    } else if (isBonus) {
+      if (card.activeVideoUrl) {
+        videoToRender = card.activeVideoUrl;
+      } else if (card.id === 'kubo' && assets.kubo_scenarios) {
+        videoToRender = assets.kubo_scenarios[Math.floor(Math.random() * assets.kubo_scenarios.length)];
+      } else {
+        videoToRender = assets[card.id] || assets.kubo_scenarios[0];
+      }
+    }
 
     let titleText = (isBonus || isModerator) ? card.name : (card.title || "GÖREV");
     let missionText = (isBonus || isModerator) ? card.desc : card.mission;
@@ -146,11 +159,11 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
 
     let bgStyle = isModerator 
         ? "bg-gradient-to-b from-emerald-950 via-neutral-900 to-black" 
-        : (isBonus ? (isPlaying ? "bg-gradient-to-b from-yellow-700 via-neutral-900 to-black" : "bg-gradient-to-b from-indigo-950 via-neutral-900 to-black") : "bg-neutral-950");
+        : (isBonus ? "bg-gradient-to-b from-amber-950 via-neutral-900 to-black" : "bg-neutral-950");
 
     let glowColor = isModerator 
         ? "rgba(16, 185, 129, 0.4)" 
-        : (isBonus ? "rgba(212, 175, 55, 0.4)" : "rgba(212, 175, 55, 0.2)");
+        : (isBonus ? "rgba(212, 175, 55, 0.5)" : "rgba(212, 175, 55, 0.2)");
 
     return (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fadeIn">
@@ -165,20 +178,24 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
             >
                 <div className={`absolute inset-0 ${bgStyle} z-0`}></div>
                 
-                {/* VIDEO BÖLÜMÜ */}
+                {/* VİDEO BÖLÜMÜ */}
                 <div 
                     className="relative w-full shrink-0 z-10 overflow-hidden flex items-center justify-center bg-black"
                     style={{ height: `${uiConfig.videoHeightPercent}%` }}
                 >
                     <video 
+                        key={videoToRender}
                         src={videoToRender} 
                         className="w-full h-full object-cover object-top" 
-                        autoPlay loop muted playsInline 
+                        autoPlay 
+                        loop={!isBonus} // Bonus kartları bittiğinde tamamlanabilsin diye
+                        muted={false}
+                        playsInline 
                     />
                     <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-neutral-950 via-neutral-950/80 to-transparent"></div>
                 </div>
 
-                {/* METİN VE AKSİYON BÖLÜMÜ */}
+                {/* METİN VE BUTON ALANI */}
                 <div 
                     className="relative z-20 flex-1 flex flex-col items-center justify-between text-center overflow-y-auto no-scrollbar -mt-6"
                     style={{ padding: `${uiConfig.cardPadding}px` }}
@@ -214,7 +231,7 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
                         className="w-full rounded-2xl font-black text-lg tracking-widest uppercase shadow-2xl transition-all transform hover:scale-[1.02] active:scale-95 bg-gradient-to-r from-[#D4AF37] via-amber-300 to-[#D4AF37] text-black hover:brightness-110"
                         style={{ padding: `${uiConfig.buttonPaddingY}px 0` }}
                      >
-                        {isModerator ? "KULİSE DÖN" : (isBonus ? "KABUL ET" : "SAHNEYE ÇIK")}
+                        {isModerator ? "KULİSE DÖN" : (isBonus ? (mode === 'use' ? "GÜCÜ ÇALIŞTIR" : "KABUL ET & SAKLA") : "SAHNEYE ÇIK")}
                      </button>
                 </div>
             </div>
@@ -226,11 +243,12 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, assets, currentTeamI
 export default function DogaclaCompleteGame() {
   const [teams, setTeams] = useState(INITIAL_TEAMS);
   const [currentTurn, setCurrentTurn] = useState(0);
-  const [gameState, setGameState] = useState('ROLL');
+  const [gameState, setGameState] = useState('ROLL'); // ROLL, CARD, PERFORM, JURY
   const [diceValue, setDiceValue] = useState(1);
   const [isRolling, setIsRolling] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
   const [cardType, setCardType] = useState(null);
+  const [cardMode, setCardMode] = useState('draw'); // 'draw' veya 'use'
   const [timer, setTimer] = useState(45);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [juryVote, setJuryVote] = useState({ role: false, obstacle: false, fail: false });
@@ -251,6 +269,7 @@ export default function DogaclaCompleteGame() {
     localStorage.setItem('dogacla_ui_config', JSON.stringify(updated));
   };
 
+  // Zaman Sayacı
   useEffect(() => {
     if (isTimerRunning && timer > 0) {
       timerRef.current = setInterval(() => setTimer(t => t - 1), 1000);
@@ -262,6 +281,7 @@ export default function DogaclaCompleteGame() {
     return () => clearInterval(timerRef.current);
   }, [isTimerRunning, timer]);
 
+  // Zar Atma Mantığı
   const rollDice = () => {
     if (isRolling) return;
     setIsRolling(true);
@@ -275,31 +295,90 @@ export default function DogaclaCompleteGame() {
         setDiceValue(finalDice);
         setIsRolling(false);
         
-        // Hareketi başlat ve kartı aç
+        // Zar sonu kart çekimi
         setTimeout(() => {
             const types = ['easy', 'medium', 'hard', 'bonus', 'obstacle'];
             const pickedType = types[Math.floor(Math.random() * types.length)];
             setCardType(pickedType);
-            if (pickedType === 'bonus') setActiveCard(CARDS_DATA.BONUS[Math.floor(Math.random() * CARDS_DATA.BONUS.length)]);
-            else if (pickedType === 'obstacle') setActiveCard(CARDS_DATA.OBSTACLE[Math.floor(Math.random() * CARDS_DATA.OBSTACLE.length)]);
-            else setActiveCard(CARDS_DATA[pickedType.toUpperCase()][0]);
+            setCardMode('draw');
+
+            if (pickedType === 'bonus') {
+              const bonus = CARDS_DATA.BONUS[Math.floor(Math.random() * CARDS_DATA.BONUS.length)];
+              // Eğer Kubo geldiyse 5 senaryodan birini seç
+              if (bonus.id === 'kubo') {
+                const randomUrl = GAME_ASSETS.kubo_scenarios[Math.floor(Math.random() * GAME_ASSETS.kubo_scenarios.length)];
+                setActiveCard({ ...bonus, activeVideoUrl: randomUrl });
+              } else {
+                setActiveCard(bonus);
+              }
+            } else if (pickedType === 'obstacle') {
+              setActiveCard(CARDS_DATA.OBSTACLE[Math.floor(Math.random() * CARDS_DATA.OBSTACLE.length)]);
+            } else {
+              setActiveCard(CARDS_DATA[pickedType.toUpperCase()][0]);
+            }
             setGameState('CARD');
         }, 400);
       }
     }, 80);
   };
 
+  // Kart Butonuna Basıldığında
   const handleCardDone = () => {
-    if (cardType === 'moderator' || cardType === 'bonus') {
+    if (cardType === 'moderator') {
       setActiveCard(null);
       setGameState('ROLL');
       setCurrentTurn((currentTurn + 1) % 4);
+    } else if (cardType === 'bonus') {
+      if (cardMode === 'use') {
+        // Performans anında kullanıldıysa
+        if (activeCard.id === 'kubo') {
+          setTimer(prev => prev + 30); // Kubo +30 saniye ekler
+        }
+        setActiveCard(null);
+        setGameState('PERFORM');
+        setIsTimerRunning(true);
+      } else {
+        // Çekilişte geldiyse takıma bonus olarak ekle
+        setTeams(prev => {
+          const next = [...prev];
+          next[currentTurn].bonuses.push(activeCard.id);
+          return next;
+        });
+        setActiveCard(null);
+        setGameState('ROLL');
+        setCurrentTurn((currentTurn + 1) % 4);
+      }
     } else {
+      // Normal görev kartıysa performansı başlat
       setActiveCard(null);
       setGameState('PERFORM');
       setTimer(45);
       setIsTimerRunning(true);
     }
+  };
+
+  // Performans Sırasında Oyuncunun Bonus Kullanması
+  const triggerInGameBonus = (bonusId) => {
+    setIsTimerRunning(false); // Sayacı dondur
+    const bonusObj = CARDS_DATA.BONUS.find(b => b.id === bonusId) || { id: bonusId, name: bonusId.toUpperCase(), desc: 'Bonus Gücü Devrede!' };
+    
+    let chosenUrl = null;
+    if (bonusId === 'kubo') {
+      chosenUrl = GAME_ASSETS.kubo_scenarios[Math.floor(Math.random() * GAME_ASSETS.kubo_scenarios.length)];
+    }
+
+    // Takımın elinden bonusu eksilt
+    setTeams(prev => {
+      const next = [...prev];
+      const idx = next[currentTurn].bonuses.indexOf(bonusId);
+      if (idx > -1) next[currentTurn].bonuses.splice(idx, 1);
+      return next;
+    });
+
+    setCardType('bonus');
+    setCardMode('use');
+    setActiveCard({ ...bonusObj, activeVideoUrl: chosenUrl });
+    setGameState('CARD');
   };
 
   const submitJury = () => {
@@ -335,7 +414,7 @@ export default function DogaclaCompleteGame() {
 
         <div className="flex items-center gap-2">
           <button 
-            onClick={() => { setCardType('moderator'); setActiveCard(CARDS_DATA.MODERATOR[0]); setGameState('CARD'); }}
+            onClick={() => { setCardType('moderator'); setCardMode('draw'); setActiveCard(CARDS_DATA.MODERATOR[0]); setGameState('CARD'); }}
             className="px-3 py-1.5 bg-emerald-600/80 hover:bg-emerald-600 border border-emerald-400/50 rounded-xl text-xs font-black flex items-center gap-1.5 transition"
           >
             <Clapperboard size={14} /> Moderatör Kartı
@@ -350,7 +429,7 @@ export default function DogaclaCompleteGame() {
         </div>
       </header>
 
-      {/* ORİJİNAL 4 TAKIM SKOR TABLOSU */}
+      {/* 4 TAKIM SKOR TABLOSU */}
       <div className="grid grid-cols-4 gap-2 p-3 z-20">
         {teams.map((t, idx) => (
           <div 
@@ -364,6 +443,11 @@ export default function DogaclaCompleteGame() {
                 <p className="text-xs font-black text-[#D4AF37]">{t.score} P</p>
               </div>
             </div>
+            {t.bonuses.length > 0 && (
+              <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded-md font-bold">
+                +{t.bonuses.length} Kart
+              </span>
+            )}
           </div>
         ))}
       </div>
@@ -394,13 +478,31 @@ export default function DogaclaCompleteGame() {
             <div className="text-7xl font-black font-mono text-[#D4AF37] drop-shadow-[0_0_20px_rgba(212,175,55,0.8)] animate-pulse">
               {timer}s
             </div>
-            <p className="text-gray-300 font-bold">Sahne senin, doğaçlamanı sergile!</p>
-            <button 
-              onClick={() => { setIsTimerRunning(false); setGameState('JURY'); }} 
-              className="px-8 py-3.5 bg-red-600 hover:bg-red-500 text-white font-black rounded-2xl shadow-xl transition"
-            >
-              Performansı Bitir
-            </button>
+            <p className="text-gray-300 font-bold">{TEAM_INFO[currentTurn].name} Sahnede! Doğaçlamanı sergile!</p>
+            
+            {/* Sahne Sırasında Bonus Kart Kullanma Barı */}
+            {currentTeam.bonuses.length > 0 && (
+              <div className="flex justify-center gap-2 pt-2">
+                {currentTeam.bonuses.map((bId, i) => (
+                  <button
+                    key={i}
+                    onClick={() => triggerInGameBonus(bId)}
+                    className="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-black text-xs rounded-xl shadow-lg border border-yellow-300 animate-bounce"
+                  >
+                    ⚡ {bId.toUpperCase()} OYNA (+30s)
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div>
+              <button 
+                onClick={() => { setIsTimerRunning(false); setGameState('JURY'); }} 
+                className="px-8 py-3.5 bg-red-600 hover:bg-red-500 text-white font-black rounded-2xl shadow-xl transition"
+              >
+                Performansı Bitir
+              </button>
+            </div>
           </div>
         )}
 
@@ -436,7 +538,7 @@ export default function DogaclaCompleteGame() {
         <CardDisplay 
             card={activeCard} 
             type={cardType} 
-            mode="draw" 
+            mode={cardMode} 
             onAction={handleCardDone} 
             assets={GAME_ASSETS} 
             currentTeamId={currentTurn} 
