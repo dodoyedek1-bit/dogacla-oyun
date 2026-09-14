@@ -64,8 +64,7 @@ jobs:
         import { defineConfig } from 'vite'
         import react from '@vitejs/plugin-react'
         export default defineConfig({ 
-          base: './', 
-          build: { target: 'es2015' },
+          base: './',
           plugins: [react()] 
         })
         EOF
@@ -87,8 +86,24 @@ jobs:
             <meta charset="UTF-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <title>DOĞAÇLA</title>
+            <style>
+              body { background-color: #0a0a0a; margin: 0; padding: 0; }
+              #error-log { display: none; background: #900; color: white; padding: 20px; font-family: monospace; word-break: break-all; position: absolute; z-index: 9999; top: 0; left: 0; right: 0; }
+            </style>
+            <script>
+              // Ekrandaki ölümcül hataları yakala ve kırmızıyla ekrana bas
+              window.onerror = function(msg, src, lineno, colno, error) {
+                var el = document.getElementById('error-log');
+                el.style.display = 'block';
+                el.innerHTML += '<b>HATA:</b> ' + msg + '<br><b>SATIR:</b> ' + lineno + '<br><hr>';
+              };
+            </script>
+            <!-- Mobil tarayıcılar için Geliştirici Konsolu (Siyah ekranda sebebi bulmamızı sağlar) -->
+            <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+            <script>eruda.init();</script>
           </head>
           <body>
+            <div id="error-log"></div>
             <div id="root"></div>
             <script type="module" src="/src/main.jsx"></script>
           </body>
@@ -136,6 +151,7 @@ jobs:
             async function downloadAll() {
                 for (const url of uniqueUrls) {
                     const filename = decodeURIComponent(url.split('/').pop());
+                    // ÇOK KRİTİK: Yollar Android WebView'e uyumlu olması için "./assets/" olarak güncellendi.
                     code = code.split(url).join('./assets/' + filename);
                     
                     console.log(`Indiriliyor: ${filename}...`);
@@ -171,15 +187,15 @@ jobs:
         npm run build
         npx cap add android
         
-        # --- UYGULAMA İKONU GÖMME VE KÜÇÜLTME İŞLEMİ ---
+        # --- UYGULAMA İKONU BOYUTLANDIRMA VE GÖMME (ŞEFFAF VE BASIK DEĞİL) ---
         echo "APK İkonu indiriliyor..."
-        wget -O dogacla_icon.png "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/dogacla_logsu.png"
+        wget -O raw_icon.png "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/dogacla_logsu.png"
         
-        # ImageMagick kur ve logonun etrafına %25 şeffaf boşluk (padding) ekleyerek maskeden taşmasını engelle
+        # ImageMagick kur: İkonun en boy oranını KORUYARAK 700x700 yap, sonra arkası ŞEFFAF 1024x1024 bir karenin tam ortasına yerleştir
         sudo apt-get update && sudo apt-get install -y imagemagick
-        convert dogacla_icon.png -bordercolor none -border 25% dogacla_icon.png
+        convert raw_icon.png -resize 700x700 -background none -gravity center -extent 1024x1024 dogacla_icon.png
         
-        echo "İkon boyutlandırıldı, Android sistemine basılıyor..."
+        echo "İkon mükemmel ölçülere getirildi, Android sistemine basılıyor..."
         # Capacitor'un tüm çözünürlüklerdeki varsayılan ikonlarının üzerine yazıyoruz
         for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
           cp dogacla_icon.png android/app/src/main/res/mipmap-$density/ic_launcher.png
