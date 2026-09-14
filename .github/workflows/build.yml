@@ -63,7 +63,11 @@ jobs:
         cat << 'EOF' > vite.config.js
         import { defineConfig } from 'vite'
         import react from '@vitejs/plugin-react'
-        export default defineConfig({ plugins: [react()] })
+        export default defineConfig({ 
+          base: './', 
+          build: { target: 'es2015' },
+          plugins: [react()] 
+        })
         EOF
         
         cat << 'EOF' > tailwind.config.js
@@ -132,7 +136,8 @@ jobs:
             async function downloadAll() {
                 for (const url of uniqueUrls) {
                     const filename = decodeURIComponent(url.split('/').pop());
-                    code = code.split(url).join('/assets/' + filename);
+                    // BURASI ÇOK ÖNEMLİ: /assets/ yerine ./assets/ yapıldı (Android için)
+                    code = code.split(url).join('./assets/' + filename);
                     
                     console.log(`Indiriliyor: ${filename}...`);
                     await new Promise((resolve) => {
