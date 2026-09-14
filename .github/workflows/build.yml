@@ -1,4 +1,4 @@
-name: DOĞAÇLA Mobil Build (Native Performans)
+name: DOĞAÇLA Mobil Build (Gömülü Videolarla)
 
 on:
   push:
@@ -87,10 +87,22 @@ jobs:
             <meta charset="UTF-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <title>DOĞAÇLA</title>
+            <style>
+              body { background-color: #0a0a0a; margin: 0; padding: 0; }
+              #error-log { display: none; background: #900; color: white; padding: 20px; font-family: monospace; word-break: break-all; position: absolute; z-index: 9999; top: 0; left: 0; right: 0; }
+            </style>
+            <script>
+              window.onerror = function(msg, src, lineno, colno, error) {
+                var el = document.getElementById('error-log');
+                el.style.display = 'block';
+                el.innerHTML += '<b>HATA:</b> ' + msg + '<br><b>SATIR:</b> ' + lineno + '<br><hr>';
+              };
+            </script>
             <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
             <script>eruda.init();</script>
           </head>
           <body>
+            <div id="error-log"></div>
             <div id="root"></div>
             <script type="module" src="/src/main.jsx"></script>
           </body>
@@ -111,7 +123,11 @@ jobs:
         @tailwind utilities;
         EOF
         
-        cp ../App.jsx src/App.jsx
+        if [ -f "../App.jsx" ]; then
+          cp ../App.jsx src/App.jsx
+        else
+          exit 1
+        fi
 
     - name: 2. Videoları ve Görselleri İndirip Uygulamaya Göm
       run: |
@@ -127,20 +143,24 @@ jobs:
         
         if (uniqueUrls.length > 0) {
             fs.mkdirSync('./public/assets', { recursive: true });
+            
             async function downloadAll() {
                 for (const url of uniqueUrls) {
                     const filename = decodeURIComponent(url.split('/').pop());
                     code = code.split(url).join('./assets/' + filename);
                     
-                    console.log(`Indiriliyor: ${filename}...`);
                     await new Promise((resolve) => {
                         https.get(url, (res) => {
                             if (res.statusCode === 200) {
                                 const file = fs.createWriteStream('./public/assets/' + filename);
                                 res.pipe(file);
                                 file.on('finish', () => { file.close(); resolve(); });
-                            } else { resolve(); }
-                        }).on('error', () => resolve());
+                            } else {
+                                resolve();
+                            }
+                        }).on('error', (e) => {
+                            resolve();
+                        });
                     });
                 }
                 fs.writeFileSync(path, code);
@@ -149,38 +169,15 @@ jobs:
         }
         EOF
         node downloadAssets.mjs
+        rm downloadAssets.mjs
 
-    - name: 3. Android Ayarlarını Native Performansa Zorla (GPU & Medya)
+    - name: 3. Android Çıktısını Hazırla ve APK İkonunu Göm
       run: |
         cd dogacla-mobil
         npx cap init "Dogacla" "com.oyun.dogacla" --web-dir dist
-        
-        # Capacitor Ayarları: Videoların sorunsuz oynaması için Native medya izinlerini aç
-        cat << 'EOF' > capacitor.config.json
-        {
-          "appId": "com.oyun.dogacla",
-          "appName": "Dogacla",
-          "webDir": "dist",
-          "server": {
-            "androidScheme": "https"
-          },
-          "cordova": {
-            "preferences": {
-              "AllowInlineMediaPlayback": "true",
-              "MediaPlaybackRequiresUserAction": "false"
-            }
-          }
-        }
-        EOF
-        
         npm run build
         npx cap add android
-        npx cap copy android
         
-        # Android OS Donanım Hızlandırmasını (GPU Acceleration) Zorla Aç
-        sed -i 's/<application/<application android:hardwareAccelerated="true" android:largeHeap="true"/g' android/app/src/main/AndroidManifest.xml
-        
-        echo "APK İkonu indiriliyor..."
         wget -O raw_icon.png "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/dogacla_logsu.png"
         
         sudo apt-get update && sudo apt-get install -y imagemagick
