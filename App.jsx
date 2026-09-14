@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Dices, Trophy, Star, ShieldAlert, Sparkles, Skull, Theater, 
   AlertTriangle, X, Volume2, VolumeX, RefreshCw, History, Bot, Zap, Crown, 
-  Ghost, Smartphone, Bird, Thermometer, Apple, HelpCircle, Music4, List, Plus, Minus, Clapperboard, Lightbulb, Drama, User, Users, Home, Copy, SkipForward, BookOpen, Pause, Play as PlayIcon, StopCircle, Wifi, WifiOff
+  Ghost, Smartphone, Bird, Thermometer, Apple, HelpCircle, Music4, List, Plus, Minus, Clapperboard, Lightbulb, Drama, User, Users, Home, Share2, Copy, SkipForward, BookOpen, Pause, Play as PlayIcon, StopCircle, Wifi, WifiOff
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -152,7 +152,7 @@ const getCardIcon = (text, defaultIcon) => {
     return defaultIcon;
 };
 
-// --- GAME ASSETS (LİNKLER DÜZELTİLDİ: Dogacla-Oyunu) ---
+// --- GAME ASSETS ---
 const GAME_ASSETS = {
     bg: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/arkplan.png",
     logo: "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/dogacla_logsu.png",
@@ -426,6 +426,7 @@ const CardDisplay = ({ card, type, mode = 'draw', onAction, onModeratorAction, a
                          </div>
                          <p className={`italic mb-3 px-1 leading-relaxed ${(isBonus || isModerator) ? 'text-[9px] sm:text-[10px] text-yellow-500 font-bold uppercase tracking-wider' : 'text-[10px] sm:text-xs text-gray-300'}`}>{flavorText}</p>
                          
+                         {/* YENİ: MODERATÖR KONTROL BUTONLARI */}
                          {isModerator && isHost ? (
                              <div className="flex flex-col gap-2 w-full mt-auto stagger-item opacity-0">
                                  <button onClick={() => onModeratorAction('toggle_time')} className={`w-full py-3 rounded-xl font-black text-sm tracking-widest uppercase shadow-lg transition-all active:scale-95 ${isTimerPaused ? 'bg-green-500 text-black border-2 border-green-700' : 'bg-yellow-500 text-black border-2 border-yellow-700'} flex items-center justify-center gap-2`}>
@@ -528,6 +529,7 @@ export default function DogaclaVisualsFinal() {
   const [bonusAlert, setBonusAlert] = useState(null);
 
   const activeAssets = assets;
+  const bgMusicRef = useRef(new Audio()); // <--- EKSİK OLAN SATIR BURASI
 
   // PRESENCE (KALP ATIŞI) - Oyundan düşenleri bulmak için her 5 saniyede bir sinyal at
   useEffect(() => {
@@ -1841,8 +1843,8 @@ export default function DogaclaVisualsFinal() {
                                      {isTimerPaused ? <PlayIcon size={16}/> : <Pause size={16}/>}
                                      {isTimerPaused ? "BAŞLAT" : "DURDUR"}
                                  </button>
-                                 <button onClick={() => handleModeratorAction('rule_violation')} className="flex-1 py-3 rounded-xl font-black text-xs sm:text-sm tracking-widest uppercase shadow-lg transition-all active:scale-95 bg-red-600 text-white border-2 border-red-800 flex items-center justify-center gap-2">
-                                     <StopCircle size={16} /> KURAL İHLALİ KES
+                                 <button onClick={() => handleModeratorAction('cancel_turn')} className="flex-1 py-3 rounded-xl font-black text-xs sm:text-sm tracking-widest uppercase shadow-lg transition-all active:scale-95 bg-red-600 text-white border-2 border-red-800 flex items-center justify-center gap-2">
+                                     <StopCircle size={16} /> SAHNEYİ KES
                                  </button>
                               </div>
                           )}
