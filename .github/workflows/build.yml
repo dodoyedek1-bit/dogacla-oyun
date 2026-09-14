@@ -5,6 +5,10 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NODE_OPTIONS: "--max-old-space-size=4096"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -28,8 +32,9 @@ jobs:
         npx create-expo-app dogacla-mobil --template blank
         cd dogacla-mobil
         
-        # Mobil kütüphaneleri kur
-        npx expo install expo-av react-native-svg lucide-react-native firebase nativewind tailwindcss
+        # SÜRÜM ÇAKIŞMASINI ÖNLEMEK İÇİN STABİL SÜRÜMLERİ ZORLUYORUZ
+        npm install nativewind@2.0.11 tailwindcss@3.3.2
+        npx expo install expo-av react-native-svg lucide-react-native firebase
         
         # Tailwind ve Native ayarlarını oluştur
         npx tailwindcss init
