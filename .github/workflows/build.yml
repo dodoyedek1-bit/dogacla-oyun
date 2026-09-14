@@ -136,7 +136,6 @@ jobs:
             async function downloadAll() {
                 for (const url of uniqueUrls) {
                     const filename = decodeURIComponent(url.split('/').pop());
-                    // BURASI ÇOK ÖNEMLİ: /assets/ yerine ./assets/ yapıldı (Android için)
                     code = code.split(url).join('./assets/' + filename);
                     
                     console.log(`Indiriliyor: ${filename}...`);
@@ -172,11 +171,16 @@ jobs:
         npm run build
         npx cap add android
         
-        # --- UYGULAMA İKONU GÖMME İŞLEMİ ---
-        echo "APK İkonu indiriliyor ve Android sistemine basılıyor..."
+        # --- UYGULAMA İKONU GÖMME VE KÜÇÜLTME İŞLEMİ ---
+        echo "APK İkonu indiriliyor..."
         wget -O dogacla_icon.png "https://raw.githubusercontent.com/dodoyedek1-bit/Dogacla-Oyunu/main/dogacla_logsu.png"
         
-        # Capacitor'un tüm çözünürlüklerdeki varsayılan ikonlarının üzerine kendi logonuzu yazıyoruz
+        # ImageMagick kur ve logonun etrafına %25 şeffaf boşluk (padding) ekleyerek maskeden taşmasını engelle
+        sudo apt-get update && sudo apt-get install -y imagemagick
+        convert dogacla_icon.png -bordercolor none -border 25% dogacla_icon.png
+        
+        echo "İkon boyutlandırıldı, Android sistemine basılıyor..."
+        # Capacitor'un tüm çözünürlüklerdeki varsayılan ikonlarının üzerine yazıyoruz
         for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
           cp dogacla_icon.png android/app/src/main/res/mipmap-$density/ic_launcher.png
           cp dogacla_icon.png android/app/src/main/res/mipmap-$density/ic_launcher_round.png
